@@ -1,4 +1,4 @@
-package xyz.avarel.lobos.ast.ops
+package xyz.avarel.lobos.ast.misc
 
 import xyz.avarel.lobos.ast.AbstractExpr
 import xyz.avarel.lobos.ast.Expr
@@ -6,12 +6,6 @@ import xyz.avarel.lobos.ast.ExprVisitor
 import xyz.avarel.lobos.lexer.Position
 import xyz.avarel.lobos.typesystem.Type
 
-class BinaryOperation(
-        type: Type,
-        val left: Expr,
-        val right: Expr,
-        val operator: BinaryOperationType,
-        position: Position
-): AbstractExpr(type, position) {
+class IfExpr(type: Type, val condition: Expr, val thenBranch: Expr, val elseBranch: Expr?, position: Position): AbstractExpr(type, position) {
     override fun <R> accept(visitor: ExprVisitor<R>) = visitor.visit(this)
 }

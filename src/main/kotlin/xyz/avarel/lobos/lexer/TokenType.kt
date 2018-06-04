@@ -14,7 +14,9 @@ enum class TokenType {
     GT,
     LTE,
     GTE,
+
     EQ,
+    NEQ,
 
     RANGE_IN,
     RANGE_EX,
@@ -32,6 +34,7 @@ enum class TokenType {
     ASSIGN,
     QUESTION,
     BANG,
+    ARROW,
 
     STRING,
     IDENT,
@@ -45,9 +48,12 @@ enum class TokenType {
     COLON,
     SEMICOLON,
 
+    RETURN,
     LET,
     MUT,
     IF,
+    ELSE,
+    NULL,
 
     INVALID,
 }

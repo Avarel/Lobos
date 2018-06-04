@@ -30,16 +30,18 @@ object LetParser: PrefixParser {
         } else {
             if (type != null) {
                 if (type.isAssignableFrom(expr.type)) {
-                    scope.setVariable(name, VariableInfo(mutable, type))
-                    scope.setAssumption(name, VariableInfo(mutable, expr.type))
+                    scope.variables[name] = VariableInfo(mutable, type)
+//                    if (expr.type != type) { // If assumption is necessary
+//                        scope.assumptions[name] = VariableInfo(mutable, expr.type)
+//                    }
                 } else {
-                    scope.setVariable(name, VariableInfo(mutable, type))
-                    throw SyntaxException("Required type: $type | Found type: ${expr.type}", expr.position)
+                    scope.variables[name] = VariableInfo(mutable, type)
+                    throw SyntaxException("Expected $type but found ${expr.type}", expr.position)
                 }
             } else {
                 assert(expr.type.universalType.isAssignableFrom(expr.type))
-                scope.setVariable(name, VariableInfo(mutable, expr.type.universalType))
-                scope.setAssumption(name, VariableInfo(mutable, expr.type))
+                scope.variables[name] = VariableInfo(mutable, expr.type.universalType)
+//                scope.assumptions[name] = VariableInfo(mutable, expr.type)
             }
             return LetExpr(name, expr, token.position)
         }

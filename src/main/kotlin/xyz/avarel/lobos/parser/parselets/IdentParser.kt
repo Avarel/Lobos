@@ -8,6 +8,7 @@ import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.PrefixParser
 import xyz.avarel.lobos.parser.SyntaxException
+import xyz.avarel.lobos.parser.typeCheck
 import xyz.avarel.lobos.typesystem.scope.ParserContext
 import xyz.avarel.lobos.typesystem.scope.VariableInfo
 
@@ -18,16 +19,18 @@ object IdentParser: PrefixParser {
         val effectiveType = scope.getEffectiveType(name)
 
         if (effectiveType != null) {
-            if (parser.match(TokenType.ASSIGN)) {
+            if (!parser.eof && parser.match(TokenType.ASSIGN)) {
                 val expr = parser.parseExpr(scope)
 
                 val currentInfo = scope.getVariable(name)!!
 
-                if (!currentInfo.type.isAssignableFrom(expr.type)) {
-                    throw SyntaxException("Required type: ${currentInfo.type} | Found type: ${expr.type}", expr.position)
+                if (!currentInfo.mutable) {
+                    throw SyntaxException("Reference $name is not mutable", token.position)
                 }
 
-                scope.setAssumption(name, VariableInfo(currentInfo.mutable, expr.type))
+                typeCheck(currentInfo.type, expr.type, expr.position)
+
+                scope.assumptions[name] = VariableInfo(currentInfo.mutable, expr.type)
 
                 return AssignExpr(name, expr, token.position)
             }

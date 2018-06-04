@@ -12,18 +12,32 @@ let x: String = y
  */ // The compiler should remember that y is effectively "string"
     // so the assignment to x should be legal
 
+
+// TODO extern let PI: i32
+// TODO extern impl i32
+
 /*
         let y = "hello";
         let x: str = y + 2;
         y = "world";
+        return 3;
         let z: "world" = y;
+ */
+
+/*
+        let a: i32 | null = 3;
+        if a == null {
+            let b: null = a;
+            return ();
+        } else {
+            let b: i32 = a;
+        };
+        let b: 3 = a;
  */
 
 fun main(args: Array<String>) {
     val source = """
-let unit: () = ();
-let tuple: (i32, i64, str) = (1, 2, "3");
-let other: ("up" | "down", i32) = ("up", 6);
+        let a: any!null = null;
     """.trimIndent()
 
     val lexer = Tokenizer(reader = source.reader())
@@ -41,33 +55,28 @@ let other: ("up" | "down", i32) = ("up", 6);
 
         println()
         println("|> ERRORS:")
+
+        val lines =  source.lines()
         parser.errors.forEach {
-            println(it.message)
-        }
-        if (parser.errors.isEmpty()) {
-            println("None :)")
+            val line = lines[it.position.lineNumber.toInt() - 1]
+            val msg = buildString {
+                append(line)
+                append('\n')
+                kotlin.repeat(it.position.lineIndex.toInt()) {
+                    append(' ')
+                }
+                append("└── ")
+                append(it.message)
+            }
+            println(msg)
         }
 
+        if (parser.errors.isEmpty()) {
+            println("None :)\n")
+        }
+
+        println()
+        println("|> AST")
         println(buildString { ast.accept(ASTViewer(this, "", true)) })
     }
-//
-//    println("\n BASE TUPLE")
-//    val base = TupleType(listOf(TupleType(listOf(A, B)), AnyType, A, LongType))
-//    println("$base            ${base.genericTypes}")
-//
-//    println("\n APPLY INT AND LONG")
-//    println(base.template(listOf(IntType, LongType)))
-//
-//    //val fn = FunctionType(listOf(GenericParameter("A"), GenericParameter("B")), listOf(A, TupleType.Unit, B), TupleType(listOf(A, B)))
-//    val fn = FunctionType(listOf(GenericParameter("A")), emptyList(), FunctionType(emptyList(), A))
-//
-//
-//    println("\n BASE GENERIC FUNC")
-//    println(fn)
-//
-//    println("\n APPLY INT AND LONG")
-//    println(fn.template(listOf(IntType)))
-
-//    println(base.template(listOf(LongType)).isAssignableFrom(base.template(listOf(IntType))))
-    //println("whytho${Position("hello_world.lbs", 1, 2)}")
 }

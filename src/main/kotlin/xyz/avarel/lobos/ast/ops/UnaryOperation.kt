@@ -6,11 +6,10 @@ import xyz.avarel.lobos.ast.ExprVisitor
 import xyz.avarel.lobos.lexer.Position
 import xyz.avarel.lobos.typesystem.Type
 
-class BinaryOperation(
+class UnaryOperation(
         type: Type,
-        val left: Expr,
-        val right: Expr,
-        val operator: BinaryOperationType,
+        val expr: Expr,
+        val operator: UnaryOperationType,
         position: Position
 ): AbstractExpr(type, position) {
     override fun <R> accept(visitor: ExprVisitor<R>) = visitor.visit(this)

@@ -3,6 +3,7 @@ package xyz.avarel.lobos.parser
 import xyz.avarel.lobos.ast.Expr
 import xyz.avarel.lobos.ast.misc.InvalidExpr
 import xyz.avarel.lobos.ast.misc.MultiExpr
+import xyz.avarel.lobos.ast.nodes.UnitExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.typesystem.scope.ParserContext
@@ -46,14 +47,23 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
         val expr = parseStatements(scope)
 
         if (!eof) {
-            errors.add(SyntaxException("Did not reach end of file", tokens.last().position))
+            println(peek().type)
+            errors.add(SyntaxException("Did not reach end of file", peek().position))
         }
 
         return expr
     }
 
-    fun parseStatements(scope: ParserContext): Expr {
-//        if (eof) return UnitExpr(last.position)
+    fun parseStatements(scope: ParserContext, delimiterPair: Pair<TokenType, TokenType>? = null): Expr {
+        if (eof) throw SyntaxException("Expected expression but reached end of file", last.position)
+
+        delimiterPair?.let {
+            eat(it.first)
+            if (match(it.second)) {
+                return UnitExpr(last.position)
+            }
+        }
+
         val expr = parseExpr(scope)
         if (expr is InvalidExpr) skipTillNextIs(TokenType.SEMICOLON)
 
@@ -63,6 +73,10 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
 
             do {
                 if (eof) break
+                if (delimiterPair != null && match(delimiterPair.second)) {
+                    list.add(UnitExpr(last.position))
+                    break
+                }
                 parseExpr(scope).let {
                     if (it is InvalidExpr) skipTillNextIs(TokenType.SEMICOLON)
                     list.add(it)
@@ -70,6 +84,10 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
             } while (!eof && match(TokenType.SEMICOLON))
 
             return MultiExpr(list)
+        }
+
+        delimiterPair?.let {
+            eat(delimiterPair.second)
         }
 
         return expr
@@ -80,6 +98,8 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
     fun nextIs(type: TokenType) = peek().type == type
 
     fun parseExpr(scope: ParserContext, precedence: Int = 0): Expr {
+        if (eof) throw SyntaxException("Expected expression but reached end of file", last.position)
+
         val token = eat()
         val parser = grammar.prefixParsers[token.type] ?: let {
             errors.add(SyntaxException("Unexpected $token", token.position))

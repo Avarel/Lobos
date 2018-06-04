@@ -2,23 +2,65 @@ package xyz.avarel.lobos.typesystem.base
 
 import xyz.avarel.lobos.typesystem.AbstractType
 import xyz.avarel.lobos.typesystem.Type
+import xyz.avarel.lobos.typesystem.generics.FunctionType
+import xyz.avarel.lobos.typesystem.generics.UnionType
 
+/**
+ * Represents the top of the inheritable type hierarchy.
+ */
 object AnyType: Type {
+    override val allAssociatedTypes: Map<String, Type> get() = associatedTypes
+    override val associatedTypes = hashMapOf<String, Type>().also {
+        val anyOrNull = UnionType(listOf(this, NullType))
+        it["equals"] = FunctionType(true, listOf(anyOrNull, anyOrNull), BoolType)
+    }
+
     override val parentType: Type = this
-    override fun isAssignableFrom(other: Type) = other != NullType && other != InvalidType
+    override fun isAssignableFrom(other: Type) = other != InvalidType
+    override fun getAssociatedType(key: String): Type? = associatedTypes[key]
     override fun toString() = "any"
 }
 
-object NullType: AbstractType("null") {
+/**
+ * This represents the null type. Nothing can be assigned to it except for itself.
+ */
+object NullType: AbstractType("null")
+
+/**
+ * This type can be assigned to anything, because technically, it will never return.
+ * However, no other type can be assigned to it.
+ */
+object NeverType: AbstractType("!") {
+    override val parentType: Type = this
     override fun isAssignableFrom(other: Type) = other == this
+    override fun getAssociatedType(key: String): Type? = null
 }
 
-object InvalidType: AbstractType("[Invalid Type]") {
+/**
+ * Signifies when type inference has failed.
+ * Nothing can be assigned to it, ever.
+ */
+object InvalidType: AbstractType("[Invalid type.]") {
+    override val parentType: Type = this
     override fun isAssignableFrom(other: Type) = false
+    override fun getAssociatedType(key: String): Type? = null
 }
 
-object I32Type: AbstractType("i32", I64Type)
+object I32Type: AbstractType("i32") {
+    override val associatedTypes = hashMapOf<String, Type>().also {
+        val opFn = FunctionType(true, listOf(this, this), this)
+        it["plus"] = opFn
+        it["minus"] = opFn
+        it["plus"] = opFn
+        it["minus"] = opFn
+    }
+}
+
 object I64Type: AbstractType("i64")
 object BoolType: AbstractType("bool")
 
-object StrType: AbstractType("str")
+object StrType: AbstractType("str") {
+    override val associatedTypes = hashMapOf<String, Type>().also {
+        it["plus"] = FunctionType(true, listOf(this, AnyType), this)
+    }
+}

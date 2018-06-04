@@ -1,15 +1,27 @@
 package xyz.avarel.lobos.typesystem.generics
 
+import xyz.avarel.lobos.parser.coerceType
 import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.TypeTemplate
+import xyz.avarel.lobos.typesystem.base.ExistentialType
 
 class UnionType(
         override val genericParameters: List<GenericParameter>,
         val valueTypes: List<Type>
-): Type, TypeTemplate {
-    constructor(types: List<Type>): this(types.findGenericParameters(), types)
+): ExistentialType, TypeTemplate {
+    constructor(valueTypes: List<Type>): this(valueTypes.findGenericParameters(), valueTypes)
 
-    // TODO handle effective type for this
+    override val universalType: Type by lazy {
+        assert(valueTypes.size > 1)
+        valueTypes.reduce(Type::commonSuperTypeWith)
+    }
+
+    override val associatedTypes: Map<String, Type> by lazy {
+        val names = valueTypes.map { it.allAssociatedTypes.keys }.reduce { a, b -> a intersect b }
+        names.associate { name -> name to valueTypes.mapNotNull { it.getAssociatedType(name) }.reduce(Type::coerceType) }
+    }
+
+    override fun getAssociatedType(key: String) = associatedTypes[key]
 
     override fun template(types: List<Type>): Type {
         require(types.size == genericParameters.size)

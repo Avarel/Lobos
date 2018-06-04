@@ -13,7 +13,12 @@ object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
         prefix(TokenType.TRUE, BooleanParser(true))
         prefix(TokenType.FALSE, BooleanParser(false))
         prefix(TokenType.L_PAREN, TupleParser)
+        prefix(TokenType.RETURN, ReturnParser)
+        prefix(TokenType.IF, IfParser)
+        prefix(TokenType.NULL, NullParser)
 
+        infix(TokenType.EQ, EqualsBinaryParser)
+        infix(TokenType.NEQ, NotEqualsBinaryParser)
         infix(TokenType.PLUS, BinaryOperatorParser(Precedence.ADDITIVE, BinaryOperationType.ADD))
         infix(TokenType.MINUS, BinaryOperatorParser(Precedence.ADDITIVE, BinaryOperationType.SUBTRACT))
         infix(TokenType.ASTERISK, BinaryOperatorParser(Precedence.MULTIPLICATIVE, BinaryOperationType.MULTIPLY))

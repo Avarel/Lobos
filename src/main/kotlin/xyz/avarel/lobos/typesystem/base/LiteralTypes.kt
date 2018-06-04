@@ -1,6 +1,7 @@
 package xyz.avarel.lobos.typesystem.base
 
 import xyz.avarel.lobos.typesystem.Type
+import xyz.avarel.lobos.typesystem.generics.UnionType
 
 interface ExistentialType: Type {
     override val universalType: Type
@@ -13,6 +14,7 @@ class LiteralIntRangeInclusiveType(val start: Int, val end: Int): ExistentialTyp
     override fun isAssignableFrom(other: Type): Boolean {
         return when {
             this === other -> true
+            other is UnionType -> other.valueTypes.all(this::isAssignableFrom)
             other is LiteralIntType -> other.value in start..end
             other is LiteralIntRangeInclusiveType -> other.start in start..end && other.end in start..end
             other is LiteralIntRangeExclusiveType -> other.start in start..end && other.end in start..end + 1
@@ -38,6 +40,7 @@ class LiteralIntRangeExclusiveType(val start: Int, val end: Int): ExistentialTyp
     override fun isAssignableFrom(other: Type): Boolean {
         return when {
             this === other -> true
+            other is UnionType -> other.valueTypes.all(this::isAssignableFrom)
             other is LiteralIntType -> other.value in start until end
             other is LiteralIntRangeInclusiveType -> other.start in start until end && other.end in start until end
             other is LiteralIntRangeExclusiveType -> other.start in start..end && other.end in start..end

@@ -1,9 +1,11 @@
 package xyz.avarel.lobos.ast
 
+import xyz.avarel.lobos.ast.misc.IfExpr
 import xyz.avarel.lobos.ast.misc.InvalidExpr
 import xyz.avarel.lobos.ast.misc.MultiExpr
 import xyz.avarel.lobos.ast.nodes.*
 import xyz.avarel.lobos.ast.ops.BinaryOperation
+import xyz.avarel.lobos.ast.ops.UnaryOperation
 import xyz.avarel.lobos.ast.variables.AssignExpr
 import xyz.avarel.lobos.ast.variables.IdentExpr
 import xyz.avarel.lobos.ast.variables.LetExpr
@@ -23,5 +25,10 @@ interface ExprVisitor<R> {
     fun visit(expr: IdentExpr): R
     fun visit(expr: TupleExpr): R
 
+    fun visit(expr: UnaryOperation): R
     fun visit(expr: BinaryOperation): R
+
+    fun visit(expr: ReturnExpr): R
+    fun visit(expr: IfExpr): R
+    fun visit(expr: NullExpr): R
 }

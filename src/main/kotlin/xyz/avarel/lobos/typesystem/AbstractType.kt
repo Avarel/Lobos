@@ -1,18 +1,20 @@
 package xyz.avarel.lobos.typesystem
 
 import xyz.avarel.lobos.typesystem.base.AnyType
+import xyz.avarel.lobos.typesystem.base.NeverType
 import xyz.avarel.lobos.typesystem.generics.UnionType
 
 abstract class AbstractType(val name: String, override val parentType: Type = AnyType): Type {
     override fun isAssignableFrom(other: Type): Boolean {
         return when (other) {
-            this -> true
+            this, NeverType -> true
             is UnionType -> other.valueTypes.all(this::isAssignableFrom)
             else -> {
                 var currentType = other
                 while (currentType != this) {
                     currentType = currentType.parentType
-                    if (currentType == AnyType) {
+                    if (currentType.parentType == currentType) {
+                        // Top-most types such as NullType, InvalidType, and AnyType
                         return false
                     }
                 }

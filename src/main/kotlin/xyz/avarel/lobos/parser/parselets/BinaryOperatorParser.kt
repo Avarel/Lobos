@@ -5,20 +5,20 @@ import xyz.avarel.lobos.ast.ops.BinaryOperation
 import xyz.avarel.lobos.ast.ops.BinaryOperationType
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.parser.Parser
-import xyz.avarel.lobos.typesystem.base.StrType
+import xyz.avarel.lobos.parser.SyntaxException
+import xyz.avarel.lobos.parser.checkInvocation
+import xyz.avarel.lobos.typesystem.generics.FunctionType
 import xyz.avarel.lobos.typesystem.scope.ParserContext
 
-class BinaryOperatorParser(precedence: Int, val operator: BinaryOperationType, leftAssoc: Boolean = true): BinaryParser(precedence, leftAssoc) {
+open class BinaryOperatorParser(precedence: Int, val operator: BinaryOperationType, leftAssoc: Boolean = true): BinaryParser(precedence, leftAssoc) {
     override fun parse(parser: Parser, scope: ParserContext, token: Token, left: Expr): Expr {
         val right = parser.parseExpr(scope, precedence - if (leftAssoc) 0 else 1)
 
-        // TODO more exhaustive type checks
+        val fnType = left.type.getAssociatedType(operator.functionName)
+                ?: throw SyntaxException("${left.type} does not have a ${operator.functionName} operation", token.position)
 
-        // This assumption is safe since literal string types do not exist at runtime
-        if (left.type.universalType == StrType && operator == BinaryOperationType.ADD) {
-            return BinaryOperation(StrType, left, right, operator, token.position)
-        }
+        fnType.checkInvocation(listOf(left.type, right.type), token.position)
 
-        return BinaryOperation(left, right, operator, token.position)
+        return BinaryOperation((fnType as FunctionType).returnType, left, right, operator, token.position)
     }
 }

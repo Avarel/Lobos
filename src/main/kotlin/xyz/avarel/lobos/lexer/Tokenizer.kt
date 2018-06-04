@@ -4,7 +4,8 @@ import java.io.BufferedReader
 import java.io.Reader
 
 class Tokenizer(private val fileName: String = "_", reader: Reader) {
-    constructor(string: String): this(reader = string.reader())
+    constructor(string: String) : this(reader = string.reader())
+
     private val reader: Reader = if (reader.markSupported()) reader else BufferedReader(reader)
 
     private var lineNumber: Long = 1
@@ -21,37 +22,45 @@ class Tokenizer(private val fileName: String = "_", reader: Reader) {
 
     private fun parseCharTo(list: MutableList<Token>, c: Char) {
         when (c) { //todo ADD characters?
-            '{' -> list.add(makeToken(TokenType.L_BRACE))
-            '}' -> list.add(makeToken(TokenType.R_BRACE))
-            '(' -> list.add(makeToken(TokenType.L_PAREN))
-            ')' -> list.add(makeToken(TokenType.R_PAREN))
-            '[' -> list.add(makeToken(TokenType.L_BRACKET))
-            ']' -> list.add(makeToken(TokenType.R_BRACKET))
+            '{' -> list.add(makeToken(TokenType.L_BRACE, c))
+            '}' -> list.add(makeToken(TokenType.R_BRACE, c))
+            '(' -> list.add(makeToken(TokenType.L_PAREN, c))
+            ')' -> list.add(makeToken(TokenType.R_PAREN, c))
+            '[' -> list.add(makeToken(TokenType.L_BRACKET, c))
+            ']' -> list.add(makeToken(TokenType.R_BRACKET, c))
             '.' -> when {
                 match('.') -> when {
-                    match('=') -> list.add(makeToken(TokenType.RANGE_IN))
-                    match('<') -> list.add(makeToken(TokenType.RANGE_EX))
+                    match('=') -> list.add(makeToken(TokenType.RANGE_IN, "..="))
+                    match('<') -> list.add(makeToken(TokenType.RANGE_EX, "..<"))
                 }
-                else -> list.add(makeToken(TokenType.DOT))
+                else -> list.add(makeToken(TokenType.DOT, "."))
             }
-            ',' -> list.add(makeToken(TokenType.COMMA))
-            ':' -> list.add(makeToken(TokenType.COLON))
-            ';' -> list.add(makeToken(TokenType.SEMICOLON))
-            '+' -> list.add(makeToken(TokenType.PLUS))
-            '-' -> list.add(makeToken(TokenType.MINUS))
-            '/' -> list.add(makeToken(TokenType.F_SLASH))
-            '\\' -> list.add(makeToken(TokenType.B_SLASH))
-            '!' -> list.add(makeToken(TokenType.BANG))
-            '?' -> list.add(makeToken(TokenType.QUESTION))
-            '=' -> if (match('=')) {
-                list.add(makeToken(TokenType.EQ))
+            ',' -> list.add(makeToken(TokenType.COMMA, c))
+            ':' -> list.add(makeToken(TokenType.COLON, c))
+            ';' -> list.add(makeToken(TokenType.SEMICOLON, c))
+            '+' -> list.add(makeToken(TokenType.PLUS, c))
+            '-' -> when {
+                match('>') -> list.add(makeToken(TokenType.ARROW, "->"))
+                else -> list.add(makeToken(TokenType.MINUS, c))
+            }
+            '/' -> list.add(makeToken(TokenType.F_SLASH, c))
+            '\\' -> list.add(makeToken(TokenType.B_SLASH, c))
+            '!' -> if (match('=')) {
+                list.add(makeToken(TokenType.NEQ, "!="))
             } else {
-                list.add(makeToken(TokenType.ASSIGN))
+                list.add(makeToken(TokenType.BANG, c))
             }
-            '|' -> list.add(makeToken(TokenType.PIPE))
+            '?' -> list.add(makeToken(TokenType.QUESTION, c))
+            '=' -> if (match('=')) {
+                list.add(makeToken(TokenType.EQ, "=="))
+            } else {
+                list.add(makeToken(TokenType.ASSIGN, c))
+            }
+            '|' -> list.add(makeToken(TokenType.PIPE, c))
             '"' -> parseStringTo(list, '"', true)
             '\'' -> parseStringTo(list, '\'', false)
-            ' ', '\n' -> {}
+            ' ', '\n' -> {
+            }
             else -> when {
                 c.isDigit() -> parseNumberTo(list, c)
                 c.isLetter() -> parseIdentTo(list, c)
@@ -60,7 +69,12 @@ class Tokenizer(private val fileName: String = "_", reader: Reader) {
         }
     }
 
-    private fun makeToken(tokenType: TokenType, string: String? = null) = Token(tokenType, string, position)
+    private fun makeToken(tokenType: TokenType, char: Char) = makeToken(tokenType, char.toString())
+    private fun makeToken(tokenType: TokenType, string: String) = Token(
+            tokenType,
+            string,
+            position.let { it.copy(lineIndex = it.lineIndex - string.length) }
+    )
 
     private fun parseIdentTo(list: MutableList<Token>, c: Char) {
         val buf = StringBuilder()
@@ -78,10 +92,14 @@ class Tokenizer(private val fileName: String = "_", reader: Reader) {
 
         val str = buf.toString()
         when (str) {
-            "true" -> list.add(makeToken(TokenType.TRUE))
-            "false" -> list.add(makeToken(TokenType.FALSE))
-            "let" -> list.add(makeToken(TokenType.LET))
-            "mut" -> list.add(makeToken(TokenType.MUT))
+            "true" -> list.add(makeToken(TokenType.TRUE, "true"))
+            "false" -> list.add(makeToken(TokenType.FALSE, "false"))
+            "let" -> list.add(makeToken(TokenType.LET, "let"))
+            "mut" -> list.add(makeToken(TokenType.MUT, "mut"))
+            "return" -> list.add(makeToken(TokenType.RETURN, "return"))
+            "if" -> list.add(makeToken(TokenType.IF, "if"))
+            "else" -> list.add(makeToken(TokenType.ELSE, "else"))
+            "null" -> list.add(makeToken(TokenType.NULL, "null"))
             else -> list.add(makeToken(TokenType.IDENT, str))
         }
     }
@@ -99,12 +117,12 @@ class Tokenizer(private val fileName: String = "_", reader: Reader) {
                     next()
 
                     list.add(makeToken(TokenType.STRING, buf.toString()))
-                    list.add(makeToken(TokenType.PLUS))
+                    list.add(makeToken(TokenType.PLUS, '+'))
                     buf = StringBuilder()
 
                     var braces = 0
 
-                    list.add(makeToken(TokenType.L_PAREN))
+                    list.add(makeToken(TokenType.L_PAREN, '('))
 
                     while (hasNext()) {
                         val cc = next()
@@ -121,10 +139,11 @@ class Tokenizer(private val fileName: String = "_", reader: Reader) {
                         } else parseCharTo(list, cc)
                     }
 
-                    list.add(makeToken(TokenType.R_PAREN))
+                    list.add(makeToken(TokenType.R_PAREN, ')'))
+                    list.add(makeToken(TokenType.PLUS, '+'))
                 } else if (peek().isLetter()) {
                     list.add(makeToken(TokenType.STRING, buf.toString()))
-                    list.add(makeToken(TokenType.PLUS))
+                    list.add(makeToken(TokenType.PLUS, '+'))
                     buf = StringBuilder()
 
                     buf.append(next())
@@ -132,6 +151,8 @@ class Tokenizer(private val fileName: String = "_", reader: Reader) {
                     while (hasNext() && peek().isLetterOrDigit()) {
                         buf.append(next())
                     }
+
+                    list.add(makeToken(TokenType.PLUS, '+'))
                 } else {
                     buf.append(next())
                 }
