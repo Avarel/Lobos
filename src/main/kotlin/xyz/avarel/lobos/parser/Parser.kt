@@ -6,7 +6,8 @@ import xyz.avarel.lobos.ast.misc.MultiExpr
 import xyz.avarel.lobos.ast.nodes.UnitExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
-import xyz.avarel.lobos.typesystem.scope.ParserContext
+import xyz.avarel.lobos.typesystem.scope.ScopeContext
+import xyz.avarel.lobos.typesystem.scope.StmtContext
 
 class Parser(val grammar: Grammar, val tokens: List<Token>) {
     val errors = mutableListOf<SyntaxException>()
@@ -43,7 +44,7 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
         }
     }
 
-    fun parse(scope: ParserContext): Expr {
+    fun parse(scope: ScopeContext): Expr {
         val expr = parseStatements(scope)
 
         if (!eof) {
@@ -54,7 +55,7 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
         return expr
     }
 
-    fun parseStatements(scope: ParserContext, delimiterPair: Pair<TokenType, TokenType>? = null): Expr {
+    fun parseStatements(scope: ScopeContext, delimiterPair: Pair<TokenType, TokenType>? = null): Expr {
         if (eof) throw SyntaxException("Expected expression but reached end of file", last.position)
 
         delimiterPair?.let {
@@ -64,7 +65,7 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
             }
         }
 
-        val expr = parseExpr(scope)
+        val expr = parseExpr(scope, StmtContext())
         if (expr is InvalidExpr) skipTillNextIs(TokenType.SEMICOLON)
 
         if (!eof && match(TokenType.SEMICOLON)) {
@@ -77,7 +78,7 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
                     list.add(UnitExpr(last.position))
                     break
                 }
-                parseExpr(scope).let {
+                parseExpr(scope, StmtContext()).let {
                     if (it is InvalidExpr) skipTillNextIs(TokenType.SEMICOLON)
                     list.add(it)
                 }
@@ -95,9 +96,9 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
 
     fun peek(distance: Int = 0) = tokens[index + distance]
 
-    fun nextIs(type: TokenType) = peek().type == type
+    fun nextIs(type: TokenType) = !eof && peek().type == type
 
-    fun parseExpr(scope: ParserContext, precedence: Int = 0): Expr {
+    fun parseExpr(scope: ScopeContext, ctx: StmtContext, precedence: Int = 0): Expr {
         if (eof) throw SyntaxException("Expected expression but reached end of file", last.position)
 
         val token = eat()
@@ -106,16 +107,16 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
             return InvalidExpr(token.position)
         }
         val expr = try {
-            parser.parse(this, scope, token)
+            parser.parse(this, scope, ctx, token)
         } catch (e: SyntaxException) {
             errors.add(e)
             return InvalidExpr(token.position)
         }
 
-        return parseInfix(scope, precedence, expr)
+        return parseInfix(scope, ctx, precedence, expr)
     }
 
-    fun parseInfix(scope: ParserContext, precedence: Int, left: Expr): Expr {
+    fun parseInfix(scope: ScopeContext, ctx: StmtContext, precedence: Int, left: Expr): Expr {
         var leftExpr = left
         while (!eof && precedence < this.precedence) {
             val token = eat()
@@ -125,7 +126,7 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
             }
 
             leftExpr = try {
-                parser.parse(this, scope, token, leftExpr)
+                parser.parse(this, scope, ctx, token, leftExpr)
             } catch (e: SyntaxException) {
                 errors.add(e)
                 return InvalidExpr(token.position)

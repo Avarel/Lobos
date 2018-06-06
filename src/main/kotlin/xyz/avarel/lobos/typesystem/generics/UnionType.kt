@@ -1,6 +1,6 @@
 package xyz.avarel.lobos.typesystem.generics
 
-import xyz.avarel.lobos.parser.coerceType
+import xyz.avarel.lobos.parser.commonAssignableToType
 import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.TypeTemplate
 import xyz.avarel.lobos.typesystem.base.ExistentialType
@@ -18,7 +18,7 @@ class UnionType(
 
     override val associatedTypes: Map<String, Type> by lazy {
         val names = valueTypes.map { it.allAssociatedTypes.keys }.reduce { a, b -> a intersect b }
-        names.associate { name -> name to valueTypes.mapNotNull { it.getAssociatedType(name) }.reduce(Type::coerceType) }
+        names.associate { name -> name to valueTypes.mapNotNull { it.getAssociatedType(name) }.reduce(Type::commonAssignableToType) }
     }
 
     override fun getAssociatedType(key: String) = associatedTypes[key]
@@ -33,5 +33,11 @@ class UnionType(
 
     override fun isAssignableFrom(other: Type) = valueTypes.any { it.isAssignableFrom(other) }
 
-    override fun toString() = valueTypes.joinToString(separator = " | ")
+    override fun toString() = valueTypes.joinToString(separator = " | ") {
+        if (it is UnionType) {
+            "($it)"
+        } else {
+            it.toString()
+        }
+    }
 }

@@ -9,11 +9,16 @@ import xyz.avarel.lobos.parser.PrefixParser
 import xyz.avarel.lobos.parser.SyntaxException
 import xyz.avarel.lobos.parser.parseType
 import xyz.avarel.lobos.typesystem.Type
-import xyz.avarel.lobos.typesystem.scope.ParserContext
+import xyz.avarel.lobos.typesystem.scope.ScopeContext
+import xyz.avarel.lobos.typesystem.scope.StmtContext
 import xyz.avarel.lobos.typesystem.scope.VariableInfo
 
 object LetParser: PrefixParser {
-    override fun parse(parser: Parser, scope: ParserContext, token: Token): Expr {
+    override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token): Expr {
+        if (ctx.mustBeExpr) {
+            throw SyntaxException("Not an expression", token.position)
+        }
+
         val mutable = parser.match(TokenType.MUT)
 
         val ident = parser.eat(TokenType.IDENT)
@@ -23,7 +28,7 @@ object LetParser: PrefixParser {
 
         parser.eat(TokenType.ASSIGN)
 
-        val expr = parser.parseExpr(scope)
+        val expr = parser.parseExpr(scope, StmtContext(true))
 
         if (scope.containsVariable(name)) {
             throw SyntaxException("Variable $name has already been declared", ident.position)

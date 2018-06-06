@@ -16,7 +16,7 @@ object AnyType: Type {
     }
 
     override val parentType: Type = this
-    override fun isAssignableFrom(other: Type) = other != InvalidType
+    override fun isAssignableFrom(other: Type) = other !== NullType && other !== InvalidType
     override fun getAssociatedType(key: String): Type? = associatedTypes[key]
     override fun toString() = "any"
 }
@@ -24,15 +24,23 @@ object AnyType: Type {
 /**
  * This represents the null type. Nothing can be assigned to it except for itself.
  */
-object NullType: AbstractType("null")
+object NullType: AbstractType("null") {
+    override val allAssociatedTypes: Map<String, Type> get() = AnyType.allAssociatedTypes
+    override val associatedTypes get() = AnyType.associatedTypes
+    override val parentType: Type = this
+    override fun isAssignableFrom(other: Type) = other === this
+    override fun getAssociatedType(key: String): Type? = associatedTypes[key]
+}
 
 /**
  * This type can be assigned to anything, because technically, it will never return.
  * However, no other type can be assigned to it.
  */
 object NeverType: AbstractType("!") {
+    override val allAssociatedTypes: Map<String, Type> get() = emptyMap()
+    override val associatedTypes: Map<String, Type> get() = emptyMap()
     override val parentType: Type = this
-    override fun isAssignableFrom(other: Type) = other == this
+    override fun isAssignableFrom(other: Type) = other === this
     override fun getAssociatedType(key: String): Type? = null
 }
 
@@ -41,6 +49,8 @@ object NeverType: AbstractType("!") {
  * Nothing can be assigned to it, ever.
  */
 object InvalidType: AbstractType("[Invalid type.]") {
+    override val allAssociatedTypes: Map<String, Type> get() = emptyMap()
+    override val associatedTypes: Map<String, Type> get() = emptyMap()
     override val parentType: Type = this
     override fun isAssignableFrom(other: Type) = false
     override fun getAssociatedType(key: String): Type? = null
@@ -51,8 +61,8 @@ object I32Type: AbstractType("i32") {
         val opFn = FunctionType(true, listOf(this, this), this)
         it["plus"] = opFn
         it["minus"] = opFn
-        it["plus"] = opFn
-        it["minus"] = opFn
+        it["times"] = opFn
+        it["div"] = opFn
     }
 }
 

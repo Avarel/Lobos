@@ -5,10 +5,11 @@ import xyz.avarel.lobos.ast.nodes.IntExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.PrefixParser
-import xyz.avarel.lobos.typesystem.scope.ParserContext
+import xyz.avarel.lobos.typesystem.scope.ScopeContext
+import xyz.avarel.lobos.typesystem.scope.StmtContext
 
 object IntParser: PrefixParser {
-    override fun parse(parser: Parser, scope: ParserContext, token: Token): Expr {
+    override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token): Expr {
         val value = token.string!!.toInt()
         return IntExpr(value, token.position)
     }

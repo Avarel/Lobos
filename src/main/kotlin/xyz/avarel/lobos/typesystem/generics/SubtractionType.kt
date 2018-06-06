@@ -35,8 +35,18 @@ class SubtractionType(
     }
 
     override fun isAssignableFrom(other: Type): Boolean {
-        return targetType.isAssignableFrom(other) && !subtractedType.isAssignableFrom(other)
+        return targetType.isAssignableFrom(other) && !other.isAssignableFrom(subtractedType)
     }
 
-    override fun toString() = "$targetType ! $subtractedType"
+    override fun toString() = buildString {
+        append(targetType)
+        append('!')
+        if (subtractedType is UnionType) {
+            append('(')
+            append(subtractedType)
+            append(')')
+        } else {
+            append(subtractedType)
+        }
+    }
 }

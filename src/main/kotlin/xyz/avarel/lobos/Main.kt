@@ -12,6 +12,8 @@ let x: String = y
  */ // The compiler should remember that y is effectively "string"
     // so the assignment to x should be legal
 
+// OR -> add inverse assumption to scope
+// AND -> nothing
 
 // TODO extern let PI: i32
 // TODO extern impl i32
@@ -35,9 +37,34 @@ let x: String = y
         let b: 3 = a;
  */
 
+/*
+let a: i32 | null = 1;
+
+        if (a == null || a == 1 || a == 2) {
+            let b: () = a;
+            return ();
+        };
+
+        let b: () = a;
+ */
+
+/*
+    let b: () = a;
+                └── Expected () but found [null | 2 | 1] at (_:4:16)
+let b: () = a;
+            └── Expected () but found [i32 ! [1 | 2]] at (_:8:12)
+ */
+
 fun main(args: Array<String>) {
     val source = """
-        let a: any!null = null;
+        let a: i32 | null = 1;
+
+        if (a != null && (a == 1 || a == 2)) {
+            let b: () = a;
+            return ();
+        };
+
+        let b: () = a;
     """.trimIndent()
 
     val lexer = Tokenizer(reader = source.reader())
@@ -78,5 +105,13 @@ fun main(args: Array<String>) {
         println()
         println("|> AST")
         println(buildString { ast.accept(ASTViewer(this, "", true)) })
+    }
+}
+
+inline fun <K, V> MutableMap<K, V>.mergeAll(other: Map<K, V>, remappingFunction: (V, V) -> V) {
+    other.forEach { (k, v) ->
+        this[k]?.let {
+            put(k, remappingFunction(it, v))
+        } ?: put(k, v)
     }
 }

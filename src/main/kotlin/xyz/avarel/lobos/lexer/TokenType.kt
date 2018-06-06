@@ -21,6 +21,7 @@ enum class TokenType {
     RANGE_IN,
     RANGE_EX,
 
+    AMP,
     PIPE,
     AND,
     OR,

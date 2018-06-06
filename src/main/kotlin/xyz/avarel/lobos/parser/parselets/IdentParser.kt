@@ -9,18 +9,23 @@ import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.PrefixParser
 import xyz.avarel.lobos.parser.SyntaxException
 import xyz.avarel.lobos.parser.typeCheck
-import xyz.avarel.lobos.typesystem.scope.ParserContext
+import xyz.avarel.lobos.typesystem.scope.ScopeContext
+import xyz.avarel.lobos.typesystem.scope.StmtContext
 import xyz.avarel.lobos.typesystem.scope.VariableInfo
 
 object IdentParser: PrefixParser {
-    override fun parse(parser: Parser, scope: ParserContext, token: Token): Expr {
+    override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token): Expr {
         val name = token.string!!
 
         val effectiveType = scope.getEffectiveType(name)
 
         if (effectiveType != null) {
-            if (!parser.eof && parser.match(TokenType.ASSIGN)) {
-                val expr = parser.parseExpr(scope)
+            if (parser.match(TokenType.ASSIGN)) {
+                if (ctx.mustBeExpr) {
+                    throw SyntaxException("Not an expression", token.position)
+                }
+
+                val expr = parser.parseExpr(scope, ctx)
 
                 val currentInfo = scope.getVariable(name)!!
 
@@ -35,7 +40,7 @@ object IdentParser: PrefixParser {
                 return AssignExpr(name, expr, token.position)
             }
 
-            return IdentExpr(name, effectiveType.type, token.position)
+            return IdentExpr(name, ctx.assumptions[name]?.type ?: effectiveType.type, token.position)
         } else {
             throw SyntaxException("Unresolved reference $name", token.position)
         }

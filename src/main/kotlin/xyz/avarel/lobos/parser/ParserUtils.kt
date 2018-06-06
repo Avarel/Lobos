@@ -9,17 +9,17 @@ import xyz.avarel.lobos.typesystem.generics.FunctionType
 import xyz.avarel.lobos.typesystem.generics.SubtractionType
 import xyz.avarel.lobos.typesystem.generics.TupleType
 import xyz.avarel.lobos.typesystem.generics.UnionType
-import xyz.avarel.lobos.typesystem.scope.ParserContext
+import xyz.avarel.lobos.typesystem.scope.ScopeContext
 
-fun Parser.parseBlock(scope: ParserContext): Expr {
+fun Parser.parseBlock(scope: ScopeContext): Expr {
     return parseStatements(scope, TokenType.L_BRACE to TokenType.R_BRACE)
 }
 
-fun Parser.parseType(scope: ParserContext): Type {
+fun Parser.parseType(scope: ScopeContext): Type {
     return parseUnionType(scope)
 }
 
-fun Parser.parseUnionType(scope: ParserContext): Type {
+fun Parser.parseUnionType(scope: ScopeContext): Type {
     val type = parseSubtractionType(scope)
 
     if (match(TokenType.PIPE)) {
@@ -41,7 +41,7 @@ fun Parser.parseUnionType(scope: ParserContext): Type {
     return type
 }
 
-fun Parser.parseSubtractionType(scope: ParserContext): Type {
+fun Parser.parseSubtractionType(scope: ScopeContext): Type {
     val type = parseSingleType(scope)
 
     if (match(TokenType.BANG)) {
@@ -58,7 +58,7 @@ fun Parser.parseSubtractionType(scope: ParserContext): Type {
     return type
 }
 
-fun Parser.parseSingleType(scope: ParserContext): Type {
+fun Parser.parseSingleType(scope: ScopeContext): Type {
     return when {
         match(TokenType.TRUE) -> LiteralTrueType
         match(TokenType.FALSE) -> LiteralFalseType
@@ -129,7 +129,7 @@ fun Parser.parseSingleType(scope: ParserContext): Type {
     }
 }
 
-private fun Parser.constructTupleOrFunctionType(scope: ParserContext, valueTypes: List<Type>): Type {
+private fun Parser.constructTupleOrFunctionType(scope: ScopeContext, valueTypes: List<Type>): Type {
    return when {
         match(TokenType.ARROW) -> {
             val returnType = tryOrInvalid { parseType(scope) }
@@ -142,6 +142,14 @@ private fun Parser.constructTupleOrFunctionType(scope: ParserContext, valueTypes
 
 private inline fun tryOrInvalid(block: () -> Type): Type {
     return try { block() } catch (e: SyntaxException) { InvalidType }
+}
+
+fun Parser.continuableTypeCheck(expectedType: Type, foundType: Type, position: Position) {
+    try {
+        typeCheck(expectedType, foundType, position)
+    } catch (e: SyntaxException) {
+        errors.add(e)
+    }
 }
 
 /**
@@ -185,16 +193,137 @@ fun FunctionType.canBeInvokedBy(argumentTypes: List<Type>): Boolean {
     return true
 }
 
-fun Type.coerceType(other: Type): Type {
+/**
+ * Find a type that [this] and [other] can be assigned to
+ * Inverse of [commonAssignableFromType]
+ */
+fun Type.commonAssignableToType(other: Type): Type {
     return when {
         this == other -> this
         this === NeverType -> other
         other === NeverType -> this
         other === InvalidType || this === InvalidType -> InvalidType
-        this is UnionType && other is UnionType -> UnionType(this.valueTypes + other.valueTypes)
-        this is UnionType -> UnionType(this.valueTypes.toMutableList().also { it.add(other) })
-        other is UnionType -> UnionType(mutableListOf(this).also { it.addAll(other.valueTypes) })
+
+        this is UnionType && other is UnionType -> UnionType(valueTypes.flatMap {
+            other.valueTypes
+                    .filter { it.isAssignableFrom(other) || other.isAssignableFrom(it) }
+                    .map { other -> it.commonAssignableToType(other) }
+                    .flatMap { (it as? UnionType)?.valueTypes ?: listOf(it) }
+        }.distinct())
+        this is UnionType -> UnionType(valueTypes.flatMap {
+            it.commonAssignableToType(other).let { (it as? UnionType)?.valueTypes ?: listOf(it) }
+        }.distinct())
+        other is UnionType -> UnionType(other.valueTypes.flatMap {
+            it.commonAssignableToType(this).let { (it as? UnionType)?.valueTypes ?: listOf(it) }
+        }.distinct())
+
+        this is SubtractionType && other is SubtractionType && targetType == other.targetType -> {
+            SubtractionType(targetType, subtractedType.commonAssignableFromType(other.subtractedType))
+        }
+        this is SubtractionType && other == targetType -> other
+        this is SubtractionType && other == subtractedType -> targetType
+        other is SubtractionType && this == other.targetType -> this
+        other is SubtractionType && this == other.subtractedType -> other.targetType
+
+        this === BoolType
+                && (other === LiteralTrueType
+                || other === LiteralFalseType) -> this
+        this === StrType
+                && other is LiteralStringType -> this
+        this === I32Type
+                && (other is LiteralIntType
+                || other is LiteralIntRangeExclusiveType
+                || other is LiteralIntRangeInclusiveType) -> this
+        this is LiteralIntRangeInclusiveType
+                && other is LiteralIntType
+                && other.value in this.start..this.end -> this
+        this is LiteralIntRangeExclusiveType
+                && other is LiteralIntType
+                && other.value in this.start until this.end -> this
+
+        other === BoolType
+                && (this === LiteralTrueType
+                || this === LiteralFalseType) -> other
+        other === StrType
+                && this is LiteralStringType -> other
+        other === I32Type
+                && (this is LiteralIntType
+                || this is LiteralIntRangeExclusiveType
+                || this is LiteralIntRangeInclusiveType) -> other
+        other is LiteralIntRangeInclusiveType
+                && this is LiteralIntType
+                && this.value in other.start..other.end -> other
+        other is LiteralIntRangeExclusiveType
+                && this is LiteralIntType
+                && this.value in other.start until other.end -> other
+
         else ->  UnionType(listOf(this, other))
+    }
+}
+
+/**
+ * Find a type that is assignable to [this] and [other].
+ * Inverse of [commonAssignableToType].
+ */
+fun Type.commonAssignableFromType(other: Type): Type {
+    return when {
+        this == other -> this
+        this === NeverType || other === NeverType -> NeverType
+        other === InvalidType || this === InvalidType -> NeverType
+
+        this is UnionType && other is UnionType -> UnionType(valueTypes.flatMap {
+            other.valueTypes
+                    .map { other -> it.commonAssignableFromType(other) }
+                    .flatMap { (it as? UnionType)?.valueTypes ?: listOf(it) }
+        }.filter { it != NeverType }.distinct().let { if (it.isEmpty()) return NeverType else it })
+        this is UnionType -> UnionType(valueTypes.flatMap {
+            it.commonAssignableFromType(other).let { (it as? UnionType)?.valueTypes ?: listOf(it) }
+        }.filter { it != NeverType }.distinct().let { if (it.isEmpty()) return NeverType else it })
+        other is UnionType -> UnionType(other.valueTypes.flatMap {
+            it.commonAssignableFromType(this).let { (it as? UnionType)?.valueTypes ?: listOf(it) }
+        }.filter { it != NeverType }.distinct().let { if (it.isEmpty()) return NeverType else it })
+
+        this is SubtractionType && other is SubtractionType && targetType == other.targetType -> {
+            SubtractionType(targetType, subtractedType.commonAssignableToType(other.subtractedType))
+        }
+        this is SubtractionType && other == targetType -> this
+        this is SubtractionType && other == subtractedType -> subtractedType
+        other is SubtractionType && this == other.targetType -> other
+        other is SubtractionType && this == other.subtractedType -> other.subtractedType
+
+        this === BoolType
+                && (other === LiteralTrueType
+                || other === LiteralFalseType) -> other
+        this === StrType
+                && other is LiteralStringType -> other
+        this === I32Type
+                && (other is LiteralIntType
+                || other is LiteralIntRangeExclusiveType
+                || other is LiteralIntRangeInclusiveType) -> other
+        this is LiteralIntRangeInclusiveType
+                && other is LiteralIntType
+                && other.value in this.start..this.end -> other
+        this is LiteralIntRangeExclusiveType
+                && other is LiteralIntType
+                && other.value in this.start until this.end -> other
+
+        other === BoolType
+                && (this === LiteralTrueType
+                || this === LiteralFalseType) -> this
+        other === StrType
+                && this is LiteralStringType -> this
+        other === I32Type
+                && (this is LiteralIntType
+                || this is LiteralIntRangeExclusiveType
+                || this is LiteralIntRangeInclusiveType) -> this
+        other is LiteralIntRangeInclusiveType
+                && this is LiteralIntType
+                && this.value in other.start..other.end -> this
+        other is LiteralIntRangeExclusiveType
+                && this is LiteralIntType
+                && this.value in other.start until other.end -> this
+
+        else -> NeverType
     }
 }
 
@@ -206,8 +335,14 @@ fun inferEffectiveOrFormal(effectiveType: Type, formalType: Type, other: Type, f
 fun Type.subtract(other: Type): Type {
     return when {
         other == this -> NeverType
-        this is UnionType -> this.valueTypes.filter { it != other }.let {
-            if (it.isEmpty()) NeverType else UnionType(it)
+        this is UnionType -> {
+            val values = valueTypes.map { it.subtract(other) }.filter { it !== NeverType }
+
+            when {
+                values.size == 1 -> values[0]
+                values.size > 1 -> UnionType(values)
+                else -> NeverType
+            }
         }
         this === BoolType && other === LiteralTrueType -> LiteralFalseType
         this === BoolType && other === LiteralFalseType -> LiteralTrueType
@@ -225,7 +360,7 @@ fun Type.subtract(other: Type): Type {
                 && other is LiteralIntType
                 && other.value in this.start until this.end -> SubtractionType(this, other)
         this is SubtractionType && this.targetType.isAssignableFrom(other) -> {
-            SubtractionType(this.targetType, this.subtractedType.coerceType(other))
+            SubtractionType(this.targetType, this.subtractedType.commonAssignableToType(other))
         }
         else -> this
     }
@@ -235,7 +370,12 @@ fun Type.filter(other: Type): Type {
     return when {
         other == this -> this
         this is UnionType -> {
-            if (valueTypes.contains(other)) other else NeverType
+            val values = valueTypes.map { it.filter(other) }.filter { it !== NeverType }
+            when {
+                values.size == 1 -> values[0]
+                values.size > 1 -> UnionType(values)
+                else -> NeverType
+            }
         }
         this === BoolType
                 && (other === LiteralTrueType

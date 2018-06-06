@@ -7,11 +7,12 @@ import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.PrefixParser
 import xyz.avarel.lobos.parser.SyntaxException
 import xyz.avarel.lobos.parser.typeCheck
-import xyz.avarel.lobos.typesystem.scope.ParserContext
+import xyz.avarel.lobos.typesystem.scope.ScopeContext
+import xyz.avarel.lobos.typesystem.scope.StmtContext
 
 object ReturnParser: PrefixParser {
-    override fun parse(parser: Parser, scope: ParserContext, token: Token): Expr {
-        val expr = parser.parseExpr(scope)
+    override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token): Expr {
+        val expr = parser.parseExpr(scope, ctx)
 
         if (scope.expectedReturnType == null) {
             throw SyntaxException("Return is not valid in this context", token.position)

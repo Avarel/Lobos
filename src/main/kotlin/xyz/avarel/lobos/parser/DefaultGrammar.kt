@@ -3,6 +3,10 @@ package xyz.avarel.lobos.parser
 import xyz.avarel.lobos.ast.ops.BinaryOperationType
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.parser.parselets.*
+import xyz.avarel.lobos.parser.parselets.special.AndParser
+import xyz.avarel.lobos.parser.parselets.special.EqualsBinaryParser
+import xyz.avarel.lobos.parser.parselets.special.NotEqualsBinaryParser
+import xyz.avarel.lobos.parser.parselets.special.OrParser
 
 object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
     init {
@@ -23,6 +27,9 @@ object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
         infix(TokenType.MINUS, BinaryOperatorParser(Precedence.ADDITIVE, BinaryOperationType.SUBTRACT))
         infix(TokenType.ASTERISK, BinaryOperatorParser(Precedence.MULTIPLICATIVE, BinaryOperationType.MULTIPLY))
         infix(TokenType.F_SLASH, BinaryOperatorParser(Precedence.MULTIPLICATIVE, BinaryOperationType.DIVIDE))
+
+        infix(TokenType.AND, AndParser)
+        infix(TokenType.OR, OrParser)
     }
 
     fun prefix(type: TokenType, parselet: PrefixParser) {

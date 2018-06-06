@@ -8,11 +8,12 @@ import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.SyntaxException
 import xyz.avarel.lobos.parser.checkInvocation
 import xyz.avarel.lobos.typesystem.generics.FunctionType
-import xyz.avarel.lobos.typesystem.scope.ParserContext
+import xyz.avarel.lobos.typesystem.scope.ScopeContext
+import xyz.avarel.lobos.typesystem.scope.StmtContext
 
 open class BinaryOperatorParser(precedence: Int, val operator: BinaryOperationType, leftAssoc: Boolean = true): BinaryParser(precedence, leftAssoc) {
-    override fun parse(parser: Parser, scope: ParserContext, token: Token, left: Expr): Expr {
-        val right = parser.parseExpr(scope, precedence - if (leftAssoc) 0 else 1)
+    override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token, left: Expr): Expr {
+        val right = parser.parseExpr(scope, ctx, precedence - if (leftAssoc) 0 else 1)
 
         val fnType = left.type.getAssociatedType(operator.functionName)
                 ?: throw SyntaxException("${left.type} does not have a ${operator.functionName} operation", token.position)

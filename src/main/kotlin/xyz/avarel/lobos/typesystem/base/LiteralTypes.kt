@@ -31,6 +31,12 @@ class LiteralIntRangeInclusiveType(val start: Int, val end: Int): ExistentialTyp
             else -> start == other.start && end == other.end
         }
     }
+
+    override fun hashCode(): Int {
+        var result = start
+        result = 31 * result + end
+        return result
+    }
 }
 
 class LiteralIntRangeExclusiveType(val start: Int, val end: Int): ExistentialType {
@@ -57,6 +63,12 @@ class LiteralIntRangeExclusiveType(val start: Int, val end: Int): ExistentialTyp
             else -> start == other.start && end == other.end
         }
     }
+
+    override fun hashCode(): Int {
+        var result = start
+        result = 31 * result + end
+        return result
+    }
 }
 
 class LiteralIntType(val value: Int): ExistentialType {
@@ -80,6 +92,10 @@ class LiteralIntType(val value: Int): ExistentialType {
             else -> value == other.value
         }
     }
+
+    override fun hashCode(): Int {
+        return value
+    }
 }
 
 class LiteralStringType(val value: String): ExistentialType {
@@ -102,6 +118,10 @@ class LiteralStringType(val value: String): ExistentialType {
             other !is LiteralStringType -> false
             else -> value == other.value
         }
+    }
+
+    override fun hashCode(): Int {
+        return value.hashCode()
     }
 }
 

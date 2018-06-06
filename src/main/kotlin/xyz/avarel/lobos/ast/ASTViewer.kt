@@ -5,6 +5,8 @@ import xyz.avarel.lobos.ast.misc.InvalidExpr
 import xyz.avarel.lobos.ast.misc.MultiExpr
 import xyz.avarel.lobos.ast.nodes.*
 import xyz.avarel.lobos.ast.ops.BinaryOperation
+import xyz.avarel.lobos.ast.ops.LogicalAndOperation
+import xyz.avarel.lobos.ast.ops.LogicalOrOperation
 import xyz.avarel.lobos.ast.ops.UnaryOperation
 import xyz.avarel.lobos.ast.variables.AssignExpr
 import xyz.avarel.lobos.ast.variables.IdentExpr
@@ -75,6 +77,26 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
 
     override fun visit(expr: BinaryOperation) {
         defaultAst("binary ${expr.operator}")
+
+        buf.append('\n')
+        expr.left.ast(buf, indent + if (isTail) "    " else "│   ", false)
+
+        buf.append('\n')
+        expr.right.ast(buf, indent + if (isTail) "    " else "│   ", true)
+    }
+
+    override fun visit(expr: LogicalAndOperation) {
+        defaultAst("logical and")
+
+        buf.append('\n')
+        expr.left.ast(buf, indent + if (isTail) "    " else "│   ", false)
+
+        buf.append('\n')
+        expr.right.ast(buf, indent + if (isTail) "    " else "│   ", true)
+    }
+
+    override fun visit(expr: LogicalOrOperation) {
+        defaultAst("logical or")
 
         buf.append('\n')
         expr.left.ast(buf, indent + if (isTail) "    " else "│   ", false)
