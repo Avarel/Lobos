@@ -10,7 +10,7 @@ import xyz.avarel.lobos.typesystem.scope.StmtContext
 
 object StringParser: PrefixParser {
     override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token): Expr {
-        val value = token.string!!
+        val value = token.string
         return StringExpr(value, token.position)
     }
 }

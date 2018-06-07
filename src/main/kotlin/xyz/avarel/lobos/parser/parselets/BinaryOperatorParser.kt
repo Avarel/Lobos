@@ -13,7 +13,7 @@ import xyz.avarel.lobos.typesystem.scope.StmtContext
 
 open class BinaryOperatorParser(precedence: Int, val operator: BinaryOperationType, leftAssoc: Boolean = true): BinaryParser(precedence, leftAssoc) {
     override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token, left: Expr): Expr {
-        val right = parser.parseExpr(scope, ctx, precedence - if (leftAssoc) 0 else 1)
+        val right = parser.parseExpr(scope, StmtContext(true), precedence - if (leftAssoc) 0 else 1)
 
         val fnType = left.type.getAssociatedType(operator.functionName)
                 ?: throw SyntaxException("${left.type} does not have a ${operator.functionName} operation", token.position)

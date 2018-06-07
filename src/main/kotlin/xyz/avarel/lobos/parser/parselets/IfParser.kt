@@ -5,8 +5,10 @@ import xyz.avarel.lobos.ast.misc.IfExpr
 import xyz.avarel.lobos.ast.variables.IdentExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
-import xyz.avarel.lobos.mergeAll
-import xyz.avarel.lobos.parser.*
+import xyz.avarel.lobos.parser.Parser
+import xyz.avarel.lobos.parser.PrefixParser
+import xyz.avarel.lobos.parser.parseBlock
+import xyz.avarel.lobos.parser.typeCheck
 import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.base.BoolType
 import xyz.avarel.lobos.typesystem.base.InvalidType
@@ -17,11 +19,6 @@ import xyz.avarel.lobos.typesystem.scope.VariableInfo
 
 object IfParser: PrefixParser {
     override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token): Expr {
-        // OR -> keep ctx
-        //       actually you know what just learn to fucking combine assumptions left and right
-        // AND -> new ctx (with inverse of current ctx)
-        //       actually you know what just learn to fucking combine assumptions left and right
-
         val conditionCtx = StmtContext(true)
         val condition = parser.parseExpr(scope, conditionCtx)
         typeCheck(BoolType, condition.type, condition.position)
@@ -31,20 +28,21 @@ object IfParser: PrefixParser {
 
         val thenBranch = parser.parseBlock(thenContext)
 
-        if (thenContext.terminates) {
-            scope.assumptions.mergeAll(conditionCtx.inverseAssumptions) { v1, v2 -> v1.copy(type = v1.type.commonAssignableToType(v2.type)) }
-        }
-
         val elseBranch: Expr?
         val elseContext: ScopeContext?
 
         if (parser.match(TokenType.ELSE)) {
             elseContext = scope.subContext()
+            elseContext.assumptions.putAll(conditionCtx.inverseAssumptions)
             elseBranch = if (parser.nextIs(TokenType.IF)) parser.parseExpr(elseContext, StmtContext())
             else parser.parseBlock(elseContext)
         } else {
             elseBranch = null
             elseContext = null
+        }
+
+        if (thenContext.terminates) {
+            scope.assumptions.putAll(conditionCtx.inverseAssumptions)
         }
 
         val type = when {
@@ -68,9 +66,10 @@ fun inferAssumptionExpr(
 ): Triple<String, VariableInfo, VariableInfo>? {
     if (target !is IdentExpr) return null
     val key = target.name
-    val formal = scope.getVariable(key)!!
     val effective = ctx.assumptions[key] ?: scope.getEffectiveType(key)!!
-    val assumption = formal.copy(type = inferEffectiveOrFormal(effective.type, formal.type, other.type, function.first))
-    val inverse = formal.copy(type = inferEffectiveOrFormal(effective.type, formal.type, other.type, function.second))
+
+    val assumption = effective.copy(type = function.first(effective.type, other.type))
+    val inverse = effective.copy(type = function.second(effective.type, other.type))
+
     return Triple(key, assumption, inverse)
 }

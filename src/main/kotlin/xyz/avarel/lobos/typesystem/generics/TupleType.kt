@@ -2,6 +2,7 @@ package xyz.avarel.lobos.typesystem.generics
 
 import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.TypeTemplate
+import xyz.avarel.lobos.typesystem.base.NeverType
 
 open class TupleType(
         override val genericParameters: List<GenericParameter>,
@@ -26,6 +27,7 @@ open class TupleType(
     override fun isAssignableFrom(other: Type): Boolean {
         return when {
             this === other -> true
+            other === NeverType -> true
             other !is TupleType -> false
             other is UnionType -> other.valueTypes.all(this::isAssignableFrom)
             else -> valueTypes.size == other.valueTypes.size

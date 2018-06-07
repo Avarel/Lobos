@@ -22,7 +22,7 @@ object LetParser: PrefixParser {
         val mutable = parser.match(TokenType.MUT)
 
         val ident = parser.eat(TokenType.IDENT)
-        val name = ident.string!!
+        val name = ident.string
 
         val type: Type? = if (parser.match(TokenType.COLON)) parser.parseType(scope) else null
 
@@ -36,9 +36,9 @@ object LetParser: PrefixParser {
             if (type != null) {
                 if (type.isAssignableFrom(expr.type)) {
                     scope.variables[name] = VariableInfo(mutable, type)
-//                    if (expr.type != type) { // If assumption is necessary
+                    if (expr.type != type) { // If assumption is necessary
 //                        scope.assumptions[name] = VariableInfo(mutable, expr.type)
-//                    }
+                    }
                 } else {
                     scope.variables[name] = VariableInfo(mutable, type)
                     throw SyntaxException("Expected $type but found ${expr.type}", expr.position)

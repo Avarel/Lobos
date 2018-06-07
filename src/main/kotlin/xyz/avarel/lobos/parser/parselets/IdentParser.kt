@@ -15,7 +15,7 @@ import xyz.avarel.lobos.typesystem.scope.VariableInfo
 
 object IdentParser: PrefixParser {
     override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token): Expr {
-        val name = token.string!!
+        val name = token.string
 
         val effectiveType = scope.getEffectiveType(name)
 

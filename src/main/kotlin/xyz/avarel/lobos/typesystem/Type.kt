@@ -1,9 +1,12 @@
 package xyz.avarel.lobos.typesystem
 
-import xyz.avarel.lobos.typesystem.base.AnyType
-import xyz.avarel.lobos.typesystem.base.InvalidType
-import xyz.avarel.lobos.typesystem.base.NeverType
-import xyz.avarel.lobos.typesystem.base.NullType
+import xyz.avarel.lobos.typesystem.base.*
+import xyz.avarel.lobos.typesystem.generics.ExcludedType
+import xyz.avarel.lobos.typesystem.generics.UnionType
+import xyz.avarel.lobos.typesystem.literals.LiteralFalseType
+import xyz.avarel.lobos.typesystem.literals.LiteralIntType
+import xyz.avarel.lobos.typesystem.literals.LiteralStrType
+import xyz.avarel.lobos.typesystem.literals.LiteralTrueType
 
 // GO WITH EXPLICIT TYPES FOR NOW, INFERENCE TOO HARD
 
@@ -20,7 +23,7 @@ interface Type {
      * base string type. This is mainly used when the parser has to
      * completely infer the type of the expression.
      *
-     * @see xyz.avarel.lobos.typesystem.base.ExistentialType
+     * @see xyz.avarel.lobos.typesystem.literals.ExistentialType
      */
     val universalType: Type get() = this
 
@@ -76,4 +79,57 @@ interface Type {
             }
         }
     }
+
+    fun commonAssignableToType(other: Type): Type {
+        return when {
+            this == other -> this
+            this === NeverType -> other
+            other === NeverType -> this
+            other === InvalidType || this === InvalidType -> InvalidType
+            other is UnionType ||
+            other is ExcludedType ||
+            other === BoolType ||
+            other === StrType ||
+            other === I32Type ||
+            other is LiteralIntType ||
+            other is LiteralStrType ||
+            other === LiteralFalseType ||
+            other === LiteralTrueType -> other.commonAssignableToType(this)
+            else -> UnionType(listOf(this, other))
+        }
+    }
+
+    fun commonAssignableFromType(other: Type): Type {
+        return when {
+            this == other -> this
+            this === NeverType || other === NeverType -> NeverType
+            other === InvalidType || this === InvalidType -> NeverType
+            other is UnionType ||
+            other is ExcludedType ||
+            other === BoolType ||
+            other === StrType ||
+            other === I32Type ||
+            other is LiteralIntType ||
+            other is LiteralStrType ||
+            other === LiteralFalseType ||
+            other === LiteralTrueType -> other.commonAssignableFromType(this)
+            else -> NeverType
+        }
+    }
+
+    fun filter(other: Type): Type {
+        return when (this) {
+            other -> this
+            else -> NeverType
+        }
+    }
+
+    fun exclude(other: Type): Type {
+        return when (this) {
+            other -> NeverType
+            else -> this
+        }
+    }
+
+    fun toNestedString() = toString()
 }

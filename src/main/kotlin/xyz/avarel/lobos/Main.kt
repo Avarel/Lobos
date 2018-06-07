@@ -1,6 +1,5 @@
 package xyz.avarel.lobos
 
-import xyz.avarel.lobos.ast.ASTViewer
 import xyz.avarel.lobos.lexer.Tokenizer
 import xyz.avarel.lobos.parser.DefaultGrammar
 import xyz.avarel.lobos.parser.Parser
@@ -57,14 +56,8 @@ let b: () = a;
 
 fun main(args: Array<String>) {
     val source = """
-        let a: i32 | null = 1;
-
-        if (a != null && (a == 1 || a == 2)) {
-            let b: () = a;
-            return ();
+        if (1) {
         };
-
-        let b: () = a;
     """.trimIndent()
 
     val lexer = Tokenizer(reader = source.reader())
@@ -102,9 +95,9 @@ fun main(args: Array<String>) {
             println("None :)\n")
         }
 
-        println()
-        println("|> AST")
-        println(buildString { ast.accept(ASTViewer(this, "", true)) })
+//        println()
+//        println("|> AST")
+//        println(buildString { ast.accept(ASTViewer(this, "", true)) })
     }
 }
 
