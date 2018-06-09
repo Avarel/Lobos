@@ -56,8 +56,9 @@ let b: () = a;
 
 fun main(args: Array<String>) {
     val source = """
-        if (1) {
-        };
+        type Single<T> = (T,);
+        type Option<T> = T | Single<T> | null;
+        let i: Option<i32> = ();
     """.trimIndent()
 
     val lexer = Tokenizer(reader = source.reader())

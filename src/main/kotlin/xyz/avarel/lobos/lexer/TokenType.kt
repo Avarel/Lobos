@@ -55,6 +55,7 @@ enum class TokenType {
     IF,
     ELSE,
     NULL,
+    TYPE,
 
     INVALID,
 }

@@ -31,7 +31,7 @@ class FunctionType(
     override fun template(types: List<Type>): Type {
         require(types.size == genericParameters.size)
         require(types.zip(genericParameters).all { (type, param) -> param.parentType.isAssignableFrom(type) })
-        return FunctionType(emptyList(), selfArgument, argumentTypes.map {
+        return FunctionType(selfArgument, argumentTypes.map {
             transposeTypes(it, genericParameters, types)
         }, transposeTypes(returnType, genericParameters, types))
     }

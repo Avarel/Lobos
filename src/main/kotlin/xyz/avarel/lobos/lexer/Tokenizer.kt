@@ -67,6 +67,16 @@ class Tokenizer(private val fileName: String = "_", reader: Reader) {
             } else {
                 list.add(makeToken(TokenType.AMP, c))
             }
+            '<' -> if (match('=')) {
+                list.add(makeToken(TokenType.LTE, c))
+            } else {
+                list.add(makeToken(TokenType.LT, c))
+            }
+            '>' -> if (match('=')) {
+                list.add(makeToken(TokenType.GTE, c))
+            } else {
+                list.add(makeToken(TokenType.GT, c))
+            }
             '"' -> parseStringTo(list, '"', true)
             '\'' -> parseStringTo(list, '\'', false)
             ' ', '\n' -> {
@@ -110,6 +120,7 @@ class Tokenizer(private val fileName: String = "_", reader: Reader) {
             "if" -> list.add(makeToken(TokenType.IF, "if"))
             "else" -> list.add(makeToken(TokenType.ELSE, "else"))
             "null" -> list.add(makeToken(TokenType.NULL, "null"))
+            "type" -> list.add(makeToken(TokenType.TYPE, "type"))
             else -> list.add(makeToken(TokenType.IDENT, str))
         }
     }

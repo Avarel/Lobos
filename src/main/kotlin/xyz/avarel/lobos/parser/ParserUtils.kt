@@ -4,6 +4,7 @@ import xyz.avarel.lobos.ast.Expr
 import xyz.avarel.lobos.lexer.Position
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.typesystem.Type
+import xyz.avarel.lobos.typesystem.TypeTemplate
 import xyz.avarel.lobos.typesystem.base.AnyType
 import xyz.avarel.lobos.typesystem.base.BoolType
 import xyz.avarel.lobos.typesystem.base.InvalidType
@@ -73,7 +74,26 @@ fun Parser.parseSingleType(scope: ScopeContext): Type {
         match(TokenType.IDENT) -> {
             val ident = last
             val name = ident.string
-            scope.getType(name) ?: throw SyntaxException("Unresolved type $name", ident.position)
+
+            val type = scope.getType(name) ?: throw SyntaxException("Unresolved type $name", ident.position)
+
+            if (match(TokenType.LT)) {
+                if (type !is TypeTemplate) {
+                    throw SyntaxException("Type $type is not a template", last.position)
+                }
+
+                val typeParameters = mutableListOf<Type>()
+
+                do {
+                    typeParameters.add(parseUnionType(scope))
+                } while (match(TokenType.COMMA))
+
+                eat(TokenType.GT)
+
+                type.template(typeParameters)
+            } else {
+                type
+            }
         }
         match(TokenType.INT) -> {
             LiteralIntType(last.string.toInt())

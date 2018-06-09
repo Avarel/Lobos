@@ -20,6 +20,7 @@ object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
         prefix(TokenType.RETURN, ReturnParser)
         prefix(TokenType.IF, IfParser)
         prefix(TokenType.NULL, NullParser)
+        prefix(TokenType.TYPE, TypeAliasParser)
 
         infix(TokenType.EQ, EqualsBinaryParser)
         infix(TokenType.NEQ, NotEqualsBinaryParser)

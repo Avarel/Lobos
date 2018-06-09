@@ -19,7 +19,7 @@ open class TupleType(
     override fun template(types: List<Type>): Type {
         require(types.size == genericParameters.size)
         require(types.zip(genericParameters).all { (type, param) -> param.parentType.isAssignableFrom(type) })
-        return TupleType(emptyList(), valueTypes.map {
+        return TupleType(valueTypes.map {
             transposeTypes(it, genericParameters, types)
         })
     }
@@ -35,5 +35,17 @@ open class TupleType(
         }
     }
 
-    override fun toString() = valueTypes.joinToString(prefix = "(", postfix = ")")
+    override fun toString() = buildString {
+        append('(')
+        append(valueTypes[0])
+
+        if (valueTypes.size == 1) {
+            append(',')
+        } else for (i in 1 until valueTypes.size) {
+            append(", ")
+            append(valueTypes[i])
+        }
+
+        append(')')
+    }
 }
