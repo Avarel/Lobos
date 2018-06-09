@@ -56,9 +56,10 @@ let b: () = a;
 
 fun main(args: Array<String>) {
     val source = """
-        type Single<T> = (T,);
-        type Option<T> = T | Single<T> | null;
-        let i: Option<i32> = ();
+        type Option<T> = T | null;
+        type String<T: str> = T;
+        let i: Option<i32> = 3;
+        let b: String<"hi"> = "hi";
     """.trimIndent()
 
     val lexer = Tokenizer(reader = source.reader())

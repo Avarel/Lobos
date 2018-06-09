@@ -23,6 +23,12 @@ class GenericParameter(
             else -> name == other.name && parentType == other.parentType
         }
     }
+
+    override fun hashCode(): Int {
+        var result = name.hashCode()
+        result = 31 * result + parentType.hashCode()
+        return result
+    }
 }
 
 fun List<Type>.findGenericParameters(): List<GenericParameter> {

@@ -5,14 +5,9 @@ import xyz.avarel.lobos.lexer.Position
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.TypeTemplate
-import xyz.avarel.lobos.typesystem.base.AnyType
-import xyz.avarel.lobos.typesystem.base.BoolType
 import xyz.avarel.lobos.typesystem.base.InvalidType
 import xyz.avarel.lobos.typesystem.base.NullType
-import xyz.avarel.lobos.typesystem.generics.ExcludedType
-import xyz.avarel.lobos.typesystem.generics.FunctionType
-import xyz.avarel.lobos.typesystem.generics.TupleType
-import xyz.avarel.lobos.typesystem.generics.UnionType
+import xyz.avarel.lobos.typesystem.generics.*
 import xyz.avarel.lobos.typesystem.literals.LiteralFalseType
 import xyz.avarel.lobos.typesystem.literals.LiteralIntType
 import xyz.avarel.lobos.typesystem.literals.LiteralStrType
@@ -36,14 +31,7 @@ fun Parser.parseUnionType(scope: ScopeContext): Type {
         do {
             list.add(try { parseSubtractionType(scope) } catch (e: SyntaxException) { InvalidType })
         } while (match(TokenType.PIPE))
-
-        val optimizedList = list.distinct()
-
-        return when {
-            optimizedList.size == 2 && LiteralTrueType in optimizedList && LiteralFalseType in optimizedList -> BoolType
-            AnyType in optimizedList -> AnyType
-            else -> UnionType(optimizedList)
-        }
+        return list.toType()
     }
 
     return type

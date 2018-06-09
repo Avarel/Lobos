@@ -41,12 +41,7 @@ class UnionType(
             }
         }
 
-        val optimizedList = types.distinct()
-        return when {
-            optimizedList.isEmpty() -> NeverType
-            optimizedList.size == 1 -> optimizedList[0]
-            else -> UnionType(optimizedList) /* no flatten */
-        }
+        return types.toType(false)
     }
 
     override fun getAssociatedType(key: String) = associatedTypes[key]
@@ -56,7 +51,7 @@ class UnionType(
         require(types.zip(genericParameters).all { (type, param) -> param.parentType.isAssignableFrom(type) })
         return valueTypes.map {
             transposeTypes(it, genericParameters, types)
-        }.listToType()
+        }.toType()
     }
 
     override fun isAssignableFrom(other: Type) = when (other) {
@@ -74,12 +69,12 @@ class UnionType(
                             //.filter { it.isAssignableFrom(other) && other.isAssignableFrom(it) }
                             .map { other -> it.commonAssignableToType(other) }
                             .flatMap { (it as? UnionType)?.valueTypes ?: listOf(it) }
-                }.listToType()
+                }.toType()
             }
             else -> {
                 valueTypes/*.filter { it.isAssignableFrom(other) && other.isAssignableFrom(it) }*/.flatMap {
                     it.commonAssignableToType(other).let { (it as? UnionType)?.valueTypes ?: listOf(it) }
-                }.listToType()
+                }.toType()
             }
         }
     }
@@ -91,12 +86,12 @@ class UnionType(
                     other.valueTypes
                             .map { other -> it.commonAssignableFromType(other) }
                             .flatMap { (it as? UnionType)?.valueTypes ?: listOf(it) }
-                }.filter { it != NeverType }.listToType()
+                }.filter { it != NeverType }.toType()
             }
             else -> {
                 valueTypes.flatMap {
                     it.commonAssignableFromType(other).let { (it as? UnionType)?.valueTypes ?: listOf(it) }
-                }.filter { it != NeverType }.listToType()
+                }.filter { it != NeverType }.toType()
             }
         }
     }
@@ -104,13 +99,13 @@ class UnionType(
     override fun exclude(other: Type): Type {
         if (other == this) return NeverType
         val values = valueTypes.map { it.exclude(other) }.filter { it !== NeverType }
-        return values.listToType()
+        return values.toType()
     }
 
     override fun filter(other: Type): Type {
         if (other == this) return this
         val values = valueTypes.map { it.filter(other) }.filter { it !== NeverType }
-        return values.listToType()
+        return values.toType()
     }
 
     override fun toString() = buildString {
@@ -140,11 +135,11 @@ class UnionType(
     }
 }
 
-fun List<Type>.listToType(): Type {
+fun List<Type>.toType(flatten: Boolean = true): Type {
     val optimizedList = distinct()
     return when {
         optimizedList.isEmpty() -> NeverType
         optimizedList.size == 1 -> optimizedList[0]
-        else -> UnionType(optimizedList).flatten()
+        else -> UnionType(optimizedList).let { if (flatten) it.flatten() else it }
     }
 }

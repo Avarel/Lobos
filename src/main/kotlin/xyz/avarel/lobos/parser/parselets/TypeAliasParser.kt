@@ -19,23 +19,26 @@ object TypeAliasParser: PrefixParser {
         val name = ident.string
 
         val type = if (parser.match(TokenType.LT)) {
-            val genericParameters = mutableMapOf<String, GenericParameter>()
+            val subScope = scope.subContext()
 
             do {
                 val genericToken = parser.eat(TokenType.IDENT)
                 val gname = genericToken.string
 
-                if (gname in genericParameters) {
+                if (gname in subScope.types) {
                     parser.errors += SyntaxException("Generic parameter $gname has already been declared", genericToken.position)
+                }
+
+                if (parser.match(TokenType.COLON)) {
+                    val parentType = parser.parseType(subScope)
+                    println(parentType)
+                    subScope.types[gname] = GenericType(GenericParameter(gname, parentType))
                 } else {
-                    genericParameters[genericToken.string] = GenericParameter(genericToken.string)
+                    subScope.types[gname] = GenericType(GenericParameter(gname))
                 }
             } while (parser.match(TokenType.COMMA))
 
             parser.eat(TokenType.GT)
-
-            val subScope = scope.subContext()
-            subScope.types += genericParameters.mapValues { (_, g) -> GenericType(g) }
 
             parser.eat(TokenType.ASSIGN)
             parser.parseType(subScope)
