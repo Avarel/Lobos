@@ -3,6 +3,7 @@ package xyz.avarel.lobos
 import xyz.avarel.lobos.lexer.Tokenizer
 import xyz.avarel.lobos.parser.DefaultGrammar
 import xyz.avarel.lobos.parser.Parser
+import xyz.avarel.lobos.typesystem.generics.UnitType
 import xyz.avarel.lobos.typesystem.scope.DefaultParserContext
 
 /* Smart Compiler
@@ -56,10 +57,14 @@ let b: () = a;
 
 fun main(args: Array<String>) {
     val source = """
-        type Option<T> = T | null;
-        type String<T: str> = T;
-        let i: Option<i32> = 3;
-        let b: String<"hi"> = "hi";
+        let x: i32 | null = 2;
+
+        if (x == null || x == 1) {
+            let b: () = x;
+            return;
+        };
+
+        let b: () = x;
     """.trimIndent()
 
     val lexer = Tokenizer(reader = source.reader())
@@ -73,7 +78,7 @@ fun main(args: Array<String>) {
         println(source)
 
         val parser = Parser(DefaultGrammar, it)
-        val ast = parser.parse(DefaultParserContext.subContext())
+        val ast = parser.parse(DefaultParserContext.subContext().also { it.expectedReturnType = UnitType })
 
         println()
         println("|> ERRORS:")

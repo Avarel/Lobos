@@ -5,17 +5,11 @@ import xyz.avarel.lobos.typesystem.TypeTemplate
 import xyz.avarel.lobos.typesystem.base.NeverType
 
 class FunctionType(
-        override val genericParameters: List<GenericParameter>,
         val selfArgument: Boolean,
         val argumentTypes: List<Type>,
         val returnType: Type
 ): Type, TypeTemplate {
-    constructor(selfArgument: Boolean, argumentTypes: List<Type>, returnType: Type): this(
-            argumentTypes.findGenericParameters(),
-            selfArgument,
-            argumentTypes,
-            returnType
-    )
+    override val genericParameters = argumentTypes.findGenericParameters()
 
     override fun isAssignableFrom(other: Type): Boolean {
         return when {
@@ -29,8 +23,6 @@ class FunctionType(
     }
 
     override fun template(types: List<Type>): Type {
-        require(types.size == genericParameters.size)
-        require(types.zip(genericParameters).all { (type, param) -> param.parentType.isAssignableFrom(type) })
         return FunctionType(selfArgument, argumentTypes.map {
             transposeTypes(it, genericParameters, types)
         }, transposeTypes(returnType, genericParameters, types))

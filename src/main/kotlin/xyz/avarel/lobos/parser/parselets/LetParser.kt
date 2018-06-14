@@ -9,13 +9,14 @@ import xyz.avarel.lobos.parser.PrefixParser
 import xyz.avarel.lobos.parser.SyntaxException
 import xyz.avarel.lobos.parser.parseType
 import xyz.avarel.lobos.typesystem.Type
+import xyz.avarel.lobos.typesystem.base.AnyType
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
 import xyz.avarel.lobos.typesystem.scope.VariableInfo
 
 object LetParser: PrefixParser {
     override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token): Expr {
-        if (ctx.mustBeExpr) {
+        if (ctx.expectedType != null) {
             throw SyntaxException("Not an expression", token.position)
         }
 
@@ -28,9 +29,9 @@ object LetParser: PrefixParser {
 
         parser.eat(TokenType.ASSIGN)
 
-        val expr = parser.parseExpr(scope, StmtContext(true))
+        val expr = parser.parseExpr(scope, StmtContext(AnyType))
 
-        if (scope.containsVariable(name)) {
+        if (name in scope.variables) {
             throw SyntaxException("Variable $name has already been declared", ident.position)
         } else {
             if (type != null) {

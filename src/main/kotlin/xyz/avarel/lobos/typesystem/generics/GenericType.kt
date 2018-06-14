@@ -3,14 +3,17 @@ package xyz.avarel.lobos.typesystem.generics
 import xyz.avarel.lobos.typesystem.AbstractType
 import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.TypeTemplate
+import xyz.avarel.lobos.typesystem.base.AnyType
 import xyz.avarel.lobos.typesystem.base.NeverType
 
-class GenericType(val genericParameter: GenericParameter): AbstractType(genericParameter.name, genericParameter.parentType), TypeTemplate {
-    override val genericParameters: List<GenericParameter> get() = listOf(genericParameter)
+class GenericType(val genericParameter: GenericParameter): AbstractType(genericParameter.name, genericParameter.parentType ?: AnyType), TypeTemplate {
+    override val genericParameters get() = listOf(genericParameter)
+
+    override fun isAssignableFrom(other: Type): Boolean {
+        return other == this || genericParameter.parentType?.isAssignableFrom(other) ?: false
+    }
 
     override fun template(types: List<Type>): Type {
-        require(types.size == 1)
-        require(types.zip(genericParameters).all { (type, param) -> param.parentType.isAssignableFrom(type) })
         return types[0]
     }
 

@@ -6,7 +6,7 @@ import xyz.avarel.lobos.typesystem.base.AnyType
 
 class GenericParameter(
         val name: String,
-        val parentType: Type = AnyType
+        val parentType: Type? = null
 ) {
     override fun toString() = buildString {
         append(name)
@@ -26,7 +26,7 @@ class GenericParameter(
 
     override fun hashCode(): Int {
         var result = name.hashCode()
-        result = 31 * result + parentType.hashCode()
+        result = 31 * result + (parentType?.hashCode() ?: 0)
         return result
     }
 }

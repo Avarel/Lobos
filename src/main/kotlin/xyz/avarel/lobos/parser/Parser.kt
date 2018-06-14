@@ -37,9 +37,9 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
         }
     }
 
-    fun skipTillNextIs(type: TokenType) {
+    fun skipTillNextIs(vararg type: TokenType) {
         while (!eof) {
-            if (nextIs(type)) break
+            if (nextIsAny(*type)) break
             eat()
         }
     }
@@ -48,8 +48,8 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
         val expr = parseStatements(scope)
 
         if (!eof) {
-            println(peek().type)
-            errors.add(SyntaxException("Did not reach end of file", peek().position))
+            val token = peek()
+            errors.add(SyntaxException("Did not reach end of file. Found token $token", token.position))
         }
 
         return expr
@@ -66,23 +66,38 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
         }
 
         val expr = parseExpr(scope, StmtContext())
-        if (expr is InvalidExpr) skipTillNextIs(TokenType.SEMICOLON)
+        if (expr is InvalidExpr) {
+            if (delimiterPair != null) {
+                skipTillNextIs(delimiterPair.second, TokenType.SEMICOLON)
+            } else {
+                skipTillNextIs(TokenType.SEMICOLON)
+            }
+        }
+
 
         if (!eof && match(TokenType.SEMICOLON)) {
             val list = mutableListOf<Expr>()
-            list.add(expr)
+            list += expr
 
             do {
                 if (eof) break
                 if (delimiterPair != null && match(delimiterPair.second)) {
-                    list.add(UnitExpr(last.position))
-                    break
+                    list += UnitExpr(last.position)
+                    return MultiExpr(list)
                 }
                 parseExpr(scope, StmtContext()).let {
-                    if (it is InvalidExpr) skipTillNextIs(TokenType.SEMICOLON)
-                    list.add(it)
+                    if (it is InvalidExpr) {
+                        if (delimiterPair != null) {
+                            skipTillNextIs(delimiterPair.second, TokenType.SEMICOLON)
+                        } else {
+                            skipTillNextIs(TokenType.SEMICOLON)
+                        }
+                    }
+                    list += it
                 }
             } while (!eof && match(TokenType.SEMICOLON))
+
+            delimiterPair?.second?.let(this::eat)
 
             return MultiExpr(list)
         }
@@ -98,18 +113,20 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
 
     fun nextIs(type: TokenType) = !eof && peek().type == type
 
+    fun nextIsAny(vararg types: TokenType) = types.any(::nextIs)
+
     fun parseExpr(scope: ScopeContext, ctx: StmtContext, precedence: Int = 0): Expr {
         if (eof) throw SyntaxException("Expected expression but reached end of file", last.position)
 
         val token = eat()
         val parser = grammar.prefixParsers[token.type] ?: let {
-            errors.add(SyntaxException("Unexpected $token", token.position))
+            errors += SyntaxException("Unexpected $token", token.position)
             return InvalidExpr(token.position)
         }
         val expr = try {
             parser.parse(this, scope, ctx, token)
         } catch (e: SyntaxException) {
-            errors.add(e)
+            errors += e
             return InvalidExpr(token.position)
         }
 
@@ -121,14 +138,14 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
         while (!eof && precedence < this.precedence) {
             val token = eat()
             val parser = grammar.infixParsers[token.type] ?: let {
-                errors.add(SyntaxException("Unexpected $token", token.position))
+                errors += SyntaxException("Unexpected $token", token.position)
                 return InvalidExpr(token.position)
             }
 
             leftExpr = try {
                 parser.parse(this, scope, ctx, token, leftExpr)
             } catch (e: SyntaxException) {
-                errors.add(e)
+                errors += e
                 return InvalidExpr(token.position)
             }
         }

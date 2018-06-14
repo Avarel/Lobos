@@ -21,7 +21,7 @@ object IdentParser: PrefixParser {
 
         if (effectiveType != null) {
             if (parser.match(TokenType.ASSIGN)) {
-                if (ctx.mustBeExpr) {
+                if (ctx.expectedType != null) {
                     throw SyntaxException("Not an expression", token.position)
                 }
 

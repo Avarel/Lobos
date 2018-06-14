@@ -12,11 +12,24 @@ import xyz.avarel.lobos.ast.variables.AssignExpr
 import xyz.avarel.lobos.ast.variables.IdentExpr
 import xyz.avarel.lobos.ast.variables.LetExpr
 
-fun Expr.ast(buf: StringBuilder, indent: String = "", isTail: Boolean) = accept(ASTViewer(buf, indent, isTail))
-
 class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boolean): ExprVisitor<Unit> {
+    fun Expr.ast(buf: StringBuilder, indent: String = "", isTail: Boolean) = accept(ASTViewer(buf, indent, isTail))
+
+
+    fun Expr.astLabel(label: String, buf: StringBuilder, indent: String, tail: Boolean) {
+        buf.append(indent).append(if (tail) "└── " else "├── ").append(label).append(':')
+
+        buf.append('\n')
+        ast(buf, indent + if (tail) "    " else "│   ", true)
+    }
+
     private fun defaultAst(string: String) {
         buf.append(indent).append(if (isTail) "└── " else "├── ").append(string)
+    }
+
+
+    private fun label(string: String) {
+        buf.append(indent).append(if (isTail) "    " else "│   ").append("└── ").append(string)
     }
 
     override fun visit(expr: NullExpr) = defaultAst("null")
@@ -39,6 +52,16 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         if (expr.list.isNotEmpty()) {
             expr.list.last().ast(buf, indent, true)
         }
+    }
+
+    override fun visit(expr: NamedFunctionExpr) {
+        defaultAst("function ${expr.name}")
+        buf.append('\n')
+
+        label(expr.parameters.entries.joinToString(prefix = "(", postfix = ")") { (name, type) -> "$name: $type" })
+        label(expr.returnType.toString())
+
+        expr.expr.ast(buf, indent + if (isTail) "    " else "│   ", true)
     }
 
     override fun visit(expr: LetExpr) {
@@ -115,18 +138,15 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
     override fun visit(expr: IfExpr) {
         defaultAst("if")
 
-        buf.append('\n').append(indent).append("│   ").append("then")
+        buf.append('\n')
+        expr.condition.astLabel("condition", buf, indent + if (isTail) "    " else "│   ", false)
 
         buf.append('\n')
-        expr.condition.ast(buf, indent + if (isTail) "    " else "│   ", false)
-
-        buf.append('\n')
-        expr.thenBranch.ast(buf, indent + if (isTail) "    " else "│   ", expr.elseBranch == null)
+        expr.thenBranch.astLabel("then", buf, indent + if (isTail) "    " else "│   ", expr.elseBranch == null)
 
         if (expr.elseBranch != null) {
-            buf.append('\n').append(indent).append("│   ").append("else")
             buf.append('\n')
-            expr.elseBranch.ast(buf, indent + if (isTail) "    " else "│   ", true)
+            expr.elseBranch.astLabel("else", buf, indent + if (isTail) "    " else "│   ", true)
         }
     }
 }

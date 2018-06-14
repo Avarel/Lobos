@@ -3,8 +3,10 @@ package xyz.avarel.lobos.typesystem.literals
 import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.base.BoolType
 import xyz.avarel.lobos.typesystem.base.NeverType
+import xyz.avarel.lobos.typesystem.generics.toType
 
 object LiteralTrueType: ExistentialType {
+    override val isUnitType: Boolean get() = true
     override val universalType: Type get() = BoolType
     override val parentType: Type get() = BoolType
 
@@ -16,7 +18,7 @@ object LiteralTrueType: ExistentialType {
         return when {
             other === BoolType -> other
             other === LiteralFalseType -> BoolType
-            else -> super.commonAssignableToType(other)
+            else -> listOf(this, other).toType()
         }
     }
 
@@ -24,7 +26,7 @@ object LiteralTrueType: ExistentialType {
         return when {
             other === BoolType -> this
             other === LiteralFalseType -> NeverType
-            else -> super.commonAssignableToType(other)
+            else -> NeverType
         }
     }
 

@@ -16,7 +16,7 @@ object AndParser: BinaryParser(Precedence.CONJUNCTION, true) {
     override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token, left: Expr): Expr {
         parser.continuableTypeCheck(BoolType, left.type, left.position)
 
-        val newCtx = StmtContext(ctx.mustBeExpr)
+        val newCtx = StmtContext(BoolType)
         newCtx.assumptions += ctx.assumptions
 
         val right = parser.parseExpr(scope, newCtx, precedence)

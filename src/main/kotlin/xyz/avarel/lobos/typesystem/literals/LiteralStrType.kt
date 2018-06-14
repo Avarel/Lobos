@@ -3,8 +3,10 @@ package xyz.avarel.lobos.typesystem.literals
 import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.base.NeverType
 import xyz.avarel.lobos.typesystem.base.StrType
+import xyz.avarel.lobos.typesystem.generics.toType
 
 class LiteralStrType(val value: String): ExistentialType {
+    override val isUnitType: Boolean get() = true
     override val universalType: Type get() = StrType
     override val parentType get() = StrType
 
@@ -19,14 +21,14 @@ class LiteralStrType(val value: String): ExistentialType {
     override fun commonAssignableToType(other: Type): Type {
         return when {
             other === StrType -> other
-            else -> super.commonAssignableToType(other)
+            else -> listOf(this, other).toType()
         }
     }
 
     override fun commonAssignableFromType(other: Type): Type {
         return when {
             other === StrType -> this
-            else -> super.commonAssignableToType(other)
+            else -> NeverType
         }
     }
 

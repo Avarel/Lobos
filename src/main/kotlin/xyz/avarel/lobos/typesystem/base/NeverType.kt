@@ -13,4 +13,7 @@ object NeverType: AbstractType("!") {
     override val parentType: Type = this
     override fun isAssignableFrom(other: Type) = other === this
     override fun getAssociatedType(key: String): Type? = null
+
+    override fun commonAssignableToType(other: Type) = other
+    override fun commonAssignableFromType(other: Type) = this
 }

@@ -8,8 +8,8 @@ buildscript {
     }
 }
 
-group 'xyz.avarel.lobos'
-version '1.0'
+group = 'xyz.avarel.lobos'
+version = '1.0'
 
 apply plugin: 'java'
 apply plugin: 'kotlin'
@@ -21,7 +21,7 @@ repositories {
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.2.0'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 }
 

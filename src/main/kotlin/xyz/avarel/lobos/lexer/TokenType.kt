@@ -52,6 +52,7 @@ enum class TokenType {
     RETURN,
     LET,
     MUT,
+    DEF,
     IF,
     ELSE,
     NULL,

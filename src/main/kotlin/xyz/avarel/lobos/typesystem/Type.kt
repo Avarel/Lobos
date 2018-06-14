@@ -1,16 +1,20 @@
 package xyz.avarel.lobos.typesystem
 
-import xyz.avarel.lobos.typesystem.base.*
+import xyz.avarel.lobos.typesystem.base.AnyType
+import xyz.avarel.lobos.typesystem.base.InvalidType
+import xyz.avarel.lobos.typesystem.base.NeverType
+import xyz.avarel.lobos.typesystem.base.NullType
 import xyz.avarel.lobos.typesystem.generics.ExcludedType
 import xyz.avarel.lobos.typesystem.generics.UnionType
-import xyz.avarel.lobos.typesystem.literals.LiteralFalseType
-import xyz.avarel.lobos.typesystem.literals.LiteralIntType
-import xyz.avarel.lobos.typesystem.literals.LiteralStrType
-import xyz.avarel.lobos.typesystem.literals.LiteralTrueType
 
 // GO WITH EXPLICIT TYPES FOR NOW, INFERENCE TOO HARD
 
 interface Type {
+    /**
+     * @returns true if this type can only ever have 1 single value. ie. null
+     */
+    val isUnitType: Boolean get() = false
+
     /**
      * @returns The parent type that this type extends.
      */
@@ -83,18 +87,7 @@ interface Type {
     fun commonAssignableToType(other: Type): Type {
         return when {
             this == other -> this
-            this === NeverType -> other
-            other === NeverType -> this
-            other === InvalidType || this === InvalidType -> InvalidType
-            other is UnionType ||
-            other is ExcludedType ||
-            other === BoolType ||
-            other === StrType ||
-            other === I32Type ||
-            other is LiteralIntType ||
-            other is LiteralStrType ||
-            other === LiteralFalseType ||
-            other === LiteralTrueType -> other.commonAssignableToType(this)
+            other is ExcludedType && this == other.targetType -> this
             else -> UnionType(listOf(this, other))
         }
     }
@@ -102,17 +95,7 @@ interface Type {
     fun commonAssignableFromType(other: Type): Type {
         return when {
             this == other -> this
-            this === NeverType || other === NeverType -> NeverType
-            other === InvalidType || this === InvalidType -> NeverType
-            other is UnionType ||
-            other is ExcludedType ||
-            other === BoolType ||
-            other === StrType ||
-            other === I32Type ||
-            other is LiteralIntType ||
-            other is LiteralStrType ||
-            other === LiteralFalseType ||
-            other === LiteralTrueType -> other.commonAssignableFromType(this)
+            other is ExcludedType && this == other.targetType -> other
             else -> NeverType
         }
     }

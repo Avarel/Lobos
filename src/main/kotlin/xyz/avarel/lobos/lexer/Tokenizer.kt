@@ -121,6 +121,7 @@ class Tokenizer(private val fileName: String = "_", reader: Reader) {
             "else" -> list.add(makeToken(TokenType.ELSE, "else"))
             "null" -> list.add(makeToken(TokenType.NULL, "null"))
             "type" -> list.add(makeToken(TokenType.TYPE, "type"))
+            "def" -> list.add(makeToken(TokenType.DEF, "def"))
             else -> list.add(makeToken(TokenType.IDENT, str))
         }
     }

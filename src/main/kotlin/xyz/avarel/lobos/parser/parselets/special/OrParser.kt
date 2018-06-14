@@ -16,7 +16,7 @@ object OrParser: BinaryParser(Precedence.DISJUNCTION, true) {
     override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token, left: Expr): Expr {
         parser.continuableTypeCheck(BoolType, left.type, left.position)
 
-        val newCtx = StmtContext(ctx.mustBeExpr)
+        val newCtx = StmtContext(BoolType)
         newCtx.assumptions += ctx.inverseAssumptions
 
         val right = parser.parseExpr(scope, newCtx, precedence)
@@ -33,6 +33,7 @@ object OrParser: BinaryParser(Precedence.DISJUNCTION, true) {
         }
 
         ctx.inverseAssumptions.mergeAll(newCtx.inverseAssumptions) { v1, v2 ->
+            println("$v1 $v2")
             v1.copy(type = v1.type.commonAssignableFromType(v2.type))
         }
 

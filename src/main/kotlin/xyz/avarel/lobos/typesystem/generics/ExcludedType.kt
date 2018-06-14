@@ -7,15 +7,10 @@ import xyz.avarel.lobos.typesystem.base.NeverType
 import xyz.avarel.lobos.typesystem.literals.ExistentialType
 
 class ExcludedType(
-        override val genericParameters: List<GenericParameter>,
         val targetType: Type,
         val subtractedType: Type
 ): ExistentialType, TypeTemplate {
-    constructor(targetType: Type, subtractedType: Type): this(
-            listOf(targetType, subtractedType).findGenericParameters(),
-            targetType,
-            subtractedType
-    )
+    override val genericParameters = listOf(targetType, subtractedType).findGenericParameters()
 
     override val universalType: Type get() {
         return if (targetType === InvalidType || subtractedType === InvalidType) {
@@ -28,10 +23,7 @@ class ExcludedType(
     override fun getAssociatedType(key: String) = universalType.getAssociatedType(key)
 
     override fun template(types: List<Type>): Type {
-        require(types.size == genericParameters.size)
-        require(types.zip(genericParameters).all { (type, param) -> param.parentType.isAssignableFrom(type) })
         return ExcludedType(
-                emptyList(),
                 transposeTypes(targetType, genericParameters, types),
                 transposeTypes(subtractedType, genericParameters, types)
         )
@@ -52,7 +44,7 @@ class ExcludedType(
             }
             targetType -> other
             subtractedType -> targetType
-            else -> super.commonAssignableToType(other)
+            else -> listOf(this, other).toType()
         }
     }
 
@@ -63,18 +55,18 @@ class ExcludedType(
             }
             is UnionType -> {
                 val value = other.exclude(subtractedType)
-                if (value is UnionType) {
-                    val values = value.valueTypes.filter { it.isAssignableFrom(this) }
-                    if (values.isEmpty()) NeverType else if (values.size == 1) values[0] else UnionType(values)
-                } else if (this.isAssignableFrom(value)) {
-                    ExcludedType(targetType, value)
-                } else {
-                    NeverType
+                when {
+                    value is UnionType -> {
+                        val values = value.valueTypes.filter { it.isAssignableFrom(this) }
+                        values.toType()
+                    }
+                    this.isAssignableFrom(value) -> ExcludedType(targetType, value)
+                    else -> NeverType
                 }
             }
             targetType -> this
             subtractedType -> NeverType
-            else -> super.commonAssignableFromType(other)
+            else -> NeverType
         }
     }
 

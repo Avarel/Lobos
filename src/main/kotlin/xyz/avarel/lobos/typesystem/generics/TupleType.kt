@@ -4,21 +4,16 @@ import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.TypeTemplate
 import xyz.avarel.lobos.typesystem.base.NeverType
 
-open class TupleType(
-        override val genericParameters: List<GenericParameter>,
-        val valueTypes: List<Type>
-): Type, TypeTemplate {
-    constructor(valueTypes: List<Type>): this(valueTypes.findGenericParameters(), valueTypes)
+class TupleType(val valueTypes: List<Type>): Type, TypeTemplate {
+    override val genericParameters = valueTypes.findGenericParameters()
+
+    init {
+        require(valueTypes.isNotEmpty())
+    }
 
     override val universalType: Type by lazy { TupleType(valueTypes.map(Type::universalType)) }
 
-    object Unit: TupleType(emptyList(), emptyList()) {
-        override fun toString() = "()"
-    }
-
     override fun template(types: List<Type>): Type {
-        require(types.size == genericParameters.size)
-        require(types.zip(genericParameters).all { (type, param) -> param.parentType.isAssignableFrom(type) })
         return TupleType(valueTypes.map {
             transposeTypes(it, genericParameters, types)
         })

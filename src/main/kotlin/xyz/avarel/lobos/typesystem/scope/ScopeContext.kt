@@ -1,7 +1,6 @@
 package xyz.avarel.lobos.typesystem.scope
 
 import xyz.avarel.lobos.typesystem.Type
-import xyz.avarel.lobos.typesystem.generics.TupleType
 
 open class ScopeContext(
         val parent: ScopeContext? = null,
@@ -9,9 +8,8 @@ open class ScopeContext(
         val types: MutableMap<String, Type> = hashMapOf()
 ) {
     val assumptions: MutableMap<String, VariableInfo> = hashMapOf()
-//    val inverseAssumptions: MutableMap<String, VariableInfo> = hashMapOf()
 
-    var expectedReturnType: Type? = TupleType.Unit
+    var expectedReturnType: Type? = null
     var terminates: Boolean = false
 
     fun containsVariable(key: String): Boolean {
@@ -37,6 +35,6 @@ open class ScopeContext(
         return types[key] ?: parent?.getType(key)
     }
 
-    fun subContext() = ScopeContext(this)
+    fun subContext() = ScopeContext(this).also { it.expectedReturnType = expectedReturnType }
 }
 

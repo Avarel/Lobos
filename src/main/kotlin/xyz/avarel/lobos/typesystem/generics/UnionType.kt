@@ -5,11 +5,8 @@ import xyz.avarel.lobos.typesystem.TypeTemplate
 import xyz.avarel.lobos.typesystem.base.NeverType
 import xyz.avarel.lobos.typesystem.literals.ExistentialType
 
-class UnionType(
-        override val genericParameters: List<GenericParameter>,
-        val valueTypes: List<Type>
-): ExistentialType, TypeTemplate {
-    constructor(valueTypes: List<Type>): this(valueTypes.findGenericParameters(), valueTypes)
+class UnionType(val valueTypes: List<Type>): ExistentialType, TypeTemplate {
+    override val genericParameters = valueTypes.findGenericParameters()
 
     init {
         if (valueTypes.isEmpty()) throw IllegalStateException("empty union")
@@ -47,8 +44,6 @@ class UnionType(
     override fun getAssociatedType(key: String) = associatedTypes[key]
 
     override fun template(types: List<Type>): Type {
-        require(types.size == genericParameters.size)
-        require(types.zip(genericParameters).all { (type, param) -> param.parentType.isAssignableFrom(type) })
         return valueTypes.map {
             transposeTypes(it, genericParameters, types)
         }.toType()
@@ -81,6 +76,7 @@ class UnionType(
 
     override fun commonAssignableFromType(other: Type): Type {
         return when (other) {
+            NeverType -> NeverType
             is UnionType -> {
                 valueTypes.flatMap {
                     other.valueTypes

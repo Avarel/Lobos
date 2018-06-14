@@ -90,7 +90,7 @@ fun Parser.parseSingleType(scope: ScopeContext): Type {
         match(TokenType.L_PAREN) -> {
             val valueTypes = mutableListOf<Type>()
             when {
-                match(TokenType.R_PAREN) -> {}
+                match(TokenType.R_PAREN) -> return UnitType
                 else -> {
                     val firstType = tryOrInvalid { parseType(scope) }
                     valueTypes.add(firstType)
@@ -128,13 +128,38 @@ private fun Parser.constructTupleOrFunctionType(scope: ScopeContext, valueTypes:
             val returnType = tryOrInvalid { parseType(scope) }
             FunctionType(false, valueTypes, returnType)
         }
-        valueTypes.isEmpty() -> TupleType.Unit
         else -> TupleType(valueTypes)
     }
 }
 
 private inline fun tryOrInvalid(block: () -> Type): Type {
     return try { block() } catch (e: SyntaxException) { InvalidType }
+}
+
+fun Parser.parseGenericArgumentsScope(scope: ScopeContext): ScopeContext? {
+    if (!match(TokenType.LT)) {
+        return null
+    }
+
+    val typeScope = scope.subContext()
+    do {
+        val genericToken = eat(TokenType.IDENT)
+        val genericName = genericToken.string
+
+        if (genericName in typeScope.types) {
+            errors += SyntaxException("Generic parameter $genericName has already been declared", genericToken.position)
+        }
+
+        if (match(TokenType.COLON)) {
+            val parentType = parseType(typeScope)
+            typeScope.types[genericName] = GenericType(GenericParameter(genericName, parentType))
+        } else {
+            typeScope.types[genericName] = GenericType(GenericParameter(genericName))
+        }
+    } while (match(TokenType.COMMA))
+
+    eat(TokenType.GT)
+    return typeScope
 }
 
 fun Parser.continuableTypeCheck(expectedType: Type, foundType: Type, position: Position) {
@@ -184,4 +209,10 @@ fun FunctionType.canBeInvokedBy(argumentTypes: List<Type>): Boolean {
         }
     }
     return true
+}
+
+inline fun requireSyntax(value: Boolean, position: Position, lazy: () -> String) {
+    if (!value) {
+        throw SyntaxException(lazy(), position)
+    }
 }

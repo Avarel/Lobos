@@ -4,25 +4,27 @@ import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.base.I32Type
 import xyz.avarel.lobos.typesystem.base.NeverType
 import xyz.avarel.lobos.typesystem.generics.UnionType
+import xyz.avarel.lobos.typesystem.generics.toType
 
 class LiteralIntType(val value: Int): ExistentialType {
+    override val isUnitType: Boolean get() = true
     override val universalType get() = I32Type
     override val parentType get() = I32Type
 
     override fun isAssignableFrom(other: Type): Boolean {
-        return when {
-            this === other -> true
-            other === NeverType -> true
-            other !is LiteralIntType -> false
+        return when (other) {
+            this -> true
+            NeverType -> true
+            !is LiteralIntType -> false
             else -> other.value == value
         }
     }
 
     override fun commonAssignableToType(other: Type): Type {
-        return when {
-            other === I32Type -> other
-            other is LiteralIntType -> if (value == other.value) this else UnionType(listOf(this, other))
-            else -> super.commonAssignableToType(other)
+        return when (other) {
+            I32Type -> other
+            is LiteralIntType -> if (value == other.value) this else UnionType(listOf(this, other))
+            else -> listOf(this, other).toType()
         }
     }
 
@@ -30,7 +32,7 @@ class LiteralIntType(val value: Int): ExistentialType {
         return when {
             other === I32Type -> this
             other is LiteralIntType -> if (value == other.value) this else NeverType
-            else -> super.commonAssignableFromType(other)
+            else -> NeverType
         }
     }
 

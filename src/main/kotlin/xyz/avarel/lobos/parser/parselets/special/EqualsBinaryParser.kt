@@ -16,11 +16,11 @@ object EqualsBinaryParser: BinaryOperatorParser(Precedence.EQUALITY, BinaryOpera
     override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token, left: Expr): Expr {
         val expr = super.parse(parser, scope, ctx, token, left) as BinaryOperation
 
-        inferAssumptionExpr(scope, ctx, expr.left, expr.right, Type::filter to Type::exclude)?.let { (name, a, b) ->
+        inferAssumptionExpr(true, scope, ctx, expr.left, expr.right, Type::filter to Type::exclude)?.let { (name, a, b) ->
             ctx.assumptions[name] = a
             ctx.inverseAssumptions[name] = b
         }
-        inferAssumptionExpr(scope, ctx, expr.right, expr.left, Type::filter to Type::exclude)?.let { (name, a, b) ->
+        inferAssumptionExpr(true, scope, ctx, expr.right, expr.left, Type::filter to Type::exclude)?.let { (name, a, b) ->
             ctx.assumptions[name] = a
             ctx.inverseAssumptions[name] = b
         }
