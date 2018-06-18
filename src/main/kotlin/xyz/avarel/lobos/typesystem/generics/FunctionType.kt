@@ -22,7 +22,7 @@ class FunctionType(
         }
     }
 
-    override fun template(types: List<Type>): Type {
+    override fun template(types: List<Type>): FunctionType {
         return FunctionType(selfArgument, argumentTypes.map {
             transposeTypes(it, genericParameters, types)
         }, transposeTypes(returnType, genericParameters, types))

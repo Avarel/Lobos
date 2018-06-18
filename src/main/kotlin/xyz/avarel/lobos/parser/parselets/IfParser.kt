@@ -2,17 +2,14 @@ package xyz.avarel.lobos.parser.parselets
 
 import xyz.avarel.lobos.ast.Expr
 import xyz.avarel.lobos.ast.misc.IfExpr
-import xyz.avarel.lobos.ast.variables.IdentExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.parser.*
-import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.base.BoolType
 import xyz.avarel.lobos.typesystem.base.InvalidType
 import xyz.avarel.lobos.typesystem.base.NeverType
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
-import xyz.avarel.lobos.typesystem.scope.VariableInfo
 
 object IfParser: PrefixParser {
     override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token): Expr {
@@ -55,27 +52,4 @@ object IfParser: PrefixParser {
 
         return IfExpr(type, condition, thenBranch, elseBranch, token.position)
     }
-}
-
-fun inferAssumptionExpr(
-        removeUnitOnly: Boolean,
-        scope: ScopeContext,
-        ctx: StmtContext,
-        target: Expr,
-        other: Expr,
-        function: Pair<(Type, Type) -> Type, (Type, Type) -> Type> // forward and inverse
-): Triple<String, VariableInfo, VariableInfo>? {
-    if (target !is IdentExpr) return null
-
-    val key = target.name
-    val effective = ctx.assumptions[key] ?: scope.getEffectiveType(key)!!
-
-    if (removeUnitOnly && !other.type.isUnitType) {
-        return null
-    }
-
-    val assumption = effective.copy(type = function.first(effective.type, other.type))
-    val inverse = effective.copy(type = function.second(effective.type, other.type))
-
-    return Triple(key, assumption, inverse)
 }

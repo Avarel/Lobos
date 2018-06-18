@@ -1,4 +1,4 @@
-package xyz.avarel.lobos.parser.parselets
+package xyz.avarel.lobos.parser.parselets.declarations
 
 import xyz.avarel.lobos.ast.DummyExpr
 import xyz.avarel.lobos.ast.Expr

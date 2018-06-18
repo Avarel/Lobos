@@ -1,4 +1,4 @@
-package xyz.avarel.lobos.parser.parselets
+package xyz.avarel.lobos.parser.parselets.declarations
 
 import xyz.avarel.lobos.ast.Expr
 import xyz.avarel.lobos.ast.NamedFunctionExpr
@@ -7,8 +7,8 @@ import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.parser.*
 import xyz.avarel.lobos.typesystem.Type
+import xyz.avarel.lobos.typesystem.base.UnitType
 import xyz.avarel.lobos.typesystem.generics.FunctionType
-import xyz.avarel.lobos.typesystem.generics.UnitType
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
 import xyz.avarel.lobos.typesystem.scope.VariableInfo

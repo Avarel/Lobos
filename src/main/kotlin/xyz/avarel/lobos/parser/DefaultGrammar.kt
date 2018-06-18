@@ -2,11 +2,14 @@ package xyz.avarel.lobos.parser
 
 import xyz.avarel.lobos.ast.ops.BinaryOperationType
 import xyz.avarel.lobos.lexer.TokenType
-import xyz.avarel.lobos.parser.parselets.*
-import xyz.avarel.lobos.parser.parselets.special.AndParser
-import xyz.avarel.lobos.parser.parselets.special.EqualsBinaryParser
-import xyz.avarel.lobos.parser.parselets.special.NotEqualsBinaryParser
-import xyz.avarel.lobos.parser.parselets.special.OrParser
+import xyz.avarel.lobos.parser.parselets.BinaryOperatorParser
+import xyz.avarel.lobos.parser.parselets.BooleanParser
+import xyz.avarel.lobos.parser.parselets.IfParser
+import xyz.avarel.lobos.parser.parselets.declarations.FunctionParser
+import xyz.avarel.lobos.parser.parselets.declarations.LetParser
+import xyz.avarel.lobos.parser.parselets.declarations.TypeAliasParser
+import xyz.avarel.lobos.parser.parselets.nodes.*
+import xyz.avarel.lobos.parser.parselets.special.*
 
 object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
     init {
@@ -23,6 +26,7 @@ object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
         prefix(TokenType.TYPE, TypeAliasParser)
         prefix(TokenType.DEF, FunctionParser)
 
+        infix(TokenType.L_PAREN, InvocationParser)
         infix(TokenType.EQ, EqualsBinaryParser)
         infix(TokenType.NEQ, NotEqualsBinaryParser)
         infix(TokenType.PLUS, BinaryOperatorParser(Precedence.ADDITIVE, BinaryOperationType.ADD))

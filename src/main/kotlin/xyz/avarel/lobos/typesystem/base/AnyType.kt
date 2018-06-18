@@ -10,7 +10,7 @@ import xyz.avarel.lobos.typesystem.generics.UnionType
 object AnyType: Type {
     override val allAssociatedTypes: Map<String, Type> get() = associatedTypes
     override val associatedTypes = hashMapOf<String, Type>().also {
-        val anyOrNull = UnionType(listOf(this, NullType))
+        val anyOrNull = UnionType(this, NullType)
         it["equals"] = FunctionType(true, listOf(anyOrNull, anyOrNull), BoolType)
     }
 

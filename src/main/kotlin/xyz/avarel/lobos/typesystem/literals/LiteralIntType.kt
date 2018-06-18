@@ -23,7 +23,7 @@ class LiteralIntType(val value: Int): ExistentialType {
     override fun commonAssignableToType(other: Type): Type {
         return when (other) {
             I32Type -> other
-            is LiteralIntType -> if (value == other.value) this else UnionType(listOf(this, other))
+            is LiteralIntType -> if (value == other.value) this else UnionType(this, other)
             else -> listOf(this, other).toType()
         }
     }

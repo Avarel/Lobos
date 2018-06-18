@@ -1,4 +1,4 @@
-package xyz.avarel.lobos.typesystem.generics
+package xyz.avarel.lobos.typesystem.base
 
 import xyz.avarel.lobos.typesystem.Type
 

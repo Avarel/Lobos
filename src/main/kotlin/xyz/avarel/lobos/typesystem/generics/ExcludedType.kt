@@ -35,7 +35,7 @@ class ExcludedType(
 
     override fun commonAssignableToType(other: Type): Type {
         return when (other) {
-            is ExcludedType -> if (other.targetType != targetType) UnionType(listOf(this, other)) else {
+            is ExcludedType -> if (other.targetType != targetType) UnionType(this, other) else {
                 ExcludedType(targetType, subtractedType.commonAssignableFromType(other.subtractedType))
             }
             is UnionType -> {
@@ -56,10 +56,7 @@ class ExcludedType(
             is UnionType -> {
                 val value = other.exclude(subtractedType)
                 when {
-                    value is UnionType -> {
-                        val values = value.valueTypes.filter { it.isAssignableFrom(this) }
-                        values.toType()
-                    }
+                    value is UnionType -> listOf(value.left, value.right).filter { it.isAssignableFrom(this) }.toType()
                     this.isAssignableFrom(value) -> ExcludedType(targetType, value)
                     else -> NeverType
                 }

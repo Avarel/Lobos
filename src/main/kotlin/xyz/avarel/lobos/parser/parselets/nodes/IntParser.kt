@@ -1,4 +1,4 @@
-package xyz.avarel.lobos.parser.parselets
+package xyz.avarel.lobos.parser.parselets.nodes
 
 import xyz.avarel.lobos.ast.Expr
 import xyz.avarel.lobos.ast.nodes.IntExpr

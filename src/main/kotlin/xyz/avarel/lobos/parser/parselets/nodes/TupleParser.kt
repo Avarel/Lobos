@@ -1,4 +1,4 @@
-package xyz.avarel.lobos.parser.parselets
+package xyz.avarel.lobos.parser.parselets.nodes
 
 import xyz.avarel.lobos.ast.Expr
 import xyz.avarel.lobos.ast.nodes.TupleExpr
@@ -16,7 +16,7 @@ object TupleParser: PrefixParser {
             return UnitExpr(token.position)
         }
 
-        val expr = parser.parseExpr(scope, ctx)
+        val expr = parser.parseExpr(scope, StmtContext())
 
         if (parser.match(TokenType.COMMA)) {
             val exprValues = mutableListOf<Expr>()

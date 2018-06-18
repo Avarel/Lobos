@@ -2,6 +2,7 @@ package xyz.avarel.lobos.ast
 
 import xyz.avarel.lobos.ast.misc.IfExpr
 import xyz.avarel.lobos.ast.misc.InvalidExpr
+import xyz.avarel.lobos.ast.misc.InvokeExpr
 import xyz.avarel.lobos.ast.misc.MultiExpr
 import xyz.avarel.lobos.ast.nodes.*
 import xyz.avarel.lobos.ast.ops.BinaryOperation
@@ -28,6 +29,7 @@ interface ExprVisitor<R> {
     fun visit(expr: IdentExpr): R
     fun visit(expr: TupleExpr): R
 
+    fun visit(expr: InvokeExpr): R
     fun visit(expr: UnaryOperation): R
     fun visit(expr: BinaryOperation): R
 

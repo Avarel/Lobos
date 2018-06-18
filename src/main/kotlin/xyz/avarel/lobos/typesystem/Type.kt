@@ -88,7 +88,7 @@ interface Type {
         return when {
             this == other -> this
             other is ExcludedType && this == other.targetType -> this
-            else -> UnionType(listOf(this, other))
+            else -> UnionType(this, other)
         }
     }
 

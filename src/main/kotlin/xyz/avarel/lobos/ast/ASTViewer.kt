@@ -2,6 +2,7 @@ package xyz.avarel.lobos.ast
 
 import xyz.avarel.lobos.ast.misc.IfExpr
 import xyz.avarel.lobos.ast.misc.InvalidExpr
+import xyz.avarel.lobos.ast.misc.InvokeExpr
 import xyz.avarel.lobos.ast.misc.MultiExpr
 import xyz.avarel.lobos.ast.nodes.*
 import xyz.avarel.lobos.ast.ops.BinaryOperation
@@ -14,7 +15,6 @@ import xyz.avarel.lobos.ast.variables.LetExpr
 
 class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boolean): ExprVisitor<Unit> {
     fun Expr.ast(buf: StringBuilder, indent: String = "", isTail: Boolean) = accept(ASTViewer(buf, indent, isTail))
-
 
     fun Expr.astLabel(label: String, buf: StringBuilder, indent: String, tail: Boolean) {
         buf.append(indent).append(if (tail) "└── " else "├── ").append(label).append(':')
@@ -88,6 +88,22 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         }
         if (expr.list.isNotEmpty()) {
             expr.list.last().ast(buf, indent, true)
+        }
+    }
+
+    override fun visit(expr: InvokeExpr) {
+        defaultAst("invoke")
+
+        buf.append('\n')
+        expr.target.ast(buf, indent + if (isTail) "    " else "│   ", expr.arguments.isEmpty())
+
+        buf.append('\n')
+        for (i in 0 until expr.arguments.size - 1) {
+            expr.arguments[i].ast(buf, indent, false)
+            buf.append('\n')
+        }
+        if (expr.arguments.isNotEmpty()) {
+            expr.arguments.last().ast(buf, indent, true)
         }
     }
 

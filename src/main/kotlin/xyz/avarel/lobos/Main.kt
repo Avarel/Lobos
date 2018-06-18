@@ -3,7 +3,7 @@ package xyz.avarel.lobos
 import xyz.avarel.lobos.lexer.Tokenizer
 import xyz.avarel.lobos.parser.DefaultGrammar
 import xyz.avarel.lobos.parser.Parser
-import xyz.avarel.lobos.typesystem.generics.UnitType
+import xyz.avarel.lobos.typesystem.base.UnitType
 import xyz.avarel.lobos.typesystem.scope.DefaultParserContext
 
 /* Smart Compiler
@@ -57,14 +57,13 @@ let b: () = a;
 
 fun main(args: Array<String>) {
     val source = """
-        let x: i32 | null = 2;
+        type Single<T> = (T,);
 
-        if (x == null || x == 1) {
-            let b: () = x;
-            return;
+        def single<T>(value: T) -> Single<T> {
+            (value,)
         };
 
-        let b: () = x;
+        let x: Single<i32> = single(3);
     """.trimIndent()
 
     val lexer = Tokenizer(reader = source.reader())
@@ -108,10 +107,3 @@ fun main(args: Array<String>) {
     }
 }
 
-inline fun <K, V> MutableMap<K, V>.mergeAll(other: Map<K, V>, remappingFunction: (V, V) -> V) {
-    other.forEach { (k, v) ->
-        this[k]?.let {
-            put(k, remappingFunction(it, v))
-        } ?: put(k, v)
-    }
-}

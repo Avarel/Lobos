@@ -8,7 +8,7 @@ abstract class AbstractType(val name: String, override val parentType: Type = An
     override fun isAssignableFrom(other: Type): Boolean {
         return when (other) {
             this, NeverType -> true
-            is UnionType -> other.valueTypes.all(this::isAssignableFrom)
+            is UnionType -> this.isAssignableFrom(other.right) && this.isAssignableFrom(other.left)
             else -> {
                 var currentType = other
                 while (currentType != this) {

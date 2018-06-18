@@ -37,9 +37,24 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
         }
     }
 
-    fun skipTillNextIs(vararg type: TokenType) {
-        while (!eof) {
-            if (nextIsAny(*type)) break
+    fun peek(distance: Int = 0) = tokens[index + distance]
+
+    fun nextIs(type: TokenType) = !eof && peek().type == type
+
+    fun nextIs(vararg types: TokenType) = !eof && types.any { nextIs(it) }
+
+    fun peekAheadUntil(vararg type: TokenType): List<Token> {
+        if (eof) return emptyList()
+        val list = mutableListOf<Token>()
+        var distance = 0
+        while (!eof && !nextIs(*type)) {
+            list += peek(distance++)
+        }
+        return list
+    }
+
+    fun skipUntil(vararg type: TokenType) {
+        while (!eof && !nextIs(*type)) {
             eat()
         }
     }
@@ -49,7 +64,7 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
 
         if (!eof) {
             val token = peek()
-            errors.add(SyntaxException("Did not reach end of file. Found token $token", token.position))
+            errors += SyntaxException("Did not reach end of file. Found token $token", token.position)
         }
 
         return expr
@@ -68,9 +83,9 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
         val expr = parseExpr(scope, StmtContext())
         if (expr is InvalidExpr) {
             if (delimiterPair != null) {
-                skipTillNextIs(delimiterPair.second, TokenType.SEMICOLON)
+                skipUntil(delimiterPair.second, TokenType.SEMICOLON)
             } else {
-                skipTillNextIs(TokenType.SEMICOLON)
+                skipUntil(TokenType.SEMICOLON)
             }
         }
 
@@ -88,9 +103,9 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
                 parseExpr(scope, StmtContext()).let {
                     if (it is InvalidExpr) {
                         if (delimiterPair != null) {
-                            skipTillNextIs(delimiterPair.second, TokenType.SEMICOLON)
+                            skipUntil(delimiterPair.second, TokenType.SEMICOLON)
                         } else {
-                            skipTillNextIs(TokenType.SEMICOLON)
+                            skipUntil(TokenType.SEMICOLON)
                         }
                     }
                     list += it
@@ -108,12 +123,6 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
 
         return expr
     }
-
-    fun peek(distance: Int = 0) = tokens[index + distance]
-
-    fun nextIs(type: TokenType) = !eof && peek().type == type
-
-    fun nextIsAny(vararg types: TokenType) = types.any(::nextIs)
 
     fun parseExpr(scope: ScopeContext, ctx: StmtContext, precedence: Int = 0): Expr {
         if (eof) throw SyntaxException("Expected expression but reached end of file", last.position)

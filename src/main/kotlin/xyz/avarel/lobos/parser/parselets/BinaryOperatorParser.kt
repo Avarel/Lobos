@@ -19,8 +19,12 @@ open class BinaryOperatorParser(precedence: Int, val operator: BinaryOperationTy
         val fnType = left.type.getAssociatedType(operator.functionName)
                 ?: throw SyntaxException("${left.type} does not have a ${operator.functionName} operation", token.position)
 
+        if (fnType !is FunctionType) {
+            throw SyntaxException("$fnType is not a function", token.position)
+        }
+
         fnType.checkInvocation(listOf(left.type, right.type), token.position)
 
-        return BinaryOperation((fnType as FunctionType).returnType, left, right, operator, token.position)
+        return BinaryOperation(fnType.returnType, left, right, operator, token.position)
     }
 }

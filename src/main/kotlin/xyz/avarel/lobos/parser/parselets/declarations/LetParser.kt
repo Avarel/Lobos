@@ -1,4 +1,4 @@
-package xyz.avarel.lobos.parser.parselets
+package xyz.avarel.lobos.parser.parselets.declarations
 
 import xyz.avarel.lobos.ast.Expr
 import xyz.avarel.lobos.ast.variables.LetExpr
@@ -29,7 +29,7 @@ object LetParser: PrefixParser {
 
         parser.eat(TokenType.ASSIGN)
 
-        val expr = parser.parseExpr(scope, StmtContext(AnyType))
+        val expr = parser.parseExpr(scope, StmtContext(type ?: AnyType))
 
         if (name in scope.variables) {
             throw SyntaxException("Variable $name has already been declared", ident.position)

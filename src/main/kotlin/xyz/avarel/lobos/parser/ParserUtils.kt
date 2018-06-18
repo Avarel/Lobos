@@ -1,18 +1,22 @@
 package xyz.avarel.lobos.parser
 
 import xyz.avarel.lobos.ast.Expr
+import xyz.avarel.lobos.ast.variables.IdentExpr
 import xyz.avarel.lobos.lexer.Position
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.TypeTemplate
 import xyz.avarel.lobos.typesystem.base.InvalidType
 import xyz.avarel.lobos.typesystem.base.NullType
+import xyz.avarel.lobos.typesystem.base.UnitType
 import xyz.avarel.lobos.typesystem.generics.*
 import xyz.avarel.lobos.typesystem.literals.LiteralFalseType
 import xyz.avarel.lobos.typesystem.literals.LiteralIntType
 import xyz.avarel.lobos.typesystem.literals.LiteralStrType
 import xyz.avarel.lobos.typesystem.literals.LiteralTrueType
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
+import xyz.avarel.lobos.typesystem.scope.StmtContext
+import xyz.avarel.lobos.typesystem.scope.VariableInfo
 
 fun Parser.parseBlock(scope: ScopeContext): Expr {
     return parseStatements(scope, TokenType.L_BRACE to TokenType.R_BRACE)
@@ -27,9 +31,9 @@ fun Parser.parseUnionType(scope: ScopeContext): Type {
 
     if (match(TokenType.PIPE)) {
         val list = mutableListOf<Type>()
-        list.add(type)
+        list += type
         do {
-            list.add(try { parseSubtractionType(scope) } catch (e: SyntaxException) { InvalidType })
+            list += try { parseSubtractionType(scope) } catch (e: SyntaxException) { InvalidType }
         } while (match(TokenType.PIPE))
         return list.toType()
     }
@@ -73,7 +77,7 @@ fun Parser.parseSingleType(scope: ScopeContext): Type {
                 val typeParameters = mutableListOf<Type>()
 
                 do {
-                    typeParameters.add(parseUnionType(scope))
+                    typeParameters += parseUnionType(scope)
                 } while (match(TokenType.COMMA))
 
                 eat(TokenType.GT)
@@ -93,7 +97,7 @@ fun Parser.parseSingleType(scope: ScopeContext): Type {
                 match(TokenType.R_PAREN) -> return UnitType
                 else -> {
                     val firstType = tryOrInvalid { parseType(scope) }
-                    valueTypes.add(firstType)
+                    valueTypes += firstType
 
                     if (match(TokenType.R_PAREN)) {
                         if (nextIs(TokenType.ARROW)) {
@@ -108,7 +112,7 @@ fun Parser.parseSingleType(scope: ScopeContext): Type {
                             return TupleType(listOf(firstType))
                         }
                         do {
-                            valueTypes.add(tryOrInvalid { parseType(scope) })
+                            valueTypes += tryOrInvalid { parseType(scope) }
                         } while (match(TokenType.COMMA))
                     }
 
@@ -166,7 +170,7 @@ fun Parser.continuableTypeCheck(expectedType: Type, foundType: Type, position: P
     try {
         typeCheck(expectedType, foundType, position)
     } catch (e: SyntaxException) {
-        errors.add(e)
+        errors += e
     }
 }
 
@@ -186,10 +190,13 @@ fun typeCheck(expectedType: Type, foundType: Type, position: Position) {
  */
 fun Type.checkInvocation(argumentTypes: List<Type>, position: Position) {
     when {
-        this is UnionType -> try { valueTypes.forEach { it.checkInvocation(argumentTypes, position) } } catch (e: SyntaxException) {
+        this is UnionType -> try {
+            left.checkInvocation(argumentTypes, position)
+            right.checkInvocation(argumentTypes, position)
+        } catch (e: SyntaxException) {
             throw SyntaxException("Can not invoke $this with $argumentTypes", position)
         }
-        this !is FunctionType -> throw SyntaxException("Can not invoke $this", position)
+        this !is FunctionType -> throw SyntaxException("$this is not a function", position)
         this.argumentTypes.size != argumentTypes.size || !canBeInvokedBy(argumentTypes) -> {
             throw SyntaxException(buildString {
                 append("Expected ")
@@ -214,5 +221,36 @@ fun FunctionType.canBeInvokedBy(argumentTypes: List<Type>): Boolean {
 inline fun requireSyntax(value: Boolean, position: Position, lazy: () -> String) {
     if (!value) {
         throw SyntaxException(lazy(), position)
+    }
+}
+
+fun inferAssumptionExpr(
+        removeUnitOnly: Boolean,
+        scope: ScopeContext,
+        ctx: StmtContext,
+        target: Expr,
+        other: Expr,
+        function: Pair<(Type, Type) -> Type, (Type, Type) -> Type> // forward and inverse
+): Triple<String, VariableInfo, VariableInfo>? {
+    if (target !is IdentExpr) return null
+
+    val key = target.name
+    val effective = ctx.assumptions[key] ?: scope.getEffectiveType(key)!!
+
+    if (removeUnitOnly && !other.type.isUnitType) {
+        return null
+    }
+
+    val assumption = effective.copy(type = function.first(effective.type, other.type))
+    val inverse = effective.copy(type = function.second(effective.type, other.type))
+
+    return Triple(key, assumption, inverse)
+}
+
+inline fun <K, V> MutableMap<K, V>.mergeAll(other: Map<K, V>, remappingFunction: (K, V, V) -> V) {
+    other.forEach { (k, v) ->
+        this[k]?.let {
+            put(k, remappingFunction(k, it, v))
+        } ?: put(k, v)
     }
 }
