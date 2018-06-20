@@ -11,7 +11,7 @@ import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
 
 object TupleParser: PrefixParser {
-    override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token): Expr {
+    override fun parse(parser: Parser, scope: ScopeContext, stmt: StmtContext, token: Token): Expr {
         if (parser.match(TokenType.R_PAREN)) {
             return UnitExpr(token.position)
         }
@@ -24,7 +24,7 @@ object TupleParser: PrefixParser {
 
             if (!parser.match(TokenType.R_PAREN)) {
                 do {
-                    exprValues.add(parser.parseExpr(scope, ctx))
+                    exprValues.add(parser.parseExpr(scope, stmt))
                 } while (parser.match(TokenType.COMMA))
                 parser.eat(TokenType.R_PAREN)
             }

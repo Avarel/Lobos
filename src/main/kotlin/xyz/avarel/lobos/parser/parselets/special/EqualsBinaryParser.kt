@@ -1,27 +1,29 @@
 package xyz.avarel.lobos.parser.parselets.special
 
 import xyz.avarel.lobos.ast.Expr
-import xyz.avarel.lobos.ast.ops.BinaryOperation
-import xyz.avarel.lobos.ast.ops.BinaryOperationType
+import xyz.avarel.lobos.ast.ops.EqualsOperation
 import xyz.avarel.lobos.lexer.Token
+import xyz.avarel.lobos.parser.InfixParser
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.Precedence
-import xyz.avarel.lobos.parser.parselets.BinaryOperatorParser
 import xyz.avarel.lobos.parser.inferAssumptionExpr
 import xyz.avarel.lobos.typesystem.Type
+import xyz.avarel.lobos.typesystem.base.AnyType
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
 
-object EqualsBinaryParser: BinaryOperatorParser(Precedence.EQUALITY, BinaryOperationType.EQUALS) {
+object EqualsBinaryParser: InfixParser {
+    override val precedence: Int get() = Precedence.EQUALITY
+
     override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token, left: Expr): Expr {
-        val expr = super.parse(parser, scope, ctx, token, left) as BinaryOperation
+        val right = parser.parseExpr(scope, StmtContext(AnyType), precedence)
 
         inferAssumptionExpr(
                 true,
                 scope,
                 ctx,
-                expr.left,
-                expr.right,
+                left,
+                right,
                 Type::filter to Type::exclude
         )?.let { (name, a, b) ->
             ctx.assumptions[name] = a
@@ -31,14 +33,14 @@ object EqualsBinaryParser: BinaryOperatorParser(Precedence.EQUALITY, BinaryOpera
                 true,
                 scope,
                 ctx,
-                expr.right,
-                expr.left,
+                right,
+                left,
                 Type::filter to Type::exclude
         )?.let { (name, a, b) ->
             ctx.assumptions[name] = a
             ctx.inverseAssumptions[name] = b
         }
 
-        return expr
+        return EqualsOperation(left, right, token.position)
     }
 }

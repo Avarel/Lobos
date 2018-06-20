@@ -1,15 +1,20 @@
 package xyz.avarel.lobos.parser
 
+import xyz.avarel.lobos.ast.DummyExpr
 import xyz.avarel.lobos.ast.Expr
 import xyz.avarel.lobos.ast.misc.InvalidExpr
 import xyz.avarel.lobos.ast.misc.MultiExpr
 import xyz.avarel.lobos.ast.nodes.UnitExpr
+import xyz.avarel.lobos.lexer.Position
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
+import xyz.avarel.lobos.lexer.Tokenizer
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
 
-class Parser(val grammar: Grammar, val tokens: List<Token>) {
+class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>) {
+    constructor(grammar: Grammar, lexer: Tokenizer): this(grammar, lexer.fileName, lexer.parse())
+
     val errors = mutableListOf<SyntaxException>()
 
     private var index: Int = 0
@@ -37,29 +42,61 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
         }
     }
 
+    fun matchAny(vararg type: TokenType): Boolean {
+        return if (nextIsAny(*type)) {
+            eat()
+            true
+        } else {
+            false
+        }
+    }
+
+    fun matchComplete(type: TokenType): Boolean {
+        return if (nextIs(type)) {
+            while (nextIs(type)) {
+                eat()
+            }
+            true
+        } else {
+            false
+        }
+    }
+
+    fun matchCompleteAny(vararg type: TokenType): Boolean {
+        return if (nextIsAny(*type)) {
+            while (nextIsAny(*type)) {
+                eat()
+            }
+            true
+        } else {
+            false
+        }
+    }
+
     fun peek(distance: Int = 0) = tokens[index + distance]
 
     fun nextIs(type: TokenType) = !eof && peek().type == type
 
-    fun nextIs(vararg types: TokenType) = !eof && types.any { nextIs(it) }
+    fun nextIsAny(vararg types: TokenType) = !eof && types.any { nextIs(it) }
 
     fun peekAheadUntil(vararg type: TokenType): List<Token> {
         if (eof) return emptyList()
         val list = mutableListOf<Token>()
         var distance = 0
-        while (!eof && !nextIs(*type)) {
+        while (!eof && !nextIsAny(*type)) {
             list += peek(distance++)
         }
         return list
     }
 
     fun skipUntil(vararg type: TokenType) {
-        while (!eof && !nextIs(*type)) {
+        while (!eof && !nextIsAny(*type)) {
             eat()
         }
     }
 
     fun parse(scope: ScopeContext): Expr {
+        if (eof) return UnitExpr(Position(fileName, 0, 0))
         val expr = parseStatements(scope)
 
         if (!eof) {
@@ -73,55 +110,34 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
     fun parseStatements(scope: ScopeContext, delimiterPair: Pair<TokenType, TokenType>? = null): Expr {
         if (eof) throw SyntaxException("Expected expression but reached end of file", last.position)
 
-        delimiterPair?.let {
-            eat(it.first)
-            if (match(it.second)) {
-                return UnitExpr(last.position)
+        delimiterPair?.first?.let(this::eat)
+
+        val list = mutableListOf<Expr>()
+
+        do {
+            if (eof || (delimiterPair != null && nextIs(delimiterPair.second))) {
+                break
             }
-        }
+            val expr = parseExpr(scope, StmtContext())
 
-        val expr = parseExpr(scope, StmtContext())
-        if (expr is InvalidExpr) {
-            if (delimiterPair != null) {
-                skipUntil(delimiterPair.second, TokenType.SEMICOLON)
-            } else {
-                skipUntil(TokenType.SEMICOLON)
+            if (expr is InvalidExpr) {
+                if (delimiterPair != null) {
+                    skipUntil(delimiterPair.second, TokenType.SEMICOLON, TokenType.NL)
+                } else {
+                    skipUntil(TokenType.SEMICOLON, TokenType.NL)
+                }
+            } else if (expr !== DummyExpr) {
+                list += expr
             }
+        } while (!eof && matchCompleteAny(TokenType.SEMICOLON, TokenType.NL))
+
+        delimiterPair?.second?.let(this::eat)
+
+        return when {
+            list.isEmpty() -> UnitExpr(last.position)
+            list.size == 1 -> list[0]
+            else -> MultiExpr(list)
         }
-
-
-        if (!eof && match(TokenType.SEMICOLON)) {
-            val list = mutableListOf<Expr>()
-            list += expr
-
-            do {
-                if (eof) break
-                if (delimiterPair != null && match(delimiterPair.second)) {
-                    list += UnitExpr(last.position)
-                    return MultiExpr(list)
-                }
-                parseExpr(scope, StmtContext()).let {
-                    if (it is InvalidExpr) {
-                        if (delimiterPair != null) {
-                            skipUntil(delimiterPair.second, TokenType.SEMICOLON)
-                        } else {
-                            skipUntil(TokenType.SEMICOLON)
-                        }
-                    }
-                    list += it
-                }
-            } while (!eof && match(TokenType.SEMICOLON))
-
-            delimiterPair?.second?.let(this::eat)
-
-            return MultiExpr(list)
-        }
-
-        delimiterPair?.let {
-            eat(delimiterPair.second)
-        }
-
-        return expr
     }
 
     fun parseExpr(scope: ScopeContext, ctx: StmtContext, precedence: Int = 0): Expr {
@@ -139,7 +155,10 @@ class Parser(val grammar: Grammar, val tokens: List<Token>) {
             return InvalidExpr(token.position)
         }
 
-        return parseInfix(scope, ctx, precedence, expr)
+        return when {
+            expr === DummyExpr -> expr
+            else -> parseInfix(scope, ctx, precedence, expr)
+        }
     }
 
     fun parseInfix(scope: ScopeContext, ctx: StmtContext, precedence: Int, left: Expr): Expr {

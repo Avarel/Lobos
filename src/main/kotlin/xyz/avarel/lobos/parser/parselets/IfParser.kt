@@ -12,7 +12,7 @@ import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
 
 object IfParser: PrefixParser {
-    override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token): Expr {
+    override fun parse(parser: Parser, scope: ScopeContext, stmt: StmtContext, token: Token): Expr {
         val conditionCtx = StmtContext(BoolType)
         val condition = parser.parseExpr(scope, conditionCtx)
         typeCheck(BoolType, condition.type, condition.position)
@@ -31,7 +31,7 @@ object IfParser: PrefixParser {
             elseBranch = if (parser.nextIs(TokenType.IF)) parser.parseExpr(elseContext, StmtContext())
             else parser.parseBlock(elseContext)
         } else {
-            if (ctx.expectedType != null) {
+            if (stmt.expectedType != null) {
                 parser.errors += SyntaxException("if expression must have else branch", token.position)
             }
             elseBranch = null

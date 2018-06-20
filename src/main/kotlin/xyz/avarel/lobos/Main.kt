@@ -1,5 +1,6 @@
 package xyz.avarel.lobos
 
+import xyz.avarel.lobos.ast.ASTViewer
 import xyz.avarel.lobos.lexer.Tokenizer
 import xyz.avarel.lobos.parser.DefaultGrammar
 import xyz.avarel.lobos.parser.Parser
@@ -56,14 +57,16 @@ let b: () = a;
  */
 
 fun main(args: Array<String>) {
+
     val source = """
-        type Single<T> = (T,);
+        extern def notNull<T>(value: T) -> T
+        extern let intOrNull: i32 | null
 
-        def single<T>(value: T) -> Single<T> {
-            (value,)
-        };
+        extern let a: i32
+        extern let b: i64
 
-        let x: Single<i32> = single(3);
+        let x: () = a + b
+        let y: () = b * a
     """.trimIndent()
 
     val lexer = Tokenizer(reader = source.reader())
@@ -74,9 +77,11 @@ fun main(args: Array<String>) {
 
         println()
         println("|> SOURCE:")
+
+
         println(source)
 
-        val parser = Parser(DefaultGrammar, it)
+        val parser = Parser(DefaultGrammar, lexer.fileName, it)
         val ast = parser.parse(DefaultParserContext.subContext().also { it.expectedReturnType = UnitType })
 
         println()
@@ -101,9 +106,9 @@ fun main(args: Array<String>) {
             println("None :)\n")
         }
 
-//        println()
-//        println("|> AST")
-//        println(buildString { ast.accept(ASTViewer(this, "", true)) })
+        println()
+        println("|> AST")
+        println(buildString { ast.accept(ASTViewer(this, "", true)) })
     }
 }
 

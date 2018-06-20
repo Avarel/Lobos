@@ -8,9 +8,7 @@ import xyz.avarel.lobos.typesystem.Type
  */
 object NullType: AbstractType("null") {
     override val isUnitType: Boolean get() = true
-    override val allAssociatedTypes: Map<String, Type> get() = AnyType.allAssociatedTypes
-    override val associatedTypes get() = AnyType.associatedTypes
     override val parentType: Type = this
     override fun isAssignableFrom(other: Type) = other === this || other === NeverType
-    override fun getAssociatedType(key: String): Type? = associatedTypes[key]
+    override fun getMember(key: String): Type? = null
 }

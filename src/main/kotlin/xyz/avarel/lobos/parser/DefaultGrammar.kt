@@ -5,6 +5,7 @@ import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.parser.parselets.BinaryOperatorParser
 import xyz.avarel.lobos.parser.parselets.BooleanParser
 import xyz.avarel.lobos.parser.parselets.IfParser
+import xyz.avarel.lobos.parser.parselets.declarations.ExternParser
 import xyz.avarel.lobos.parser.parselets.declarations.FunctionParser
 import xyz.avarel.lobos.parser.parselets.declarations.LetParser
 import xyz.avarel.lobos.parser.parselets.declarations.TypeAliasParser
@@ -25,6 +26,7 @@ object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
         prefix(TokenType.NULL, NullParser)
         prefix(TokenType.TYPE, TypeAliasParser)
         prefix(TokenType.DEF, FunctionParser)
+        prefix(TokenType.EXTERN, ExternParser)
 
         infix(TokenType.L_PAREN, InvocationParser)
         infix(TokenType.EQ, EqualsBinaryParser)

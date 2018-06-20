@@ -3,7 +3,7 @@ package xyz.avarel.lobos.lexer
 import java.io.BufferedReader
 import java.io.Reader
 
-class Tokenizer(private val fileName: String = "_", reader: Reader) {
+class Tokenizer(val fileName: String = "_", reader: Reader) {
     constructor(string: String) : this(reader = string.reader())
 
     private val reader: Reader = if (reader.markSupported()) reader else BufferedReader(reader)
@@ -21,7 +21,7 @@ class Tokenizer(private val fileName: String = "_", reader: Reader) {
     }
 
     private fun parseCharTo(list: MutableList<Token>, c: Char) {
-        when (c) { //todo ADD characters?
+        when (c) {
             '{' -> list.add(makeToken(TokenType.L_BRACE, c))
             '}' -> list.add(makeToken(TokenType.R_BRACE, c))
             '(' -> list.add(makeToken(TokenType.L_PAREN, c))
@@ -38,6 +38,7 @@ class Tokenizer(private val fileName: String = "_", reader: Reader) {
             ',' -> list.add(makeToken(TokenType.COMMA, c))
             ':' -> list.add(makeToken(TokenType.COLON, c))
             ';' -> list.add(makeToken(TokenType.SEMICOLON, c))
+            '\n' -> list.add(makeToken(TokenType.NL, c))
             '+' -> list.add(makeToken(TokenType.PLUS, c))
             '-' -> when {
                 match('>') -> list.add(makeToken(TokenType.ARROW, "->"))
@@ -122,6 +123,7 @@ class Tokenizer(private val fileName: String = "_", reader: Reader) {
             "null" -> list.add(makeToken(TokenType.NULL, "null"))
             "type" -> list.add(makeToken(TokenType.TYPE, "type"))
             "def" -> list.add(makeToken(TokenType.DEF, "def"))
+            "extern" -> list.add(makeToken(TokenType.EXTERN, "extern"))
             else -> list.add(makeToken(TokenType.IDENT, str))
         }
     }

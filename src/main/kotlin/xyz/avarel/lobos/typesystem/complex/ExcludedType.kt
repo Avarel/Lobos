@@ -1,16 +1,20 @@
-package xyz.avarel.lobos.typesystem.generics
+package xyz.avarel.lobos.typesystem.complex
 
 import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.TypeTemplate
 import xyz.avarel.lobos.typesystem.base.InvalidType
 import xyz.avarel.lobos.typesystem.base.NeverType
+import xyz.avarel.lobos.typesystem.generics.GenericParameter
+import xyz.avarel.lobos.typesystem.findGenericParameters
+import xyz.avarel.lobos.typesystem.toType
 import xyz.avarel.lobos.typesystem.literals.ExistentialType
+import xyz.avarel.lobos.typesystem.template
 
 class ExcludedType(
         val targetType: Type,
         val subtractedType: Type
 ): ExistentialType, TypeTemplate {
-    override val genericParameters = listOf(targetType, subtractedType).findGenericParameters()
+    override var genericParameters = listOf(targetType, subtractedType).findGenericParameters()
 
     override val universalType: Type get() {
         return if (targetType === InvalidType || subtractedType === InvalidType) {
@@ -20,13 +24,17 @@ class ExcludedType(
 
     override val parentType: Type get() = targetType
 
-    override fun getAssociatedType(key: String) = universalType.getAssociatedType(key)
+    override fun getMember(key: String) = universalType.getMember(key)
 
-    override fun template(types: List<Type>): Type {
+    override fun template(types: Map<GenericParameter, Type>): Type {
         return ExcludedType(
-                transposeTypes(targetType, genericParameters, types),
-                transposeTypes(subtractedType, genericParameters, types)
+                targetType.template(types),
+                subtractedType.template(types)
         )
+    }
+
+    override fun extract(type: Type): Map<GenericParameter, Type> {
+        TODO("not implemented")
     }
 
     override fun isAssignableFrom(other: Type): Boolean {

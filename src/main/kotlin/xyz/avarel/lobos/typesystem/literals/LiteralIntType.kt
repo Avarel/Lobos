@@ -3,8 +3,8 @@ package xyz.avarel.lobos.typesystem.literals
 import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.base.I32Type
 import xyz.avarel.lobos.typesystem.base.NeverType
-import xyz.avarel.lobos.typesystem.generics.UnionType
-import xyz.avarel.lobos.typesystem.generics.toType
+import xyz.avarel.lobos.typesystem.complex.UnionType
+import xyz.avarel.lobos.typesystem.toType
 
 class LiteralIntType(val value: Int): ExistentialType {
     override val isUnitType: Boolean get() = true
@@ -45,8 +45,8 @@ class LiteralIntType(val value: Int): ExistentialType {
     }
 
     override fun filter(other: Type): Type {
-        return when {
-            this == other -> this
+        return when (other) {
+            this -> this
             else -> NeverType
         }
     }

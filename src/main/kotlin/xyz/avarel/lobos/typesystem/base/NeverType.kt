@@ -8,11 +8,9 @@ import xyz.avarel.lobos.typesystem.Type
  * However, no other type can be assigned to it.
  */
 object NeverType: AbstractType("!") {
-    override val allAssociatedTypes: Map<String, Type> get() = emptyMap()
-    override val associatedTypes: Map<String, Type> get() = emptyMap()
     override val parentType: Type = this
     override fun isAssignableFrom(other: Type) = other === this
-    override fun getAssociatedType(key: String): Type? = null
+    override fun getMember(key: String): Type? = null
 
     override fun commonAssignableToType(other: Type) = other
     override fun commonAssignableFromType(other: Type) = this

@@ -5,10 +5,7 @@ import xyz.avarel.lobos.ast.misc.InvalidExpr
 import xyz.avarel.lobos.ast.misc.InvokeExpr
 import xyz.avarel.lobos.ast.misc.MultiExpr
 import xyz.avarel.lobos.ast.nodes.*
-import xyz.avarel.lobos.ast.ops.BinaryOperation
-import xyz.avarel.lobos.ast.ops.LogicalAndOperation
-import xyz.avarel.lobos.ast.ops.LogicalOrOperation
-import xyz.avarel.lobos.ast.ops.UnaryOperation
+import xyz.avarel.lobos.ast.ops.*
 import xyz.avarel.lobos.ast.variables.AssignExpr
 import xyz.avarel.lobos.ast.variables.IdentExpr
 import xyz.avarel.lobos.ast.variables.LetExpr
@@ -27,9 +24,8 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         buf.append(indent).append(if (isTail) "└── " else "├── ").append(string)
     }
 
-
-    private fun label(string: String) {
-        buf.append(indent).append(if (isTail) "    " else "│   ").append("└── ").append(string)
+    private fun label(string: String, tail: Boolean) {
+        buf.append(indent).append(if (isTail) "    " else "│   ").append(if (tail) "└── " else "├── ").append(string)
     }
 
     override fun visit(expr: NullExpr) = defaultAst("null")
@@ -56,12 +52,15 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
 
     override fun visit(expr: NamedFunctionExpr) {
         defaultAst("function ${expr.name}")
+
         buf.append('\n')
+        label(expr.parameters.entries.joinToString(prefix = "parameters: (", postfix = ")") { (name, type) -> "$name: $type" }, false)
 
-        label(expr.parameters.entries.joinToString(prefix = "(", postfix = ")") { (name, type) -> "$name: $type" })
-        label(expr.returnType.toString())
+        buf.append('\n')
+        label("return: ${expr.returnType}", false)
 
-        expr.expr.ast(buf, indent + if (isTail) "    " else "│   ", true)
+        buf.append('\n')
+        expr.expr.astLabel("body", buf, indent + if (isTail) "    " else "│   ", true)
     }
 
     override fun visit(expr: LetExpr) {
@@ -83,11 +82,11 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
 
         buf.append('\n')
         for (i in 0 until expr.list.size - 1) {
-            expr.list[i].ast(buf, indent, false)
+            expr.list[i].ast(buf, indent + if (isTail) "    " else "│   ", false)
             buf.append('\n')
         }
         if (expr.list.isNotEmpty()) {
-            expr.list.last().ast(buf, indent, true)
+            expr.list.last().ast(buf, indent + if (isTail) "    " else "│   ", true)
         }
     }
 
@@ -95,15 +94,12 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         defaultAst("invoke")
 
         buf.append('\n')
-        expr.target.ast(buf, indent + if (isTail) "    " else "│   ", expr.arguments.isEmpty())
+        expr.target.astLabel("target", buf, indent + if (isTail) "    " else "│   ", expr.arguments.isEmpty())
 
         buf.append('\n')
-        for (i in 0 until expr.arguments.size - 1) {
-            expr.arguments[i].ast(buf, indent, false)
+        for (i in 0 until expr.arguments.size) {
+            expr.arguments[i].ast(buf, indent + if (isTail) "    " else "│   ", i == expr.arguments.size - 1)
             buf.append('\n')
-        }
-        if (expr.arguments.isNotEmpty()) {
-            expr.arguments.last().ast(buf, indent, true)
         }
     }
 
@@ -136,6 +132,16 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
 
     override fun visit(expr: LogicalOrOperation) {
         defaultAst("logical or")
+
+        buf.append('\n')
+        expr.left.ast(buf, indent + if (isTail) "    " else "│   ", false)
+
+        buf.append('\n')
+        expr.right.ast(buf, indent + if (isTail) "    " else "│   ", true)
+    }
+
+    override fun visit(expr: EqualsOperation) {
+        defaultAst("equals")
 
         buf.append('\n')
         expr.left.ast(buf, indent + if (isTail) "    " else "│   ", false)

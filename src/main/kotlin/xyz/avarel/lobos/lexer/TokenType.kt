@@ -49,9 +49,12 @@ enum class TokenType {
     COLON,
     SEMICOLON,
 
+    NL,
+
+    EXTERN,
+    MUT,
     RETURN,
     LET,
-    MUT,
     DEF,
     IF,
     ELSE,

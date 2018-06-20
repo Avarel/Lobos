@@ -2,18 +2,25 @@ package xyz.avarel.lobos.typesystem.base
 
 import xyz.avarel.lobos.typesystem.AbstractType
 import xyz.avarel.lobos.typesystem.Type
-import xyz.avarel.lobos.typesystem.generics.ExcludedType
-import xyz.avarel.lobos.typesystem.generics.FunctionType
+import xyz.avarel.lobos.typesystem.complex.ExcludedType
+import xyz.avarel.lobos.typesystem.complex.FunctionType
+import xyz.avarel.lobos.typesystem.complex.UnionType
+import xyz.avarel.lobos.typesystem.generics.GenericParameter
+import xyz.avarel.lobos.typesystem.generics.GenericType
 import xyz.avarel.lobos.typesystem.literals.LiteralIntType
 
 object I32Type: AbstractType("i32") {
-    override val associatedTypes = hashMapOf<String, Type>().also {
-        val opFn = FunctionType(true, listOf(this, this), this)
+    val members = hashMapOf<String, Type>().also {
+        val gp = GenericParameter("T", UnionType(I32Type, I64Type))
+        val gt = GenericType(gp)
+        val opFn = FunctionType(true, listOf(this, gt), gt)
         it["plus"] = opFn
         it["minus"] = opFn
         it["times"] = opFn
         it["div"] = opFn
     }
+
+    override fun getMember(key: String): Type? = members[key]
 
     override fun commonAssignableToType(other: Type): Type {
         return when (other) {

@@ -6,5 +6,5 @@ import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
 
 interface PrefixParser {
-    fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token): Expr
+    fun parse(parser: Parser, scope: ScopeContext, stmt: StmtContext, token: Token): Expr
 }

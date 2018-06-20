@@ -9,7 +9,7 @@ import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
 
 class BooleanParser(private val value: Boolean): PrefixParser {
-    override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token): Expr {
+    override fun parse(parser: Parser, scope: ScopeContext, stmt: StmtContext, token: Token): Expr {
         return BooleanExpr(value, token.position)
     }
 }

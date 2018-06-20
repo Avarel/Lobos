@@ -3,7 +3,7 @@ package xyz.avarel.lobos.typesystem.literals
 import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.base.BoolType
 import xyz.avarel.lobos.typesystem.base.NeverType
-import xyz.avarel.lobos.typesystem.generics.toType
+import xyz.avarel.lobos.typesystem.toType
 
 object LiteralFalseType: ExistentialType {
     override val isUnitType: Boolean get() = true

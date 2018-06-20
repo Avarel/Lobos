@@ -13,11 +13,11 @@ import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
 
 object ReturnParser: PrefixParser {
-    override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token): Expr {
-        val expr = if (parser.match(TokenType.SEMICOLON)) {
+    override fun parse(parser: Parser, scope: ScopeContext, stmt: StmtContext, token: Token): Expr {
+        val expr = if (parser.matchAny(TokenType.NL, TokenType.SEMICOLON)) {
             UnitExpr(parser.last.position)
         } else {
-            parser.parseExpr(scope, ctx)
+            parser.parseExpr(scope, stmt)
         }
 
         if (scope.expectedReturnType == null) {

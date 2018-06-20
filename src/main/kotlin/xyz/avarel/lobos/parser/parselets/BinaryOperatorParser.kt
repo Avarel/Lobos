@@ -6,9 +6,8 @@ import xyz.avarel.lobos.ast.ops.BinaryOperationType
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.SyntaxException
-import xyz.avarel.lobos.parser.checkInvocation
+import xyz.avarel.lobos.parser.enhancedCheckInvocation
 import xyz.avarel.lobos.typesystem.base.AnyType
-import xyz.avarel.lobos.typesystem.generics.FunctionType
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
 
@@ -16,15 +15,11 @@ open class BinaryOperatorParser(precedence: Int, val operator: BinaryOperationTy
     override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token, left: Expr): Expr {
         val right = parser.parseExpr(scope, StmtContext(AnyType), precedence - if (leftAssoc) 0 else 1)
 
-        val fnType = left.type.getAssociatedType(operator.functionName)
+        val member = left.type.getMember(operator.functionName)
                 ?: throw SyntaxException("${left.type} does not have a ${operator.functionName} operation", token.position)
 
-        if (fnType !is FunctionType) {
-            throw SyntaxException("$fnType is not a function", token.position)
-        }
+        val returnType = enhancedCheckInvocation(parser, member, listOf(left, right), ctx.expectedType, token.position)
 
-        fnType.checkInvocation(listOf(left.type, right.type), token.position)
-
-        return BinaryOperation(fnType.returnType, left, right, operator, token.position)
+        return BinaryOperation(returnType, left, right, operator, token.position)
     }
 }

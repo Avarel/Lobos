@@ -1,7 +1,6 @@
 package xyz.avarel.lobos.typesystem.generics
 
 import xyz.avarel.lobos.typesystem.Type
-import xyz.avarel.lobos.typesystem.TypeTemplate
 import xyz.avarel.lobos.typesystem.base.AnyType
 
 class GenericParameter(
@@ -10,7 +9,7 @@ class GenericParameter(
 ) {
     override fun toString() = buildString {
         append(name)
-        if (parentType != AnyType) {
+        if (parentType != null && parentType != AnyType) {
             append(": ")
             append(parentType)
         }
@@ -28,24 +27,5 @@ class GenericParameter(
         var result = name.hashCode()
         result = 31 * result + (parentType?.hashCode() ?: 0)
         return result
-    }
-}
-
-fun List<Type>.findGenericParameters(): List<GenericParameter> {
-    val list = mutableListOf<GenericParameter>()
-    for (type in this) {
-        when (type) {
-            is GenericType -> list.add(type.genericParameter)
-            is TypeTemplate -> list.addAll(type.genericParameters)
-        }
-    }
-    return list.distinctBy { it.name }
-}
-
-fun transposeTypes(originalType: Type, typeParameters: List<GenericParameter>, imposingTypes: List<Type>): Type {
-    return when (originalType) {
-        is GenericType -> imposingTypes[typeParameters.indexOfFirst { it.name == originalType.name }]
-        is TypeTemplate -> originalType.template(originalType.genericParameters.map { inner -> typeParameters.indexOfFirst { it.name == inner.name } }.map { imposingTypes[it] })
-        else -> originalType
     }
 }
