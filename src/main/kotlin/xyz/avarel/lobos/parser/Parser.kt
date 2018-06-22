@@ -110,7 +110,11 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
     fun parseStatements(scope: ScopeContext, delimiterPair: Pair<TokenType, TokenType>? = null): Expr {
         if (eof) throw SyntaxException("Expected expression but reached end of file", last.position)
 
+        matchCompleteAny(TokenType.SEMICOLON, TokenType.NL)
+
         delimiterPair?.first?.let(this::eat)
+
+        matchCompleteAny(TokenType.SEMICOLON, TokenType.NL)
 
         val list = mutableListOf<Expr>()
 

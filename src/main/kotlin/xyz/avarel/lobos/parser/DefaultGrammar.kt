@@ -26,7 +26,8 @@ object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
         prefix(TokenType.NULL, NullParser)
         prefix(TokenType.TYPE, TypeAliasParser)
         prefix(TokenType.DEF, FunctionParser)
-        prefix(TokenType.EXTERN, ExternParser)
+        prefix(TokenType.EXTERNAL, ExternParser)
+        prefix(TokenType.BANG, NotUnaryParser)
 
         infix(TokenType.L_PAREN, InvocationParser)
         infix(TokenType.EQ, EqualsBinaryParser)

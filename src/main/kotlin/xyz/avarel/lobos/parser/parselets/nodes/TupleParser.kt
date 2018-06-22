@@ -16,7 +16,7 @@ object TupleParser: PrefixParser {
             return UnitExpr(token.position)
         }
 
-        val expr = parser.parseExpr(scope, StmtContext())
+        val expr = parser.parseExpr(scope, stmt)
 
         if (parser.match(TokenType.COMMA)) {
             val exprValues = mutableListOf<Expr>()

@@ -1,20 +1,20 @@
 package xyz.avarel.lobos.parser.parselets.special
 
 import xyz.avarel.lobos.ast.Expr
-import xyz.avarel.lobos.ast.ops.BinaryOperation
 import xyz.avarel.lobos.ast.ops.LogicalNotOperation
 import xyz.avarel.lobos.lexer.Token
-import xyz.avarel.lobos.parser.InfixParser
 import xyz.avarel.lobos.parser.Parser
-import xyz.avarel.lobos.parser.Precedence
+import xyz.avarel.lobos.parser.PrefixParser
+import xyz.avarel.lobos.parser.continuableTypeCheck
+import xyz.avarel.lobos.typesystem.base.BoolType
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
 
-object NotEqualsBinaryParser: InfixParser {
-    override val precedence: Int get() = Precedence.EQUALITY
+object NotUnaryParser: PrefixParser {
+    override fun parse(parser: Parser, scope: ScopeContext, stmt: StmtContext, token: Token): Expr {
+        val expr = parser.parseExpr(scope, stmt)
 
-    override fun parse(parser: Parser, scope: ScopeContext, stmt: StmtContext, token: Token, left: Expr): Expr {
-        val expr = EqualsBinaryParser.parse(parser, scope, stmt, token, left) as BinaryOperation
+        parser.continuableTypeCheck(BoolType, expr.type, expr.position)
 
         val tmp = stmt.assumptions
         stmt.assumptions = stmt.inverseAssumptions

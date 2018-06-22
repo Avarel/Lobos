@@ -140,6 +140,13 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         expr.right.ast(buf, indent + if (isTail) "    " else "│   ", true)
     }
 
+    override fun visit(expr: LogicalNotOperation) {
+        defaultAst("logical not")
+
+        buf.append('\n')
+        expr.target.ast(buf, indent + if (isTail) "    " else "│   ", false)
+    }
+
     override fun visit(expr: EqualsOperation) {
         defaultAst("equals")
 

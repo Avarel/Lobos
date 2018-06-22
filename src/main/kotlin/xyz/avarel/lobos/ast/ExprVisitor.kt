@@ -36,5 +36,6 @@ interface ExprVisitor<R> {
 
     fun visit(expr: LogicalOrOperation): R
     fun visit(expr: LogicalAndOperation): R
+    fun visit(expr: LogicalNotOperation): R
     fun visit(expr: EqualsOperation): R
 }

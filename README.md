@@ -97,3 +97,7 @@ The code above generate the following AST: (given that ? and ! are non-valid exp
 ```
 Similarly, if the lexer does not recognize a character, it will simply return
 an invalid token instead of throwing an exception.
+
+### Generics
+Generics parameters is supported. Erasure or type templating is dependent on AST transformation.
+

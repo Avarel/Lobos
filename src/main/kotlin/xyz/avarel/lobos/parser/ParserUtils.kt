@@ -6,6 +6,7 @@ import xyz.avarel.lobos.lexer.Position
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.typesystem.*
 import xyz.avarel.lobos.typesystem.base.InvalidType
+import xyz.avarel.lobos.typesystem.base.NeverType
 import xyz.avarel.lobos.typesystem.base.NullType
 import xyz.avarel.lobos.typesystem.base.UnitType
 import xyz.avarel.lobos.typesystem.complex.ExcludedType
@@ -67,6 +68,7 @@ fun Parser.parseSingleType(scope: ScopeContext): Type {
         match(TokenType.TRUE) -> LiteralTrueType
         match(TokenType.FALSE) -> LiteralFalseType
         match(TokenType.NULL) -> NullType
+        match(TokenType.BANG) -> NeverType
         match(TokenType.IDENT) -> {
             val ident = last
             val name = ident.string

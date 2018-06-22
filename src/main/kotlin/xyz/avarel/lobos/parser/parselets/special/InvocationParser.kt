@@ -8,13 +8,14 @@ import xyz.avarel.lobos.parser.InfixParser
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.Precedence
 import xyz.avarel.lobos.parser.enhancedCheckInvocation
+import xyz.avarel.lobos.typesystem.base.NeverType
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
 
 object InvocationParser: InfixParser {
     override val precedence: Int = Precedence.POSTFIX
 
-    override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token, left: Expr): Expr {
+    override fun parse(parser: Parser, scope: ScopeContext, stmt: StmtContext, token: Token, left: Expr): Expr {
         val arguments = mutableListOf<Expr>()
 
         if (!parser.match(TokenType.R_PAREN)) {
@@ -24,7 +25,11 @@ object InvocationParser: InfixParser {
             parser.eat(TokenType.R_PAREN)
         }
 
-        val returnType = enhancedCheckInvocation(parser, left.type, arguments, ctx.expectedType, token.position)
+        val returnType = enhancedCheckInvocation(parser, left.type, arguments, stmt.expectedType, token.position)
+
+        if (returnType == NeverType) {
+            scope.terminates = true
+        }
 
         return InvokeExpr(returnType, left, arguments, token.position)
     }

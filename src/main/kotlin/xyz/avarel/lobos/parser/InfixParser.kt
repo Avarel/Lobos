@@ -7,5 +7,5 @@ import xyz.avarel.lobos.typesystem.scope.StmtContext
 
 interface InfixParser {
     val precedence: Int
-    fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token, left: Expr): Expr
+    fun parse(parser: Parser, scope: ScopeContext, stmt: StmtContext, token: Token, left: Expr): Expr
 }

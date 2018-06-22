@@ -59,14 +59,18 @@ let b: () = a;
 fun main(args: Array<String>) {
 
     val source = """
-        extern def notNull<T>(value: T) -> T
-        extern let intOrNull: i32 | null
+        external def notNull<T>(value: T) -> T
+        external let intOrNull: i32 | null
+        external def terminate() -> !
 
-        extern let a: i32
-        extern let b: i64
+        external let a: i32
 
-        let x: () = a + b
-        let y: () = b * a
+        if 1 == a {
+            let x: () = a
+            terminate()
+        }
+
+        let x: () = a
     """.trimIndent()
 
     val lexer = Tokenizer(reader = source.reader())
