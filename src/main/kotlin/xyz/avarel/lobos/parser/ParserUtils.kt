@@ -261,6 +261,24 @@ inline fun <K, V> MutableMap<K, V>.mergeAll(other: Map<K, V>, remappingFunction:
     }
 }
 
+fun inferGeneric(target: Type, subject: Type, position: Position): Type {
+    return if (subject is TypeTemplate) {
+        val map = try {
+            subject.extract(target)
+        } catch (e: IllegalArgumentException) {
+            throw SyntaxException(e.message ?: "Not enough information to infer type parameters of $subject", position)
+        }
+
+        if (map.size != subject.genericParameters.size || !map.keys.containsAll(subject.genericParameters)) {
+            throw SyntaxException("Failed to infer generic parameters", position)
+        }
+
+        subject.template(map)
+    } else {
+        subject
+    }
+}
+
 fun enhancedCheckInvocation(parser: Parser, target: Type, arguments: List<Expr>, returnType: Type?, position: Position): Type {
     if (target !is FunctionType) {
         throw SyntaxException("$target is not invokable", position)
@@ -270,7 +288,7 @@ fun enhancedCheckInvocation(parser: Parser, target: Type, arguments: List<Expr>,
     var argumentTypes = arguments.map(Expr::type)
     if (fnType.genericParameters.isNotEmpty()) {
         val map = enhancedExtract(parser, fnType, arguments, returnType, position)
-        if (map.size != fnType.genericParameters.size) {
+        if (map.size != fnType.genericParameters.size && map.keys.containsAll(fnType.genericParameters)) {
             throw SyntaxException("Failed to infer generic parameters", position)
         }
         fnType = fnType.template(map)

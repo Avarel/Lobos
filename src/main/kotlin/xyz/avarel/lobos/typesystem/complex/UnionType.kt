@@ -76,12 +76,14 @@ class UnionType(val left: Type, val right: Type): ExistentialType, TypeTemplate 
 
     override fun exclude(other: Type): Type {
         if (other == this) return NeverType
+        if (other is UnionType) return listOf(left, right, other.left, other.right).map { it.exclude(other) }.filter { it != NeverType }.toType()
         return listOf(left, right).map { it.exclude(other) }.filter { it != NeverType }.toType()
     }
 
     override fun filter(other: Type): Type {
         if (other == this) return this
-        return listOf(left, right).map { it.exclude(other) }.filter { it != NeverType }.toType()
+        if (other is UnionType) return listOf(left, right, other.left, other.right).map { it.filter(other) }.filter { it != NeverType }.toType()
+        return listOf(left, right).map { it.filter(other) }.filter { it != NeverType }.toType()
     }
 
     override fun toString() = "$left | $right"

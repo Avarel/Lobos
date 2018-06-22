@@ -1,10 +1,9 @@
 package xyz.avarel.lobos
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 class TestTypes {
     @Test
     fun `common super type test`() {
-
     }
 }

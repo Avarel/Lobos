@@ -1,14 +1,10 @@
 package xyz.avarel.lobos.typesystem.complex
 
-import xyz.avarel.lobos.typesystem.Type
-import xyz.avarel.lobos.typesystem.TypeTemplate
+import xyz.avarel.lobos.typesystem.*
 import xyz.avarel.lobos.typesystem.base.InvalidType
 import xyz.avarel.lobos.typesystem.base.NeverType
 import xyz.avarel.lobos.typesystem.generics.GenericParameter
-import xyz.avarel.lobos.typesystem.findGenericParameters
-import xyz.avarel.lobos.typesystem.toType
 import xyz.avarel.lobos.typesystem.literals.ExistentialType
-import xyz.avarel.lobos.typesystem.template
 
 class ExcludedType(
         val targetType: Type,
@@ -34,7 +30,7 @@ class ExcludedType(
     }
 
     override fun extract(type: Type): Map<GenericParameter, Type> {
-        TODO("not implemented")
+        return emptyMap()
     }
 
     override fun isAssignableFrom(other: Type): Boolean {

@@ -8,7 +8,7 @@ class NamedFunctionExpr(
         val name: String,
         val parameters: Map<String, Type>,
         val returnType: Type,
-        val expr: Expr,
+        val body: Expr,
         position: Position
 ): AbstractExpr(InvalidType, position) {
     override fun <R> accept(visitor: ExprVisitor<R>) = visitor.visit(this)

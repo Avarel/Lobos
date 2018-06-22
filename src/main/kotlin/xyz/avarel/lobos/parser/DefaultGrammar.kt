@@ -14,8 +14,9 @@ import xyz.avarel.lobos.parser.parselets.special.*
 
 object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
     init {
-        prefix(TokenType.LET, LetParser)
         prefix(TokenType.INT, IntParser)
+        prefix(TokenType.DECIMAL, DecimalParser)
+
         prefix(TokenType.STRING, StringParser)
         prefix(TokenType.IDENT, IdentParser)
         prefix(TokenType.TRUE, BooleanParser(true))
@@ -24,6 +25,8 @@ object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
         prefix(TokenType.RETURN, ReturnParser)
         prefix(TokenType.IF, IfParser)
         prefix(TokenType.NULL, NullParser)
+
+        prefix(TokenType.LET, LetParser)
         prefix(TokenType.TYPE, TypeAliasParser)
         prefix(TokenType.DEF, FunctionParser)
         prefix(TokenType.EXTERN, ExternParser)

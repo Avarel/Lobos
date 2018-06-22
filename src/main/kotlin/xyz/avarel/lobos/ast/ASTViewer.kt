@@ -28,11 +28,15 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         buf.append(indent).append(if (isTail) "    " else "│   ").append(if (tail) "└── " else "├── ").append(string)
     }
 
-    override fun visit(expr: NullExpr) = defaultAst("null")
+    override fun visit(expr: NullExpr) = defaultAst("null ref")
 
     override fun visit(expr: InvalidExpr) = defaultAst("[Invalid expression.]")
 
-    override fun visit(expr: IntExpr) = defaultAst(expr.value.toString())
+    override fun visit(expr: I32Expr) = defaultAst("i32: ${expr.value}")
+
+    override fun visit(expr: I64Expr) = defaultAst("i64: ${expr.value}")
+
+    override fun visit(expr: F64Expr) = defaultAst("f64: ${expr.value}")
 
     override fun visit(expr: StringExpr) = defaultAst("\"${expr.value}\"")
 
@@ -60,7 +64,7 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         label("return: ${expr.returnType}", false)
 
         buf.append('\n')
-        expr.expr.astLabel("body", buf, indent + if (isTail) "    " else "│   ", true)
+        expr.body.astLabel("body", buf, indent + if (isTail) "    " else "│   ", true)
     }
 
     override fun visit(expr: LetExpr) {
@@ -90,6 +94,16 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         }
     }
 
+    override fun visit(expr: AccessIndexExpr) {
+        defaultAst("access index")
+
+        buf.append('\n')
+        expr.target.astLabel("target", buf, indent + if (isTail) "    " else "│   ", false)
+
+        buf.append('\n')
+        label("index: ${expr.index}", true)
+    }
+
     override fun visit(expr: InvokeExpr) {
         defaultAst("invoke")
 
@@ -107,7 +121,7 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         defaultAst("binary ${expr.operator}")
 
         buf.append('\n')
-        expr.expr.ast(buf, indent + if (isTail) "    " else "│   ", true)
+        expr.target.ast(buf, indent + if (isTail) "    " else "│   ", true)
     }
 
     override fun visit(expr: BinaryOperation) {

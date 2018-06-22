@@ -114,6 +114,8 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
 
         val list = mutableListOf<Expr>()
 
+        matchCompleteAny(TokenType.SEMICOLON, TokenType.NL)
+
         do {
             if (eof || (delimiterPair != null && nextIs(delimiterPair.second))) {
                 break
@@ -161,7 +163,7 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
         }
     }
 
-    fun parseInfix(scope: ScopeContext, ctx: StmtContext, precedence: Int, left: Expr): Expr {
+    fun parseInfix(scope: ScopeContext, stmt: StmtContext, precedence: Int, left: Expr): Expr {
         var leftExpr = left
         while (!eof && precedence < this.precedence) {
             val token = eat()
@@ -171,7 +173,7 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
             }
 
             leftExpr = try {
-                parser.parse(this, scope, ctx, token, leftExpr)
+                parser.parse(this, scope, stmt, token, leftExpr)
             } catch (e: SyntaxException) {
                 errors += e
                 return InvalidExpr(token.position)

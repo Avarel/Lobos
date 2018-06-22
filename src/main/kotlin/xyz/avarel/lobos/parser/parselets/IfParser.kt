@@ -14,10 +14,13 @@ import xyz.avarel.lobos.typesystem.scope.StmtContext
 object IfParser: PrefixParser {
     override fun parse(parser: Parser, scope: ScopeContext, stmt: StmtContext, token: Token): Expr {
         val conditionCtx = StmtContext(BoolType)
+
         val condition = parser.parseExpr(scope, conditionCtx)
+
         typeCheck(BoolType, condition.type, condition.position)
 
         val thenContext = scope.subContext()
+
         thenContext.assumptions += conditionCtx.assumptions
 
         val thenBranch = parser.parseBlock(thenContext)

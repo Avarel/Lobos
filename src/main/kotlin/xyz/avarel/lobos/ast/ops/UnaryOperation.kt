@@ -8,7 +8,7 @@ import xyz.avarel.lobos.typesystem.Type
 
 class UnaryOperation(
         type: Type,
-        val expr: Expr,
+        val target: Expr,
         val operator: UnaryOperationType,
         position: Position
 ): AbstractExpr(type, position) {

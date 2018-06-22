@@ -1,6 +1,5 @@
 package xyz.avarel.lobos
 
-import xyz.avarel.lobos.ast.ASTViewer
 import xyz.avarel.lobos.lexer.Tokenizer
 import xyz.avarel.lobos.parser.DefaultGrammar
 import xyz.avarel.lobos.parser.Parser
@@ -56,25 +55,24 @@ let b: () = a;
             └── Expected () but found [i32 ! [1 | 2]] at (_:8:12)
  */
 
+val source = """
+
+extern let a: i32
+
+if a == 1 || a == 2 {
+    let x: 1 | 2 = a
+    return
+}
+let x: i32!(1 | 2) = a
+
+"""
+
+
 fun main(args: Array<String>) {
 
-    val source = """
-        extern def notNull<T>(value: T) -> T
-        extern let intOrNull: i32 | null
-
-        extern let a: i32
-        extern let b: i64
-
-        let x: () = a + b
-        let y: () = b * a
-    """.trimIndent()
 
     val lexer = Tokenizer(reader = source.reader())
     lexer.parse().let {
-//        println()
-//        println("|> TOKENS:")
-//        it.forEach(::println)
-
         println()
         println("|> SOURCE:")
 
@@ -106,9 +104,9 @@ fun main(args: Array<String>) {
             println("None :)\n")
         }
 
-        println()
-        println("|> AST")
-        println(buildString { ast.accept(ASTViewer(this, "", true)) })
+//        println()
+//        println("|> AST")
+//        println(buildString { ast.accept(ASTViewer(this, "", true)) })
     }
 }
 

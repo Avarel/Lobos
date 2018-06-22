@@ -12,7 +12,9 @@ import xyz.avarel.lobos.ast.variables.LetExpr
 
 interface ExprVisitor<R> {
     fun visit(expr: InvalidExpr): R
-    fun visit(expr: IntExpr): R
+    fun visit(expr: I32Expr): R
+    fun visit(expr: I64Expr): R
+    fun visit(expr: F64Expr): R
     fun visit(expr: StringExpr): R
     fun visit(expr: BooleanExpr): R
     fun visit(expr: UnitExpr): R
@@ -26,15 +28,16 @@ interface ExprVisitor<R> {
     fun visit(expr: IdentExpr): R
     fun visit(expr: TupleExpr): R
 
+    fun visit(expr: AccessIndexExpr): R
     fun visit(expr: InvokeExpr): R
+
     fun visit(expr: UnaryOperation): R
     fun visit(expr: BinaryOperation): R
+    fun visit(expr: LogicalOrOperation): R
+    fun visit(expr: LogicalAndOperation): R
+    fun visit(expr: EqualsOperation): R
 
     fun visit(expr: ReturnExpr): R
     fun visit(expr: IfExpr): R
     fun visit(expr: NullExpr): R
-
-    fun visit(expr: LogicalOrOperation): R
-    fun visit(expr: LogicalAndOperation): R
-    fun visit(expr: EqualsOperation): R
 }

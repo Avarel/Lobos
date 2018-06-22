@@ -5,10 +5,7 @@ import xyz.avarel.lobos.ast.variables.AssignExpr
 import xyz.avarel.lobos.ast.variables.IdentExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
-import xyz.avarel.lobos.parser.Parser
-import xyz.avarel.lobos.parser.PrefixParser
-import xyz.avarel.lobos.parser.SyntaxException
-import xyz.avarel.lobos.parser.typeCheck
+import xyz.avarel.lobos.parser.*
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
 import xyz.avarel.lobos.typesystem.scope.VariableInfo
@@ -33,7 +30,9 @@ object IdentParser: PrefixParser {
                     throw SyntaxException("Reference $name is not mutable", token.position)
                 }
 
-                typeCheck(currentInfo.type, expr.type, expr.position)
+                val exprType = inferGeneric(scope.getVariable(name)!!.type, expr.type, token.position)
+
+                typeCheck(currentInfo.type, exprType, expr.position)
 
                 scope.assumptions[name] = VariableInfo(currentInfo.mutable, expr.type)
 

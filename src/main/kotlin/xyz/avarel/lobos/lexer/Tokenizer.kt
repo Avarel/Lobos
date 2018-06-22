@@ -80,8 +80,7 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
             }
             '"' -> parseStringTo(list, '"', true)
             '\'' -> parseStringTo(list, '\'', false)
-            ' ', '\n' -> {
-            }
+            ' ' -> Unit
             else -> when {
                 c.isDigit() -> parseNumberTo(list, c)
                 c.isLetter() -> parseIdentTo(list, c)
@@ -91,10 +90,10 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
     }
 
     private fun makeToken(tokenType: TokenType, char: Char) = makeToken(tokenType, char.toString())
-    private fun makeToken(tokenType: TokenType, string: String) = Token(
+    private fun makeToken(tokenType: TokenType, string: String, offset: Int = 0) = Token(
             tokenType,
             string,
-            position.let { it.copy(lineIndex = it.lineIndex - string.length) }
+            position.let { it.copy(lineIndex = it.lineIndex - string.length - offset) }
     )
 
     private fun parseIdentTo(list: MutableList<Token>, c: Char) {
@@ -194,7 +193,7 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
             throw IllegalStateException("Unterminated string")
         }
 
-        list.add(makeToken(TokenType.STRING, buf.toString()))
+        list.add(makeToken(TokenType.STRING, buf.toString(), 2))
     }
 
     private fun parseNumberTo(list: MutableList<Token>, c: Char) {
@@ -237,7 +236,14 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
         }
 
         fillBufferNumbers(buf, false)
-        list.add(makeToken(TokenType.INT, buf.toString()))
+
+        if (match('.')) {
+            buf.append('.')
+            fillBufferNumbers(buf, false)
+            list.add(makeToken(TokenType.DECIMAL, buf.toString()))
+        } else {
+            list.add(makeToken(TokenType.INT, buf.toString()))
+        }
     }
 
     private fun fillBufferNumbers(buf: StringBuilder, allowHex: Boolean) {
@@ -256,6 +262,18 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
         val c = reader.read().toChar()
         reader.reset()
         return c
+    }
+
+    private fun peekString(length: Int): String {
+        var array = CharArray(length)
+        reader.mark(length)
+        val amt = reader.read(array)
+        when {
+            amt == -1 -> return ""
+            amt < array.size -> array = array.copyOf(amt)
+        }
+        reader.reset()
+        return String(array)
     }
 
     private fun match(c: Char): Boolean {
@@ -288,6 +306,14 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
         }
 
         return c
+    }
+
+    private fun nextString(length: Int): String {
+        val buf = StringBuilder(length)
+        for (i in 0 until length) {
+            buf.append(next())
+        }
+        return buf.toString()
     }
 }
 

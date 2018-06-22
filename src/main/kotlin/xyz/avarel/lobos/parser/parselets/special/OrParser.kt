@@ -13,26 +13,26 @@ import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
 
 object OrParser: BinaryParser(Precedence.DISJUNCTION, true) {
-    override fun parse(parser: Parser, scope: ScopeContext, ctx: StmtContext, token: Token, left: Expr): Expr {
+    override fun parse(parser: Parser, scope: ScopeContext, stmt: StmtContext, token: Token, left: Expr): Expr {
         parser.continuableTypeCheck(BoolType, left.type, left.position)
 
         val newCtx = StmtContext(BoolType)
-        newCtx.assumptions.putAll(ctx.inverseAssumptions)
+        newCtx.assumptions.putAll(stmt.inverseAssumptions)
 
         val right = parser.parseExpr(scope, newCtx, precedence)
 
         parser.continuableTypeCheck(BoolType, right.type, right.position)
 
-        if ((ctx.assumptions.keys + newCtx.assumptions.keys).size == 1) {
+        if ((stmt.assumptions.keys + newCtx.assumptions.keys).size == 1) {
             // can only assume if it is only one variable
-            ctx.assumptions.mergeAll(newCtx.assumptions) { v1, v2 ->
+            stmt.assumptions.mergeAll(newCtx.assumptions) { v1, v2 ->
                 v1.copy(type = v1.type.commonAssignableToType(v2.type))
             }
         } else {
-            ctx.assumptions.clear()
+            stmt.assumptions.clear()
         }
 
-        ctx.inverseAssumptions.mergeAll(newCtx.inverseAssumptions) { v1, v2 ->
+        stmt.inverseAssumptions.mergeAll(newCtx.inverseAssumptions) { v1, v2 ->
             v1.copy(type = v1.type.commonAssignableFromType(v2.type))
         }
 

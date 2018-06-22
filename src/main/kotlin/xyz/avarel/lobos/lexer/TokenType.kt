@@ -39,7 +39,9 @@ enum class TokenType {
 
     STRING,
     IDENT,
+
     INT,
+    DECIMAL,
 
     TRUE,
     FALSE,
@@ -62,4 +64,5 @@ enum class TokenType {
     TYPE,
 
     INVALID,
+    RESERVED
 }

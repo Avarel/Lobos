@@ -5,11 +5,9 @@ import xyz.avarel.lobos.ast.Expr
 import xyz.avarel.lobos.ast.variables.LetExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
-import xyz.avarel.lobos.parser.Parser
-import xyz.avarel.lobos.parser.PrefixParser
-import xyz.avarel.lobos.parser.SyntaxException
-import xyz.avarel.lobos.parser.parseType
+import xyz.avarel.lobos.parser.*
 import xyz.avarel.lobos.typesystem.Type
+import xyz.avarel.lobos.typesystem.TypeTemplate
 import xyz.avarel.lobos.typesystem.base.AnyType
 import xyz.avarel.lobos.typesystem.scope.Modifier
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
@@ -45,17 +43,22 @@ object LetParser: PrefixParser {
             throw SyntaxException("Variable $name has already been declared", ident.position)
         } else {
             if (type != null) {
-                if (type.isAssignableFrom(expr.type)) {
+                val exprType = inferGeneric(type, expr.type, token.position)
+
+                if (type.isAssignableFrom(exprType)) {
                     scope.variables[name] = VariableInfo(mutable, type)
                     if (expr.type != type) { // If assumption is necessary
-                        scope.assumptions[name] = VariableInfo(mutable, expr.type)
+                        scope.assumptions[name] = VariableInfo(mutable, exprType)
                     }
                 } else {
                     scope.variables[name] = VariableInfo(mutable, type)
-                    throw SyntaxException("Expected $type but found ${expr.type}", assign.position)
+                    throw SyntaxException("Expected $type but found $exprType", assign.position)
                 }
             } else {
-                assert(expr.type.universalType.isAssignableFrom(expr.type))
+                if (expr.type is TypeTemplate) {
+                    throw SyntaxException("Not enough information to infer type parameters of ${expr.type}", token.position)
+                }
+
                 scope.variables[name] = VariableInfo(mutable, expr.type.universalType)
                 scope.assumptions[name] = VariableInfo(mutable, expr.type)
             }
