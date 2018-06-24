@@ -42,6 +42,7 @@ enum class TokenType {
     STRING,
     IDENT,
     INT,
+    DECIMAL,
 
     TRUE,
     FALSE,
@@ -53,6 +54,8 @@ enum class TokenType {
 
     NL,
 
+    AS,
+    IS,
     EXTERNAL,
     MUT,
     RETURN,

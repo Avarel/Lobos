@@ -26,6 +26,7 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
     fun eat() = tokens[index++]
 
     fun eat(type: TokenType): Token {
+        if (eof) throw SyntaxException("Expected $type but reached end of file", last.position)
         val token = peek()
         if (token.type != type) {
             throw SyntaxException("Expected $type but found ${token.type}", token.position)

@@ -40,7 +40,7 @@ class GenericType(val genericParameter: GenericParameter): AbstractType(genericP
         }
     }
 
-    override fun toString() = genericParameter.toString()
+    override fun toString() = genericParameter.name
 
     override fun hashCode(): Int {
         return genericParameter.hashCode()

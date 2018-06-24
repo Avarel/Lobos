@@ -38,4 +38,8 @@ interface ExprVisitor<R> {
     fun visit(expr: LogicalAndOperation): R
     fun visit(expr: LogicalNotOperation): R
     fun visit(expr: EqualsOperation): R
+
+    fun visit(expr: IndexAccessExpr): R
+    fun visit(expr: PropertyAccessExpr): R
+    fun visit(expr: InvokeMemberExpr): R
 }

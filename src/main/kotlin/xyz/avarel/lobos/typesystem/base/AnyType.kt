@@ -11,4 +11,3 @@ object AnyType: Type {
     override fun getMember(key: String): Type? = null
     override fun toString() = "any"
 }
-

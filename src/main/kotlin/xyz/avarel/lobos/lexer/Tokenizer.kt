@@ -231,7 +231,18 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
         }
 
         fillBufferNumbers(buf, false)
-        list.add(makeToken(TokenType.INT, buf.toString()))
+
+        when {
+            peek() == '.' && peek(1).isDigit() -> {
+                next()
+                buf.append('.')
+                fillBufferNumbers(buf, false)
+                list.add(makeToken(TokenType.DECIMAL, buf.toString()))
+            }
+            else -> {
+                list.add(makeToken(TokenType.INT, buf.toString()))
+            }
+        }
     }
 
     private fun fillBufferNumbers(buf: StringBuilder, allowHex: Boolean) {
@@ -250,6 +261,29 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
         val c = reader.read().toChar()
         reader.reset()
         return c
+    }
+
+    private fun peek(distance: Int): Char {
+        reader.mark(distance + 1)
+        val array = CharArray(distance + 1)
+        val result = when {
+            reader.read(array) < distance + 1 -> (-1).toChar()
+            else -> array[distance]
+        }
+        reader.reset()
+        return result
+    }
+
+    private fun peekString(length: Int): String {
+        val array = CharArray(length)
+        reader.mark(length)
+        val len = reader.read(array)
+        reader.reset()
+        return when {
+            len == -1 -> ""
+            len < length -> String(array.copyOf(len))
+            else -> String(array)
+        }
     }
 
     private fun match(c: Char): Boolean {
@@ -282,6 +316,15 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
         }
 
         return c
+    }
+
+    private fun nextString(length: Int): String {
+        val buf = StringBuilder(length)
+        var i = 0
+        while (hasNext() && i++ < length) {
+            buf.append(next())
+        }
+        return buf.toString()
     }
 }
 

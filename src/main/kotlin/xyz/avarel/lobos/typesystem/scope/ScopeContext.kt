@@ -24,11 +24,7 @@ open class ScopeContext(
     }
 
     fun getAssumption(key: String): VariableInfo? {
-        return assumptions[key] ?: parent?.getAssumption(key)
-    }
-
-    fun getEffectiveType(key: String): VariableInfo? {
-        return assumptions[key] ?: variables[key] ?: parent?.getEffectiveType(key)
+        return assumptions[key] ?: variables[key] ?: parent?.getAssumption(key)
     }
 
     fun getType(key: String): Type? {

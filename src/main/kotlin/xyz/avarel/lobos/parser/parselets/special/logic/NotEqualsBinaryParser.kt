@@ -1,4 +1,4 @@
-package xyz.avarel.lobos.parser.parselets.special
+package xyz.avarel.lobos.parser.parselets.special.logic
 
 import xyz.avarel.lobos.ast.Expr
 import xyz.avarel.lobos.ast.ops.BinaryOperation
@@ -7,6 +7,7 @@ import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.parser.InfixParser
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.Precedence
+import xyz.avarel.lobos.parser.parselets.special.logic.EqualsBinaryParser
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
 

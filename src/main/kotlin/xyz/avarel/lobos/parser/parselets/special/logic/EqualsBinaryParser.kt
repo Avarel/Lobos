@@ -1,4 +1,4 @@
-package xyz.avarel.lobos.parser.parselets.special
+package xyz.avarel.lobos.parser.parselets.special.logic
 
 import xyz.avarel.lobos.ast.Expr
 import xyz.avarel.lobos.ast.ops.EqualsOperation

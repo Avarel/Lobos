@@ -56,21 +56,23 @@ let b: () = a;
             └── Expected () but found [i32 ! [1 | 2]] at (_:8:12)
  */
 
+// dank::meme
+// dank.meme    // if arity-0 -> invoke
+                // else if is function -> require next is R_PAREN (
+                // else -> property access
+
+/*
+struct Point {
+    x: i32
+    y: i32
+}
+
+ */
+
 fun main(args: Array<String>) {
 
     val source = """
-        external def notNull<T>(value: T) -> T
-        external let intOrNull: i32 | null
-        external def terminate() -> !
-
-        external let a: i32
-
-        if 1 == a {
-            let x: () = a
-            terminate()
-        }
-
-        let x: () = a
+        1.unary_plus()
     """.trimIndent()
 
     val lexer = Tokenizer(reader = source.reader())
@@ -91,7 +93,7 @@ fun main(args: Array<String>) {
         println()
         println("|> ERRORS:")
 
-        val lines =  source.lines()
+        val lines = source.lines()
         parser.errors.forEach {
             val line = lines[it.position.lineNumber.toInt() - 1]
             val msg = buildString {

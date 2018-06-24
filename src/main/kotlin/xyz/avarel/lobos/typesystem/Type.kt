@@ -44,13 +44,6 @@ interface Type {
      */
     fun isAssignableFrom(other: Type): Boolean
 
-    //val members: Map<String, Type> get() = emptyMap()
-
-    /**
-     * Specialized for [xyz.avarel.lobos.typesystem.generics.TupleType].
-     */
-    fun getMember(key: Int): Type? = null
-
     /**
      * Get an associated type of this type.
      */

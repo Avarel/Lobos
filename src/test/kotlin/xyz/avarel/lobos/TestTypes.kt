@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test
 
 class TestTypes {
     @Test
-    fun `common super type test`() {
+    fun `partial templating`() {
 
     }
 }

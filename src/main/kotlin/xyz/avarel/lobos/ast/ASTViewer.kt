@@ -178,4 +178,40 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
             expr.elseBranch.astLabel("else", buf, indent + if (isTail) "    " else "│   ", true)
         }
     }
+
+    override fun visit(expr: IndexAccessExpr) {
+        defaultAst("index access")
+
+        buf.append('\n')
+        expr.target.astLabel("target", buf, indent + if (isTail) "    " else "│   ", false)
+
+        buf.append('\n')
+        label("index: ${expr.index}", true)
+    }
+
+    override fun visit(expr: PropertyAccessExpr) {
+        defaultAst("property access")
+
+        buf.append('\n')
+        expr.target.astLabel("target", buf, indent + if (isTail) "    " else "│   ", false)
+
+        buf.append('\n')
+        label("name: ${expr.name}", true)
+    }
+
+    override fun visit(expr: InvokeMemberExpr) {
+        defaultAst("invoke member function")
+
+        buf.append('\n')
+        expr.target.astLabel("target", buf, indent + if (isTail) "    " else "│   ", false)
+
+        buf.append('\n')
+        label("name: ${expr.name}", expr.arguments.isEmpty())
+
+        buf.append('\n')
+        for (i in 0 until expr.arguments.size) {
+            expr.arguments[i].ast(buf, indent + if (isTail) "    " else "│   ", i == expr.arguments.size - 1)
+            buf.append('\n')
+        }
+    }
 }
