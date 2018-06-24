@@ -14,7 +14,7 @@ object IdentParser: PrefixParser {
     override fun parse(parser: Parser, scope: ScopeContext, stmt: StmtContext, token: Token): Expr {
         val name = token.string
 
-        val effectiveType = scope.getEffectiveType(name)
+        val effectiveType = scope.getAssumption(name)
 
         if (effectiveType != null) {
             if (parser.match(TokenType.ASSIGN)) {
@@ -30,11 +30,11 @@ object IdentParser: PrefixParser {
                     throw SyntaxException("Reference $name is not mutable", token.position)
                 }
 
-                val exprType = inferGeneric(scope.getVariable(name)!!.type, expr.type, token.position)
+                val exprType = enhancedInfer(parser, scope.getVariable(name)!!.type, expr.type, token.position)
 
                 typeCheck(currentInfo.type, exprType, expr.position)
 
-                scope.assumptions[name] = VariableInfo(currentInfo.mutable, expr.type)
+                scope.assumptions[name] = VariableInfo(currentInfo.mutable, exprType)
 
                 return AssignExpr(name, expr, token.position)
             }

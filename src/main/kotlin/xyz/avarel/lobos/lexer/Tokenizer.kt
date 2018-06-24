@@ -22,61 +22,56 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
 
     private fun parseCharTo(list: MutableList<Token>, c: Char) {
         when (c) {
-            '{' -> list.add(makeToken(TokenType.L_BRACE, c))
-            '}' -> list.add(makeToken(TokenType.R_BRACE, c))
-            '(' -> list.add(makeToken(TokenType.L_PAREN, c))
-            ')' -> list.add(makeToken(TokenType.R_PAREN, c))
-            '[' -> list.add(makeToken(TokenType.L_BRACKET, c))
-            ']' -> list.add(makeToken(TokenType.R_BRACKET, c))
+            '{' -> list.add(makeToken(TokenType.L_BRACE))
+            '}' -> list.add(makeToken(TokenType.R_BRACE))
+            '(' -> list.add(makeToken(TokenType.L_PAREN))
+            ')' -> list.add(makeToken(TokenType.R_PAREN))
+            '[' -> list.add(makeToken(TokenType.L_BRACKET))
+            ']' -> list.add(makeToken(TokenType.R_BRACKET))
             '.' -> when {
                 match('.') -> when {
-                    match('=') -> list.add(makeToken(TokenType.RANGE_IN, "..="))
-                    match('<') -> list.add(makeToken(TokenType.RANGE_EX, "..<"))
+                    match('=') -> list.add(makeToken(TokenType.RANGE_IN, 3))
+                    match('<') -> list.add(makeToken(TokenType.RANGE_EX, 3))
                 }
-                else -> list.add(makeToken(TokenType.DOT, "."))
+                else -> list.add(makeToken(TokenType.DOT))
             }
-            ',' -> list.add(makeToken(TokenType.COMMA, c))
-            ':' -> list.add(makeToken(TokenType.COLON, c))
-            ';' -> list.add(makeToken(TokenType.SEMICOLON, c))
-            '\n' -> list.add(makeToken(TokenType.NL, c))
-            '+' -> list.add(makeToken(TokenType.PLUS, c))
+            ',' -> list.add(makeToken(TokenType.COMMA))
+            ':' -> list.add(makeToken(TokenType.COLON))
+            ';' -> list.add(makeToken(TokenType.SEMICOLON))
+            '\n' -> list.add(makeToken(TokenType.NL))
+            '+' -> list.add(makeToken(TokenType.PLUS))
             '-' -> when {
-                match('>') -> list.add(makeToken(TokenType.ARROW, "->"))
-                else -> list.add(makeToken(TokenType.MINUS, c))
+                match('>') -> list.add(makeToken(TokenType.ARROW, 2))
+                else -> list.add(makeToken(TokenType.MINUS))
             }
-            '*' -> list.add(makeToken(TokenType.ASTERISK, c))
-            '/' -> list.add(makeToken(TokenType.F_SLASH, c))
-            '\\' -> list.add(makeToken(TokenType.B_SLASH, c))
-            '!' -> if (match('=')) {
-                list.add(makeToken(TokenType.NEQ, "!="))
-            } else {
-                list.add(makeToken(TokenType.BANG, c))
+            '*' -> list.add(makeToken(TokenType.ASTERISK))
+            '/' -> list.add(makeToken(TokenType.F_SLASH))
+            '\\' -> list.add(makeToken(TokenType.B_SLASH))
+            '!' -> when {
+                match('=') -> list.add(makeToken(TokenType.NEQ, 2))
+                else -> list.add(makeToken(TokenType.BANG))
             }
-            '?' -> list.add(makeToken(TokenType.QUESTION, c))
-            '=' -> if (match('=')) {
-                list.add(makeToken(TokenType.EQ, "=="))
-            } else {
-                list.add(makeToken(TokenType.ASSIGN, c))
+            '?' -> list.add(makeToken(TokenType.QUESTION))
+            '=' -> when {
+                match('=') -> list.add(makeToken(TokenType.EQ, 2))
+                else -> list.add(makeToken(TokenType.ASSIGN))
             }
-            '|' -> if (match('|')) {
-                list.add(makeToken(TokenType.OR, c))
-            } else {
-                list.add(makeToken(TokenType.PIPE, c))
+            '|' -> when {
+                match('|') -> list.add(makeToken(TokenType.OR, 2))
+                match('>') -> list.add(makeToken(TokenType.PIPE_FORWARD, 2))
+                else -> list.add(makeToken(TokenType.PIPE))
             }
-            '&' -> if (match('&')) {
-                list.add(makeToken(TokenType.AND, c))
-            } else {
-                list.add(makeToken(TokenType.AMP, c))
+            '&' -> when {
+                match('&') -> list.add(makeToken(TokenType.AND, 2))
+                else -> list.add(makeToken(TokenType.AMP))
             }
-            '<' -> if (match('=')) {
-                list.add(makeToken(TokenType.LTE, c))
-            } else {
-                list.add(makeToken(TokenType.LT, c))
+            '<' -> when {
+                match('=') -> list.add(makeToken(TokenType.LTE, 2))
+                else -> list.add(makeToken(TokenType.LT))
             }
-            '>' -> if (match('=')) {
-                list.add(makeToken(TokenType.GTE, c))
-            } else {
-                list.add(makeToken(TokenType.GT, c))
+            '>' -> when {
+                match('=') -> list.add(makeToken(TokenType.GTE, 2))
+                else -> list.add(makeToken(TokenType.GT))
             }
             '"' -> parseStringTo(list, '"', true)
             '\'' -> parseStringTo(list, '\'', false)
@@ -89,7 +84,7 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
         }
     }
 
-    private fun makeToken(tokenType: TokenType, char: Char) = makeToken(tokenType, char.toString())
+    private fun makeToken(tokenType: TokenType, offset: Int = 1) = makeToken(tokenType, "", offset)
     private fun makeToken(tokenType: TokenType, string: String, offset: Int = 0) = Token(
             tokenType,
             string,
@@ -112,17 +107,17 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
 
         val str = buf.toString()
         when (str) {
-            "true" -> list.add(makeToken(TokenType.TRUE, "true"))
-            "false" -> list.add(makeToken(TokenType.FALSE, "false"))
-            "let" -> list.add(makeToken(TokenType.LET, "let"))
-            "mut" -> list.add(makeToken(TokenType.MUT, "mut"))
-            "return" -> list.add(makeToken(TokenType.RETURN, "return"))
-            "if" -> list.add(makeToken(TokenType.IF, "if"))
-            "else" -> list.add(makeToken(TokenType.ELSE, "else"))
-            "null" -> list.add(makeToken(TokenType.NULL, "null"))
-            "type" -> list.add(makeToken(TokenType.TYPE, "type"))
-            "def" -> list.add(makeToken(TokenType.DEF, "def"))
-            "extern" -> list.add(makeToken(TokenType.EXTERN, "extern"))
+            "true" -> list.add(makeToken(TokenType.TRUE, 4))
+            "false" -> list.add(makeToken(TokenType.FALSE, 4))
+            "let" -> list.add(makeToken(TokenType.LET, 3))
+            "mut" -> list.add(makeToken(TokenType.MUT, 3))
+            "return" -> list.add(makeToken(TokenType.RETURN, 6))
+            "if" -> list.add(makeToken(TokenType.IF, 2))
+            "else" -> list.add(makeToken(TokenType.ELSE, 4))
+            "null" -> list.add(makeToken(TokenType.NULL, 4))
+            "type" -> list.add(makeToken(TokenType.TYPE, 4))
+            "def" -> list.add(makeToken(TokenType.DEF, 3))
+            "external" -> list.add(makeToken(TokenType.EXTERNAL, 8))
             else -> list.add(makeToken(TokenType.IDENT, str))
         }
     }
@@ -140,12 +135,12 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
                     next()
 
                     list.add(makeToken(TokenType.STRING, buf.toString()))
-                    list.add(makeToken(TokenType.PLUS, '+'))
+                    list.add(makeToken(TokenType.PLUS))
                     buf = StringBuilder()
 
                     var braces = 0
 
-                    list.add(makeToken(TokenType.L_PAREN, '('))
+                    list.add(makeToken(TokenType.L_PAREN))
 
                     while (hasNext()) {
                         val cc = next()
@@ -162,11 +157,11 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
                         } else parseCharTo(list, cc)
                     }
 
-                    list.add(makeToken(TokenType.R_PAREN, ')'))
-                    list.add(makeToken(TokenType.PLUS, '+'))
+                    list.add(makeToken(TokenType.R_PAREN))
+                    list.add(makeToken(TokenType.PLUS))
                 } else if (peek().isLetter()) {
                     list.add(makeToken(TokenType.STRING, buf.toString()))
-                    list.add(makeToken(TokenType.PLUS, '+'))
+                    list.add(makeToken(TokenType.PLUS))
                     buf = StringBuilder()
 
                     buf.append(next())
@@ -175,7 +170,7 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
                         buf.append(next())
                     }
 
-                    list.add(makeToken(TokenType.PLUS, '+'))
+                    list.add(makeToken(TokenType.PLUS))
                 } else {
                     buf.append(next())
                 }
@@ -237,12 +232,16 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
 
         fillBufferNumbers(buf, false)
 
-        if (match('.')) {
-            buf.append('.')
-            fillBufferNumbers(buf, false)
-            list.add(makeToken(TokenType.DECIMAL, buf.toString()))
-        } else {
-            list.add(makeToken(TokenType.INT, buf.toString()))
+        when {
+            peek() == '.' && peek(1).isDigit() -> {
+                next()
+                buf.append('.')
+                fillBufferNumbers(buf, false)
+                list.add(makeToken(TokenType.DECIMAL, buf.toString()))
+            }
+            else -> {
+                list.add(makeToken(TokenType.INT, buf.toString()))
+            }
         }
     }
 
@@ -264,16 +263,27 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
         return c
     }
 
-    private fun peekString(length: Int): String {
-        var array = CharArray(length)
-        reader.mark(length)
-        val amt = reader.read(array)
-        when {
-            amt == -1 -> return ""
-            amt < array.size -> array = array.copyOf(amt)
+    private fun peek(distance: Int): Char {
+        reader.mark(distance + 1)
+        val array = CharArray(distance + 1)
+        val result = when {
+            reader.read(array) < distance + 1 -> (-1).toChar()
+            else -> array[distance]
         }
         reader.reset()
-        return String(array)
+        return result
+    }
+
+    private fun peekString(length: Int): String {
+        val array = CharArray(length)
+        reader.mark(length)
+        val len = reader.read(array)
+        reader.reset()
+        return when {
+            len == -1 -> ""
+            len < length -> String(array.copyOf(len))
+            else -> String(array)
+        }
     }
 
     private fun match(c: Char): Boolean {
@@ -310,7 +320,8 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
 
     private fun nextString(length: Int): String {
         val buf = StringBuilder(length)
-        for (i in 0 until length) {
+        var i = 0
+        while (hasNext() && i++ < length) {
             buf.append(next())
         }
         return buf.toString()

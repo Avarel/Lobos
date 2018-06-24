@@ -13,11 +13,19 @@ object I32Type: AbstractType("i32") {
     val members = hashMapOf<String, Type>().also {
         val gp = GenericParameter("T", UnionType(I32Type, I64Type))
         val gt = GenericType(gp)
-        val opFn = FunctionType(true, listOf(this, gt), gt)
-        it["plus"] = opFn
-        it["minus"] = opFn
-        it["times"] = opFn
-        it["div"] = opFn
+        val biOp = FunctionType(true, listOf(this, gt), gt)
+        it["plus"] = biOp
+        it["minus"] = biOp
+        it["times"] = biOp
+        it["div"] = biOp
+
+        val unOp = FunctionType(true, listOf(this), this)
+        it["unary_plus"] = unOp
+        it["unary_minus"] = unOp
+
+
+        it["to_i32"] = FunctionType(true, listOf(this), this)
+        it["to_i64"] = FunctionType(true, listOf(this), I64Type)
     }
 
     override fun getMember(key: String): Type? = members[key]

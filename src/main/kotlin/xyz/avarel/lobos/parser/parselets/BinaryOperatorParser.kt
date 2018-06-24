@@ -18,6 +18,8 @@ open class BinaryOperatorParser(precedence: Int, val operator: BinaryOperationTy
         val member = left.type.getMember(operator.functionName)
                 ?: throw SyntaxException("${left.type} does not have a ${operator.functionName} operation", token.position)
 
+        // TODO do self invocation check
+
         val returnType = enhancedCheckInvocation(parser, member, listOf(left, right), stmt.expectedType, token.position)
 
         return BinaryOperation(returnType, left, right, operator, token.position)

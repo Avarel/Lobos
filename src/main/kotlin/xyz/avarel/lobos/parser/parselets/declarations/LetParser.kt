@@ -7,9 +7,8 @@ import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.parser.*
 import xyz.avarel.lobos.typesystem.Type
-import xyz.avarel.lobos.typesystem.TypeTemplate
 import xyz.avarel.lobos.typesystem.base.AnyType
-import xyz.avarel.lobos.typesystem.scope.Modifier
+import xyz.avarel.lobos.typesystem.TypeTemplate
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
 import xyz.avarel.lobos.typesystem.scope.VariableInfo
@@ -27,7 +26,7 @@ object LetParser: PrefixParser {
 
         val type: Type? = if (parser.match(TokenType.COLON)) parser.parseType(scope) else null
 
-        if (Modifier.EXTERN in stmt.modifiers) {
+        if (Modifier.EXTERNAL in stmt.modifiers) {
             if (type == null) {
                 throw SyntaxException("Type annotation required for extern definitions", token.position)
             }
@@ -43,7 +42,7 @@ object LetParser: PrefixParser {
             throw SyntaxException("Variable $name has already been declared", ident.position)
         } else {
             if (type != null) {
-                val exprType = inferGeneric(type, expr.type, token.position)
+                val exprType = enhancedInfer(parser, type, expr.type, assign.position)
 
                 if (type.isAssignableFrom(exprType)) {
                     scope.variables[name] = VariableInfo(mutable, type)
@@ -55,12 +54,13 @@ object LetParser: PrefixParser {
                     throw SyntaxException("Expected $type but found $exprType", assign.position)
                 }
             } else {
-                if (expr.type is TypeTemplate) {
-                    throw SyntaxException("Not enough information to infer type parameters of ${expr.type}", token.position)
+                val exprType = expr.type
+                if (exprType is TypeTemplate && exprType.genericParameters.isNotEmpty()) {
+                    throw SyntaxException("Not enough information to infer type parameters of expression", token.position)
                 }
 
-                scope.variables[name] = VariableInfo(mutable, expr.type.universalType)
-                scope.assumptions[name] = VariableInfo(mutable, expr.type)
+                scope.variables[name] = VariableInfo(mutable, exprType.universalType)
+                scope.assumptions[name] = VariableInfo(mutable, exprType)
             }
             return LetExpr(name, expr, token.position)
         }

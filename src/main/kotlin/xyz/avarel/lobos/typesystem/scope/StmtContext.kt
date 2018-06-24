@@ -1,5 +1,6 @@
 package xyz.avarel.lobos.typesystem.scope
 
+import xyz.avarel.lobos.parser.Modifier
 import xyz.avarel.lobos.typesystem.Type
 
 class StmtContext(val modifiers: Array<Modifier> = emptyArray(), val expectedType: Type? = null) {

@@ -6,6 +6,12 @@ import xyz.avarel.lobos.ast.ExprVisitor
 import xyz.avarel.lobos.lexer.Position
 import xyz.avarel.lobos.typesystem.Type
 
-class IfExpr(type: Type, val condition: Expr, val thenBranch: Expr, val elseBranch: Expr?, position: Position): AbstractExpr(type, position) {
+class IfExpr(
+        type: Type,
+        val condition: Expr,
+        val thenBranch: Expr,
+        val elseBranch: Expr?,
+        position: Position
+): AbstractExpr(type, position) {
     override fun <R> accept(visitor: ExprVisitor<R>) = visitor.visit(this)
 }

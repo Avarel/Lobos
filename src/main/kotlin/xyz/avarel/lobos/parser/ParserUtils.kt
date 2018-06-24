@@ -6,6 +6,7 @@ import xyz.avarel.lobos.lexer.Position
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.typesystem.*
 import xyz.avarel.lobos.typesystem.base.InvalidType
+import xyz.avarel.lobos.typesystem.base.NeverType
 import xyz.avarel.lobos.typesystem.base.NullType
 import xyz.avarel.lobos.typesystem.base.UnitType
 import xyz.avarel.lobos.typesystem.complex.ExcludedType
@@ -67,6 +68,7 @@ fun Parser.parseSingleType(scope: ScopeContext): Type {
         match(TokenType.TRUE) -> LiteralTrueType
         match(TokenType.FALSE) -> LiteralFalseType
         match(TokenType.NULL) -> NullType
+        match(TokenType.BANG) -> NeverType
         match(TokenType.IDENT) -> {
             val ident = last
             val name = ident.string
@@ -241,7 +243,7 @@ fun inferAssumptionExpr(
     if (target !is IdentExpr) return null
 
     val key = target.name
-    val effective = ctx.assumptions[key] ?: scope.getEffectiveType(key)!!
+    val effective = ctx.assumptions[key] ?: scope.getAssumption(key)!!
 
     if (removeUnitOnly && !other.type.isUnitType) {
         return null
@@ -261,22 +263,21 @@ inline fun <K, V> MutableMap<K, V>.mergeAll(other: Map<K, V>, remappingFunction:
     }
 }
 
-fun inferGeneric(target: Type, subject: Type, position: Position): Type {
+fun enhancedInfer(parser: Parser, target: Type, subject: Type, position: Position): Type {
     return if (subject is TypeTemplate) {
         val map = try {
             subject.extract(target)
         } catch (e: IllegalArgumentException) {
-            throw SyntaxException(e.message ?: "Not enough information to infer type parameters of $subject", position)
+            parser.errors += SyntaxException(e.message ?: "Failed to infer generic parameters", position)
+            emptyMap<GenericParameter, Type>()
         }
 
         if (map.size != subject.genericParameters.size || !map.keys.containsAll(subject.genericParameters)) {
             throw SyntaxException("Failed to infer generic parameters", position)
         }
 
-        subject.template(map)
-    } else {
-        subject
-    }
+        return subject.template(map)
+    } else subject
 }
 
 fun enhancedCheckInvocation(parser: Parser, target: Type, arguments: List<Expr>, returnType: Type?, position: Position): Type {
@@ -288,14 +289,23 @@ fun enhancedCheckInvocation(parser: Parser, target: Type, arguments: List<Expr>,
     var argumentTypes = arguments.map(Expr::type)
     if (fnType.genericParameters.isNotEmpty()) {
         val map = enhancedExtract(parser, fnType, arguments, returnType, position)
-        if (map.size != fnType.genericParameters.size && map.keys.containsAll(fnType.genericParameters)) {
+        if (map.size != fnType.genericParameters.size || !map.keys.containsAll(fnType.genericParameters)) {
             throw SyntaxException("Failed to infer generic parameters", position)
         }
         fnType = fnType.template(map)
     }
 
     if (fnType.argumentTypes.size == argumentTypes.size && argumentTypes.filterIsInstance<TypeTemplate>().isNotEmpty()) {
-        argumentTypes = argumentTypes.zip(fnType.argumentTypes).map { (a, b) -> a to a.extract(b) }.map { (a, map) -> a.template(map) }
+        argumentTypes = argumentTypes.zip(fnType.argumentTypes)
+                .mapIndexed { i, (a, b) ->
+                    a to try {
+                        a.extract(b)
+                    } catch (e: IllegalArgumentException) {
+                        throw SyntaxException(e.message ?: "Failed to infer generic parameters", arguments[i].position)
+                    }
+                }.map { (a, map) ->
+                    a.template(map)
+                }
     }
 
     fnType.checkInvocation(argumentTypes, position)

@@ -26,6 +26,8 @@ enum class TokenType {
     AND,
     OR,
 
+    PIPE_FORWARD,
+
     PLUS,
     MINUS,
     ASTERISK,
@@ -53,7 +55,9 @@ enum class TokenType {
 
     NL,
 
-    EXTERN,
+    AS,
+    IS,
+    EXTERNAL,
     MUT,
     RETURN,
     LET,

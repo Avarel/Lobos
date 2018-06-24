@@ -18,7 +18,7 @@ class GenericBodyType(val genericParameter: GenericParameter): AbstractType(gene
         }
     }
 
-    override fun toString() = genericParameter.toString()
+    override fun toString() = genericParameter.name
 
     override fun hashCode(): Int {
         return genericParameter.hashCode()

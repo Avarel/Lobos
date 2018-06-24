@@ -1,5 +1,6 @@
 package xyz.avarel.lobos
 
+import xyz.avarel.lobos.ast.ASTViewer
 import xyz.avarel.lobos.lexer.Tokenizer
 import xyz.avarel.lobos.parser.DefaultGrammar
 import xyz.avarel.lobos.parser.Parser
@@ -55,24 +56,31 @@ let b: () = a;
             └── Expected () but found [i32 ! [1 | 2]] at (_:8:12)
  */
 
-val source = """
+// dank::meme
+// dank.meme    // if arity-0 -> invoke
+                // else if is function -> require next is R_PAREN (
+                // else -> property access
 
-extern let a: i32
-
-if a == 1 || a == 2 {
-    let x: 1 | 2 = a
-    return
+/*
+struct Point {
+    x: i32
+    y: i32
 }
-let x: i32!(1 | 2) = a
 
-"""
-
+ */
 
 fun main(args: Array<String>) {
 
+    val source = """
+        1.unary_plus()
+    """.trimIndent()
 
     val lexer = Tokenizer(reader = source.reader())
     lexer.parse().let {
+//        println()
+//        println("|> TOKENS:")
+//        it.forEach(::println)
+
         println()
         println("|> SOURCE:")
 
@@ -85,7 +93,7 @@ fun main(args: Array<String>) {
         println()
         println("|> ERRORS:")
 
-        val lines =  source.lines()
+        val lines = source.lines()
         parser.errors.forEach {
             val line = lines[it.position.lineNumber.toInt() - 1]
             val msg = buildString {
@@ -104,9 +112,9 @@ fun main(args: Array<String>) {
             println("None :)\n")
         }
 
-//        println()
-//        println("|> AST")
-//        println(buildString { ast.accept(ASTViewer(this, "", true)) })
+        println()
+        println("|> AST")
+        println(buildString { ast.accept(ASTViewer(this, "", true)) })
     }
 }
 

@@ -1,12 +1,9 @@
-package xyz.avarel.lobos.parser.parselets.special
+package xyz.avarel.lobos.parser.parselets.special.logic
 
 import xyz.avarel.lobos.ast.Expr
 import xyz.avarel.lobos.ast.ops.EqualsOperation
 import xyz.avarel.lobos.lexer.Token
-import xyz.avarel.lobos.parser.InfixParser
-import xyz.avarel.lobos.parser.Parser
-import xyz.avarel.lobos.parser.Precedence
-import xyz.avarel.lobos.parser.inferAssumptionExpr
+import xyz.avarel.lobos.parser.*
 import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.base.AnyType
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
@@ -17,6 +14,10 @@ object EqualsBinaryParser: InfixParser {
 
     override fun parse(parser: Parser, scope: ScopeContext, stmt: StmtContext, token: Token, left: Expr): Expr {
         val right = parser.parseExpr(scope, StmtContext(AnyType), precedence)
+
+        if (!left.type.isAssignableFrom(right.type) && !right.type.isAssignableFrom(left.type)) {
+            parser.errors += SyntaxException("${left.type} and ${right.type} are incompatible", token.position)
+        }
 
         inferAssumptionExpr(
                 true,

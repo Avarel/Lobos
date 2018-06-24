@@ -11,7 +11,7 @@ import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.base.UnitType
 import xyz.avarel.lobos.typesystem.complex.FunctionType
 import xyz.avarel.lobos.typesystem.generics.GenericParameter
-import xyz.avarel.lobos.typesystem.scope.Modifier
+import xyz.avarel.lobos.parser.Modifier
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
 import xyz.avarel.lobos.typesystem.scope.VariableInfo
@@ -59,7 +59,7 @@ object FunctionParser: PrefixParser {
             UnitType
         }
 
-        if (Modifier.EXTERN in stmt.modifiers) {
+        if (Modifier.EXTERNAL in stmt.modifiers) {
             val type = FunctionType(false, parameters.values.toList(), returnType)
 
             type.genericParameters = genericParameters
@@ -69,6 +69,10 @@ object FunctionParser: PrefixParser {
             return DummyExpr
         }
 
+        val type = FunctionType(false, parameters.values.toList(), returnType)
+        type.genericParameters = genericParameters
+
+        bodyScope.variables[name] = VariableInfo(false, type)
         bodyScope.expectedReturnType = returnType
 
         val body = parser.parseStatements(bodyScope, TokenType.L_BRACE to TokenType.R_BRACE)
@@ -76,10 +80,6 @@ object FunctionParser: PrefixParser {
         if (!bodyScope.terminates) {
             parser.continuableTypeCheck(returnType, body.type, (body as? MultiExpr)?.list?.last()?.position ?: body.position)
         }
-
-        val type = FunctionType(false, parameters.values.toList(), returnType)
-
-        type.genericParameters = genericParameters
 
         scope.variables[name] = VariableInfo(false, type)
         return NamedFunctionExpr(name, parameters, returnType, body, token.position)

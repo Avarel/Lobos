@@ -26,6 +26,7 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
     fun eat() = tokens[index++]
 
     fun eat(type: TokenType): Token {
+        if (eof) throw SyntaxException("Expected $type but reached end of file", last.position)
         val token = peek()
         if (token.type != type) {
             throw SyntaxException("Expected $type but found ${token.type}", token.position)
@@ -110,7 +111,11 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
     fun parseStatements(scope: ScopeContext, delimiterPair: Pair<TokenType, TokenType>? = null): Expr {
         if (eof) throw SyntaxException("Expected expression but reached end of file", last.position)
 
+        matchCompleteAny(TokenType.SEMICOLON, TokenType.NL)
+
         delimiterPair?.first?.let(this::eat)
+
+        matchCompleteAny(TokenType.SEMICOLON, TokenType.NL)
 
         val list = mutableListOf<Expr>()
 
