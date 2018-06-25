@@ -70,9 +70,8 @@ struct Point {
  */
 
 fun main(args: Array<String>) {
-
     val source = """
-        1.unary_plus()
+        1 + 2
     """.trimIndent()
 
     val lexer = Tokenizer(reader = source.reader())

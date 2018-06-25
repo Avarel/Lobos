@@ -93,17 +93,6 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
             expr.list.last().ast(buf, indent + if (isTail) "    " else "│   ", true)
         }
     }
-
-    override fun visit(expr: AccessIndexExpr) {
-        defaultAst("access index")
-
-        buf.append('\n')
-        expr.target.astLabel("target", buf, indent + if (isTail) "    " else "│   ", false)
-
-        buf.append('\n')
-        label("index: ${expr.index}", true)
-    }
-
     override fun visit(expr: InvokeExpr) {
         defaultAst("invoke")
 

@@ -18,6 +18,8 @@ class ExcludedType(
         } else targetType
     }
 
+    override val implNamespace: String get() = targetType.implNamespace
+
     override val parentType: Type get() = targetType
 
     override fun getMember(key: String) = universalType.getMember(key)

@@ -8,28 +8,28 @@ import xyz.avarel.lobos.typesystem.complex.UnionType
 import xyz.avarel.lobos.typesystem.generics.GenericParameter
 import xyz.avarel.lobos.typesystem.generics.GenericType
 import xyz.avarel.lobos.typesystem.literals.LiteralIntType
+import xyz.avarel.lobos.typesystem.scope.VariableInfo
 
-object I32Type: AbstractType("i32") {
-    val members = hashMapOf<String, Type>().also {
+object I32Impl: Namespace("i32") {
+    init {
         val gp = GenericParameter("T", UnionType(I32Type, I64Type))
         val gt = GenericType(gp)
-        val biOp = FunctionType(true, listOf(this, gt), gt)
-        it["plus"] = biOp
-        it["minus"] = biOp
-        it["times"] = biOp
-        it["div"] = biOp
+        val biOp = VariableInfo(false, FunctionType(true, listOf(I32Type, gt), gt))
+        scope.variables["plus"] = biOp
+        scope.variables["minus"] = biOp
+        scope.variables["times"] = biOp
+        scope.variables["div"] = biOp
 
-        val unOp = FunctionType(true, listOf(this), this)
-        it["unary_plus"] = unOp
-        it["unary_minus"] = unOp
+        val unOp = VariableInfo(false, FunctionType(true, listOf(I32Type), I32Type))
+        scope.variables["unary_plus"] = unOp
+        scope.variables["unary_minus"] = unOp
 
-
-        it["to_i32"] = FunctionType(true, listOf(this), this)
-        it["to_i64"] = FunctionType(true, listOf(this), I64Type)
+        scope.variables["to_i32"] = VariableInfo(false, FunctionType(true, listOf(I32Type), I32Type))
+        scope.variables["to_i64"] = VariableInfo(false, FunctionType(true, listOf(I32Type), I64Type))
     }
+}
 
-    override fun getMember(key: String): Type? = members[key]
-
+object I32Type: AbstractType("i32") {
     override fun commonAssignableToType(other: Type): Type {
         return when (other) {
             is LiteralIntType -> this

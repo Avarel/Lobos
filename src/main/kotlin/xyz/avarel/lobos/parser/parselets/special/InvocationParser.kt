@@ -26,7 +26,7 @@ object InvocationParser: InfixParser {
             parser.eat(TokenType.R_PAREN)
         }
 
-        val returnType = enhancedCheckInvocation(parser, fnType, arguments, stmt.expectedType, token.position)
+        val returnType = enhancedCheckInvocation(parser, false, fnType, arguments, stmt.expectedType, token.position)
 
         if (returnType == NeverType) {
             scope.terminates = true

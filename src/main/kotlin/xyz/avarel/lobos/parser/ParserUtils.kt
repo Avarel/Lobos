@@ -280,7 +280,7 @@ fun enhancedInfer(parser: Parser, target: Type, subject: Type, position: Positio
     } else subject
 }
 
-fun enhancedCheckInvocation(parser: Parser, target: Type, arguments: List<Expr>, returnType: Type?, position: Position): Type {
+fun enhancedCheckInvocation(parser: Parser, selfInvocation: Boolean, target: Type, arguments: List<Expr>, returnType: Type?, position: Position): Type {
     if (target !is FunctionType) {
         throw SyntaxException("$target is not invokable", position)
     }
@@ -306,6 +306,10 @@ fun enhancedCheckInvocation(parser: Parser, target: Type, arguments: List<Expr>,
                 }.map { (a, map) ->
                     a.template(map)
                 }
+    }
+
+    if (selfInvocation && (!fnType.selfArgument || !fnType.argumentTypes[0].isAssignableFrom(argumentTypes[0]))) {
+        parser.errors += SyntaxException("$target can not be invoked in self position", position)
     }
 
     fnType.checkInvocation(argumentTypes, position)

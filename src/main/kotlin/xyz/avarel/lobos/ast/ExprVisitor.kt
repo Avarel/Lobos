@@ -11,8 +11,11 @@ import xyz.avarel.lobos.ast.variables.IdentExpr
 import xyz.avarel.lobos.ast.variables.LetExpr
 
 interface ExprVisitor<R> {
+    fun visit(expr: I32Expr): R
+    fun visit(expr: I64Expr): R
+    fun visit(expr: F64Expr): R
+
     fun visit(expr: InvalidExpr): R
-    fun visit(expr: IntExpr): R
     fun visit(expr: StringExpr): R
     fun visit(expr: BooleanExpr): R
     fun visit(expr: UnitExpr): R

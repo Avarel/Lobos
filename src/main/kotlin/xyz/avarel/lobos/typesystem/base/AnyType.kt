@@ -6,6 +6,7 @@ import xyz.avarel.lobos.typesystem.Type
  * Represents the top of the inheritable type hierarchy.
  */
 object AnyType: Type {
+    override val implNamespace: String get() = "any"
     override val parentType: Type = this
     override fun isAssignableFrom(other: Type) = other !== NullType && other !== InvalidType
     override fun getMember(key: String): Type? = null

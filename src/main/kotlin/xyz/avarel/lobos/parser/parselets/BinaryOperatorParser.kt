@@ -8,6 +8,7 @@ import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.SyntaxException
 import xyz.avarel.lobos.parser.enhancedCheckInvocation
 import xyz.avarel.lobos.typesystem.base.AnyType
+import xyz.avarel.lobos.typesystem.base.Namespace
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
 
@@ -15,12 +16,15 @@ open class BinaryOperatorParser(precedence: Int, val operator: BinaryOperationTy
     override fun parse(parser: Parser, scope: ScopeContext, stmt: StmtContext, token: Token, left: Expr): Expr {
         val right = parser.parseExpr(scope, StmtContext(AnyType), precedence - if (leftAssoc) 0 else 1)
 
-        val member = left.type.getMember(operator.functionName)
+        val implName = left.type.implNamespace!!
+
+        val implNamespace = scope.getAssumption(implName)?.type as? Namespace
+                ?: throw SyntaxException("There is no impl for ${left.type} in this scope", token.position)
+
+        val member = implNamespace.getMember(operator.functionName)
                 ?: throw SyntaxException("${left.type} does not have a ${operator.functionName} operation", token.position)
 
-        // TODO do self invocation check
-
-        val returnType = enhancedCheckInvocation(parser, member, listOf(left, right), stmt.expectedType, token.position)
+        val returnType = enhancedCheckInvocation(parser, true, member, listOf(left, right), stmt.expectedType, token.position)
 
         return BinaryOperation(returnType, left, right, operator, token.position)
     }

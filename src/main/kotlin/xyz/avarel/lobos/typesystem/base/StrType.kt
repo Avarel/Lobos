@@ -3,15 +3,12 @@ package xyz.avarel.lobos.typesystem.base
 import xyz.avarel.lobos.typesystem.AbstractType
 import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.complex.ExcludedType
-import xyz.avarel.lobos.typesystem.complex.FunctionType
 import xyz.avarel.lobos.typesystem.literals.LiteralStrType
 
 object StrType: AbstractType("str") {
-    val members = hashMapOf<String, Type>().also {
-        it["plus"] = FunctionType(true, listOf(this, AnyType), this)
-    }
-
-    override fun getMember(key: String) = members[key]
+//    val members = hashMapOf<String, Type>().also {
+//        it["plus"] = FunctionType(true, listOf(this, AnyType), this)
+//    }
 
     override fun commonAssignableToType(other: Type): Type {
         return when (other) {
