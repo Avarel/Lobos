@@ -2,7 +2,7 @@ package xyz.avarel.lobos.parser
 
 import xyz.avarel.lobos.ast.Expr
 import xyz.avarel.lobos.ast.variables.IdentExpr
-import xyz.avarel.lobos.lexer.Position
+import xyz.avarel.lobos.lexer.Section
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.typesystem.*
 import xyz.avarel.lobos.typesystem.base.InvalidType
@@ -21,7 +21,6 @@ import xyz.avarel.lobos.typesystem.literals.LiteralStrType
 import xyz.avarel.lobos.typesystem.literals.LiteralTrueType
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
-import xyz.avarel.lobos.typesystem.scope.VariableInfo
 
 fun Parser.parseBlock(scope: ScopeContext): Expr {
     return parseStatements(scope, TokenType.L_BRACE to TokenType.R_BRACE)
@@ -149,6 +148,10 @@ private inline fun tryOrInvalid(block: () -> Type): Type {
     return try { block() } catch (e: SyntaxException) { InvalidType }
 }
 
+fun ScopeContext.allVariables(): Map<String, Type> {
+    return parent?.allVariables()?.let { it + this.variables } ?: this.variables
+}
+
 fun Parser.parseGenericArgumentsScope(scope: ScopeContext): Pair<List<GenericParameter>, ScopeContext>? {
     if (!match(TokenType.LT)) {
         return null
@@ -179,7 +182,7 @@ fun Parser.parseGenericArgumentsScope(scope: ScopeContext): Pair<List<GenericPar
     return genericParameters to typeScope
 }
 
-fun Parser.continuableTypeCheck(expectedType: Type, foundType: Type, position: Position) {
+fun Parser.continuableTypeCheck(expectedType: Type, foundType: Type, position: Section) {
     try {
         typeCheck(expectedType, foundType, position)
     } catch (e: SyntaxException) {
@@ -190,7 +193,7 @@ fun Parser.continuableTypeCheck(expectedType: Type, foundType: Type, position: P
 /**
  * Throws an error if [foundType] can not be assigned to [expectedType].
  */
-fun typeCheck(expectedType: Type, foundType: Type, position: Position) {
+fun typeCheck(expectedType: Type, foundType: Type, position: Section) {
     if (!expectedType.isAssignableFrom(foundType)) {
         throw SyntaxException("Expected $expectedType but found $foundType", position)
     }
@@ -201,7 +204,7 @@ fun typeCheck(expectedType: Type, foundType: Type, position: Position) {
  * This requires that [this] is a function type, and that [argumentTypes]
  * must conform to all of the functions argument types.
  */
-fun Type.checkInvocation(argumentTypes: List<Type>, position: Position) {
+fun Type.checkInvocation(argumentTypes: List<Type>, position: Section) {
     when {
         this is UnionType -> try {
             left.checkInvocation(argumentTypes, position)
@@ -226,7 +229,7 @@ fun FunctionType.canBeInvokedBy(argumentTypes: List<Type>): Boolean {
     return this.argumentTypes.zip(argumentTypes).all { (a, b) -> a.isAssignableFrom(b) }
 }
 
-inline fun requireSyntax(value: Boolean, position: Position, lazy: () -> String) {
+inline fun requireSyntax(value: Boolean, position: Section, lazy: () -> String) {
     if (!value) {
         throw SyntaxException(lazy(), position)
     }
@@ -239,18 +242,19 @@ fun inferAssumptionExpr(
         target: Expr,
         other: Expr,
         function: Pair<(Type, Type) -> Type, (Type, Type) -> Type> // forward and inverse
-): Triple<String, VariableInfo, VariableInfo>? {
+): Triple<String, Type, Type>? {
     if (target !is IdentExpr) return null
 
     val key = target.name
-    val effective = ctx.assumptions[key] ?: scope.getAssumption(key)!!
+    val effectiveType = ctx.assumptions[key] ?: scope.getAssumption(key)!!
+    val otherType = other.type
 
-    if (removeUnitOnly && !other.type.isUnitType) {
+    if (removeUnitOnly && !otherType.isUnitType) {
         return null
     }
 
-    val assumption = effective.copy(type = function.first(effective.type, other.type))
-    val inverse = effective.copy(type = function.second(effective.type, other.type))
+    val assumption = function.first(effectiveType, otherType)
+    val inverse = function.second(effectiveType, otherType)
 
     return Triple(key, assumption, inverse)
 }
@@ -263,8 +267,8 @@ inline fun <K, V> MutableMap<K, V>.mergeAll(other: Map<K, V>, remappingFunction:
     }
 }
 
-fun enhancedInfer(parser: Parser, target: Type, subject: Type, position: Position): Type {
-    return if (subject is TypeTemplate) {
+fun enhancedInfer(parser: Parser, target: Type, subject: Type, position: Section): Type {
+    return if (subject is TypeTemplate && subject.genericParameters.isNotEmpty()) {
         val map = try {
             subject.extract(target)
         } catch (e: IllegalArgumentException) {
@@ -280,7 +284,7 @@ fun enhancedInfer(parser: Parser, target: Type, subject: Type, position: Positio
     } else subject
 }
 
-fun enhancedCheckInvocation(parser: Parser, selfInvocation: Boolean, target: Type, arguments: List<Expr>, returnType: Type?, position: Position): Type {
+fun enhancedCheckInvocation(parser: Parser, selfInvocation: Boolean, target: Type, arguments: List<Expr>, returnType: Type?, position: Section): Type {
     if (target !is FunctionType) {
         throw SyntaxException("$target is not invokable", position)
     }
@@ -316,7 +320,7 @@ fun enhancedCheckInvocation(parser: Parser, selfInvocation: Boolean, target: Typ
     return fnType.returnType
 }
 
-fun enhancedExtract(parser: Parser, target: FunctionType, arguments: List<Expr>, returnType: Type?, position: Position): Map<GenericParameter, Type> {
+fun enhancedExtract(parser: Parser, target: FunctionType, arguments: List<Expr>, returnType: Type?, position: Section): Map<GenericParameter, Type> {
     if (arguments.size < target.argumentTypes.size) {
         parser.errors += SyntaxException("Can not infer, insufficient arguments", position)
         return emptyMap()

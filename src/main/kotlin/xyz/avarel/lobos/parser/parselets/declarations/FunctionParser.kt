@@ -11,10 +11,8 @@ import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.base.UnitType
 import xyz.avarel.lobos.typesystem.complex.FunctionType
 import xyz.avarel.lobos.typesystem.generics.GenericParameter
-import xyz.avarel.lobos.parser.Modifier
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
-import xyz.avarel.lobos.typesystem.scope.VariableInfo
 import xyz.avarel.lobos.typesystem.transformToBodyType
 
 object FunctionParser: PrefixParser {
@@ -28,13 +26,13 @@ object FunctionParser: PrefixParser {
 
         val (genericParameters, argumentScope) = parser.parseGenericArgumentsScope(scope) ?: emptyList<GenericParameter>() to scope
 
-        val bodyScope = argumentScope.subContext()
+        val bodyScope = ScopeContext(argumentScope, argumentScope.allVariables().toMutableMap())
         val parameters = mutableMapOf<String, Type>()
 
         parser.eat(TokenType.L_PAREN)
         if (!parser.match(TokenType.R_PAREN)) {
             do {
-                val mutable = parser.match(TokenType.MUT)
+                val isMutable = parser.match(TokenType.MUT)
 
                 val paramIdent = parser.eat(TokenType.IDENT)
                 val paramName = paramIdent.string
@@ -45,7 +43,7 @@ object FunctionParser: PrefixParser {
                 if (paramName in bodyScope.variables) {
                     parser.errors += SyntaxException("Parameter $paramName has already been declared", paramIdent.position)
                 } else {
-                    bodyScope.variables[paramName] = VariableInfo(mutable, type.transformToBodyType())
+                    bodyScope.putVariable(paramName, type.transformToBodyType(), isMutable)
                     parameters[paramName] = type
                 }
             } while (parser.match(TokenType.COMMA))
@@ -64,7 +62,7 @@ object FunctionParser: PrefixParser {
 
             type.genericParameters = genericParameters
 
-            scope.variables[name] = VariableInfo(false, type)
+            scope.variables[name] = type
 
             return DummyExpr
         }
@@ -72,7 +70,7 @@ object FunctionParser: PrefixParser {
         val type = FunctionType(false, parameters.values.toList(), returnType)
         type.genericParameters = genericParameters
 
-        bodyScope.variables[name] = VariableInfo(false, type)
+        bodyScope.variables[name] = type
         bodyScope.expectedReturnType = returnType
 
         val body = parser.parseStatements(bodyScope, TokenType.L_BRACE to TokenType.R_BRACE)
@@ -81,7 +79,7 @@ object FunctionParser: PrefixParser {
             parser.continuableTypeCheck(returnType, body.type, (body as? MultiExpr)?.list?.last()?.position ?: body.position)
         }
 
-        scope.variables[name] = VariableInfo(false, type)
+        scope.variables[name] = type
         return NamedFunctionExpr(name, parameters, returnType, body, token.position)
     }
 }

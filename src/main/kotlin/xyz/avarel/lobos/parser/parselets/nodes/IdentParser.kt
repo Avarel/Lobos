@@ -8,7 +8,6 @@ import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.parser.*
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
-import xyz.avarel.lobos.typesystem.scope.VariableInfo
 
 object IdentParser: PrefixParser {
     override fun parse(parser: Parser, scope: ScopeContext, stmt: StmtContext, token: Token): Expr {
@@ -24,22 +23,22 @@ object IdentParser: PrefixParser {
 
                 val expr = parser.parseExpr(scope, stmt)
 
-                val currentInfo = scope.getVariable(name)!!
+                val (declaredType, isMutable) = scope.getDeclaration(name)!!
 
-                if (!currentInfo.mutable) {
-                    throw SyntaxException("Reference $name is not mutable", token.position)
+                if (!isMutable) {
+                    throw SyntaxException("Reference $name is not mutable", token.position.span(expr.position))
                 }
 
-                val exprType = enhancedInfer(parser, scope.getVariable(name)!!.type, expr.type, token.position)
+                val exprType = enhancedInfer(parser, scope.getVariable(name)!!, expr.type, token.position)
 
-                typeCheck(currentInfo.type, exprType, expr.position)
+                typeCheck(declaredType, exprType, expr.position)
 
-                scope.assumptions[name] = VariableInfo(currentInfo.mutable, exprType)
+                scope.assumptions[name] = exprType
 
                 return AssignExpr(name, expr, token.position)
             }
 
-            return IdentExpr(name, stmt.assumptions[name]?.type ?: effectiveType.type, token.position)
+            return IdentExpr(name, stmt.assumptions[name] ?: effectiveType, token.position)
         } else {
             throw SyntaxException("Unresolved reference $name", token.position)
         }

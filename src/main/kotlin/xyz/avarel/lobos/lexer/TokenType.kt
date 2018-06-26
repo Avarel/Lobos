@@ -58,6 +58,7 @@ enum class TokenType {
     AS,
     IS,
     EXTERNAL,
+    MOD,
     MUT,
     RETURN,
     LET,

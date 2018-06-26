@@ -43,6 +43,6 @@ object EqualsBinaryParser: InfixParser {
             stmt.inverseAssumptions[name] = b
         }
 
-        return EqualsOperation(left, right, token.position)
+        return EqualsOperation(left, right, left.position.span(right.position))
     }
 }

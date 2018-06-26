@@ -1,9 +1,9 @@
 package xyz.avarel.lobos.ast
 
-import xyz.avarel.lobos.lexer.Position
+import xyz.avarel.lobos.lexer.Section
 import xyz.avarel.lobos.typesystem.Type
 
 abstract class AbstractExpr(
         override val type: Type,
-        override val position: Position
+        override val position: Section
 ): Expr

@@ -20,6 +20,6 @@ object NotUnaryParser: PrefixParser {
         stmt.assumptions = stmt.inverseAssumptions
         stmt.inverseAssumptions = tmp
 
-        return LogicalNotOperation(expr, token.position)
+        return LogicalNotOperation(expr, token.position.span(expr.position))
     }
 }

@@ -10,7 +10,6 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
 
     private var lineNumber: Long = 1
     private var lineIndex: Long = 0
-    private val position get() = Position(fileName, lineNumber, lineIndex)
 
     fun parse() = mutableListOf<Token>().also(::parseTo)
 
@@ -88,7 +87,7 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
     private fun makeToken(tokenType: TokenType, string: String, offset: Int = 0) = Token(
             tokenType,
             string,
-            position.let { it.copy(lineIndex = it.lineIndex - string.length - offset) }
+            Section(fileName, lineNumber, lineIndex - string.length - offset, string.length + offset)
     )
 
     private fun parseIdentTo(list: MutableList<Token>, c: Char) {
@@ -112,6 +111,7 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
             "let" -> list.add(makeToken(TokenType.LET, 3))
             "mut" -> list.add(makeToken(TokenType.MUT, 3))
             "return" -> list.add(makeToken(TokenType.RETURN, 6))
+            "mod" -> list.add(makeToken(TokenType.MOD, 3))
             "if" -> list.add(makeToken(TokenType.IF, 2))
             "else" -> list.add(makeToken(TokenType.ELSE, 4))
             "null" -> list.add(makeToken(TokenType.NULL, 4))

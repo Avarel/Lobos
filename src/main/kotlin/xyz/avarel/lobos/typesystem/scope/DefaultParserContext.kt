@@ -11,7 +11,5 @@ object DefaultParserContext: ScopeContext() {
         this.types["null"] = NullType
         this.types["any"] = AnyType
         this.types["bool"] = BoolType
-
-        this.variables["i32"] = VariableInfo(false, I32Impl)
     }
 }

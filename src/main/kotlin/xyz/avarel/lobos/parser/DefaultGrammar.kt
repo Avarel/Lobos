@@ -5,12 +5,11 @@ import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.parser.parselets.BinaryOperatorParser
 import xyz.avarel.lobos.parser.parselets.BooleanParser
 import xyz.avarel.lobos.parser.parselets.IfParser
-import xyz.avarel.lobos.parser.parselets.declarations.ExternalParser
-import xyz.avarel.lobos.parser.parselets.declarations.FunctionParser
-import xyz.avarel.lobos.parser.parselets.declarations.LetParser
-import xyz.avarel.lobos.parser.parselets.declarations.TypeAliasParser
+import xyz.avarel.lobos.parser.parselets.declarations.*
 import xyz.avarel.lobos.parser.parselets.nodes.*
-import xyz.avarel.lobos.parser.parselets.special.*
+import xyz.avarel.lobos.parser.parselets.special.DotParser
+import xyz.avarel.lobos.parser.parselets.special.InvocationParser
+import xyz.avarel.lobos.parser.parselets.special.ReturnParser
 import xyz.avarel.lobos.parser.parselets.special.logic.*
 
 object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
@@ -18,6 +17,7 @@ object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
         prefix(TokenType.INT, IntParser)
         prefix(TokenType.DECIMAL, DecimalParser)
 
+        prefix(TokenType.MOD, ModuleParser)
         prefix(TokenType.STRING, StringParser)
         prefix(TokenType.IDENT, IdentParser)
         prefix(TokenType.TRUE, BooleanParser(true))

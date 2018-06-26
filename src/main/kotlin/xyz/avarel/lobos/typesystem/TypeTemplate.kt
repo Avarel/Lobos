@@ -19,6 +19,7 @@ interface TypeTemplate: Type {
      * Extract generic parameters.
      */
     fun extract(type: Type): Map<GenericParameter, Type>
+
 }
 
 fun Type.template(types: Map<GenericParameter, Type>): Type {

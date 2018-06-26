@@ -4,27 +4,39 @@ import xyz.avarel.lobos.typesystem.Type
 
 open class ScopeContext(
         val parent: ScopeContext? = null,
-        val variables: MutableMap<String, VariableInfo> = hashMapOf(),
+        val variables: MutableMap<String, Type> = hashMapOf(),
         val types: MutableMap<String, Type> = hashMapOf()
 ) {
-    val assumptions: MutableMap<String, VariableInfo> = hashMapOf()
+    val mutableVariables: MutableSet<String> = hashSetOf()
+
+    val assumptions: MutableMap<String, Type> = hashMapOf()
 
     var expectedReturnType: Type? = null
     var terminates: Boolean = false
 
-    fun containsVariable(key: String): Boolean {
-        return key in variables || parent?.containsVariable(key) ?: false
+    private fun getMutability(key: String): Boolean {
+        return key in mutableVariables || parent?.getMutability(key) ?: false
     }
-    fun getVariable(key: String): VariableInfo? {
+
+    fun getDeclaration(key: String): Pair<Type, Boolean>? {
+        return getVariable(key)?.let { it to getMutability(key) }
+    }
+
+    fun getVariable(key: String): Type? {
         return variables[key] ?: parent?.getVariable(key)
     }
 
-    fun containsAssumption(key: String): Boolean {
-        return key in assumptions || parent?.containsAssumption(key) ?: false
+    fun putVariable(key: String, type: Type, mutable: Boolean) {
+        variables[key] = type
+        if (mutable) mutableVariables += key
     }
 
-    fun getAssumption(key: String): VariableInfo? {
+    fun getAssumption(key: String): Type? {
         return assumptions[key] ?: variables[key] ?: parent?.getAssumption(key)
+    }
+
+    fun putAssumption(key: String, type: Type) {
+        assumptions[key] = type
     }
 
     fun getType(key: String): Type? {

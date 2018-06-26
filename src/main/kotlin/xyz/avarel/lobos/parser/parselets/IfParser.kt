@@ -19,35 +19,35 @@ object IfParser: PrefixParser {
 
         typeCheck(BoolType, condition.type, condition.position)
 
-        val thenContext = scope.subContext()
+        val thenScope = scope.subContext()
 
-        thenContext.assumptions += conditionCtx.assumptions
+        thenScope.assumptions += conditionCtx.assumptions
 
-        val thenBranch = parser.parseBlock(thenContext)
+        val thenBranch = parser.parseBlock(thenScope)
 
         val elseBranch: Expr?
-        val elseContext: ScopeContext?
+        val elseScope: ScopeContext?
 
         if (parser.match(TokenType.ELSE)) {
-            elseContext = scope.subContext()
-            elseContext.assumptions += conditionCtx.inverseAssumptions
-            elseBranch = if (parser.nextIs(TokenType.IF)) parser.parseExpr(elseContext, StmtContext())
-            else parser.parseBlock(elseContext)
+            elseScope = scope.subContext()
+            elseScope.assumptions += conditionCtx.inverseAssumptions
+            elseBranch = if (parser.nextIs(TokenType.IF)) parser.parseExpr(elseScope, StmtContext())
+            else parser.parseBlock(elseScope)
         } else {
             if (stmt.expectedType != null) {
                 parser.errors += SyntaxException("if expression must have else branch", token.position)
             }
             elseBranch = null
-            elseContext = null
+            elseScope = null
         }
 
-        if (thenContext.terminates) {
+        if (thenScope.terminates) {
             scope.assumptions += conditionCtx.inverseAssumptions
         }
 
         val type = when {
             elseBranch != null -> when {
-                elseContext!!.terminates -> if (thenContext.terminates) NeverType else thenBranch.type
+                elseScope!!.terminates -> if (thenScope.terminates) NeverType else thenBranch.type
                 else -> elseBranch.type.commonAssignableToType(thenBranch.type)
             }
             else -> InvalidType

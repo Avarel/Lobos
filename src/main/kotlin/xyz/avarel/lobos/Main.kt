@@ -71,7 +71,10 @@ struct Point {
 
 fun main(args: Array<String>) {
     val source = """
-        1 + 2
+        external let mut x: i32
+        external let a: 3
+
+        a = 1 + 2
     """.trimIndent()
 
     val lexer = Tokenizer(reader = source.reader())
@@ -101,7 +104,16 @@ fun main(args: Array<String>) {
                 kotlin.repeat(it.position.lineIndex.toInt()) {
                     append(' ')
                 }
-                append("└── ")
+                when (it.position.length) {
+                    0, 1 -> append('^')
+                    else -> {
+                        append('└')
+                        kotlin.repeat(it.position.length - 2) {
+                            append('─')
+                        }
+                        append('┘')
+                    }
+                }
                 append(it.message)
             }
             println(msg)

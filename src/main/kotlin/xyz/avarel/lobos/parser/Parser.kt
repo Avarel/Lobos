@@ -5,7 +5,7 @@ import xyz.avarel.lobos.ast.Expr
 import xyz.avarel.lobos.ast.misc.InvalidExpr
 import xyz.avarel.lobos.ast.misc.MultiExpr
 import xyz.avarel.lobos.ast.nodes.UnitExpr
-import xyz.avarel.lobos.lexer.Position
+import xyz.avarel.lobos.lexer.Section
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.lexer.Tokenizer
@@ -97,7 +97,7 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
     }
 
     fun parse(scope: ScopeContext): Expr {
-        if (eof) return UnitExpr(Position(fileName, 0, 0))
+        if (eof) return UnitExpr(Section(fileName, 0, 0, 0))
         val expr = parseStatements(scope)
 
         if (!eof) {
@@ -111,14 +111,10 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
     fun parseStatements(scope: ScopeContext, delimiterPair: Pair<TokenType, TokenType>? = null): Expr {
         if (eof) throw SyntaxException("Expected expression but reached end of file", last.position)
 
-        matchCompleteAny(TokenType.SEMICOLON, TokenType.NL)
-
         delimiterPair?.first?.let(this::eat)
-
         matchCompleteAny(TokenType.SEMICOLON, TokenType.NL)
 
         val list = mutableListOf<Expr>()
-
         matchCompleteAny(TokenType.SEMICOLON, TokenType.NL)
 
         do {
@@ -159,7 +155,7 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
             parser.parse(this, scope, ctx, token)
         } catch (e: SyntaxException) {
             errors += e
-            return InvalidExpr(token.position)
+            return InvalidExpr(e.position)
         }
 
         return when {
@@ -181,7 +177,7 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
                 parser.parse(this, scope, stmt, token, leftExpr)
             } catch (e: SyntaxException) {
                 errors += e
-                return InvalidExpr(token.position)
+                return InvalidExpr(e.position)
             }
         }
         return leftExpr

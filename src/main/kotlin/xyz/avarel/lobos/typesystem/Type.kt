@@ -10,8 +10,6 @@ import xyz.avarel.lobos.typesystem.complex.UnionType
 // GO WITH EXPLICIT TYPES FOR NOW, INFERENCE TOO HARD
 
 interface Type {
-    val implNamespace: String get() = parentType.implNamespace
-
     /**
      * @returns true if this type can only ever have 1 single value. ie. null
      */
@@ -91,15 +89,15 @@ interface Type {
     }
 
     fun filter(other: Type): Type {
-        return when (this) {
-            other -> this
+        return when (other) {
+            this -> this
             else -> NeverType
         }
     }
 
     fun exclude(other: Type): Type {
-        return when (this) {
-            other -> NeverType
+        return when (other) {
+            this -> NeverType
             else -> this
         }
     }

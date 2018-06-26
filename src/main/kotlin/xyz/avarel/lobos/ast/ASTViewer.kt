@@ -54,6 +54,13 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         }
     }
 
+    override fun visit(expr: ModuleExpr) {
+        defaultAst("module ${expr.name}")
+
+        buf.append('\n')
+        expr.body.ast(buf, indent, true)
+    }
+
     override fun visit(expr: NamedFunctionExpr) {
         defaultAst("function ${expr.name}")
 

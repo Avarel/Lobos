@@ -22,6 +22,7 @@ interface ExprVisitor<R> {
 
     fun visit(expr: MultiExpr): R
 
+    fun visit(expr: ModuleExpr): R
     fun visit(expr: NamedFunctionExpr): R
     fun visit(expr: LetExpr): R
     fun visit(expr: AssignExpr): R

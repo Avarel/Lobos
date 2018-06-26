@@ -5,8 +5,6 @@ import xyz.avarel.lobos.typesystem.base.NeverType
 import xyz.avarel.lobos.typesystem.complex.UnionType
 
 abstract class AbstractType(val name: String, override val parentType: Type = AnyType): Type {
-    override val implNamespace get() = name
-
     override fun isAssignableFrom(other: Type): Boolean {
         return when (other) {
             this, NeverType -> true

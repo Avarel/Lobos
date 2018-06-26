@@ -7,11 +7,10 @@ import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.parser.*
 import xyz.avarel.lobos.typesystem.Type
-import xyz.avarel.lobos.typesystem.base.AnyType
 import xyz.avarel.lobos.typesystem.TypeTemplate
+import xyz.avarel.lobos.typesystem.base.AnyType
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
-import xyz.avarel.lobos.typesystem.scope.VariableInfo
 
 object LetParser: PrefixParser {
     override fun parse(parser: Parser, scope: ScopeContext, stmt: StmtContext, token: Token): Expr {
@@ -19,7 +18,7 @@ object LetParser: PrefixParser {
             throw SyntaxException("Not an expression", token.position)
         }
 
-        val mutable = parser.match(TokenType.MUT)
+        val isMutable = parser.match(TokenType.MUT)
 
         val ident = parser.eat(TokenType.IDENT)
         val name = ident.string
@@ -30,7 +29,7 @@ object LetParser: PrefixParser {
             if (type == null) {
                 throw SyntaxException("Type annotation required for extern definitions", token.position)
             }
-            scope.variables[name] = VariableInfo(mutable, type)
+            scope.putVariable(name, type, isMutable)
             return DummyExpr
         }
 
@@ -42,15 +41,14 @@ object LetParser: PrefixParser {
             throw SyntaxException("Variable $name has already been declared", ident.position)
         } else {
             if (type != null) {
-                val exprType = enhancedInfer(parser, type, expr.type, assign.position)
+                scope.putVariable(name, type, isMutable)
 
+                val exprType = enhancedInfer(parser, type, expr.type, assign.position)
                 if (type.isAssignableFrom(exprType)) {
-                    scope.variables[name] = VariableInfo(mutable, type)
                     if (expr.type != type) { // If assumption is necessary
-                        scope.assumptions[name] = VariableInfo(mutable, exprType)
+                        scope.putAssumption(name, exprType)
                     }
                 } else {
-                    scope.variables[name] = VariableInfo(mutable, type)
                     throw SyntaxException("Expected $type but found $exprType", assign.position)
                 }
             } else {
@@ -59,8 +57,8 @@ object LetParser: PrefixParser {
                     throw SyntaxException("Not enough information to infer type parameters of expression", token.position)
                 }
 
-                scope.variables[name] = VariableInfo(mutable, exprType.universalType)
-                scope.assumptions[name] = VariableInfo(mutable, exprType)
+                scope.putVariable(name, exprType.universalType, isMutable)
+                scope.putAssumption(name, exprType)
             }
             return LetExpr(name, expr, token.position)
         }

@@ -8,6 +8,7 @@ import xyz.avarel.lobos.parser.Precedence
 import xyz.avarel.lobos.parser.continuableTypeCheck
 import xyz.avarel.lobos.parser.mergeAll
 import xyz.avarel.lobos.parser.parselets.BinaryParser
+import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.base.BoolType
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
@@ -23,20 +24,16 @@ object AndParser: BinaryParser(Precedence.CONJUNCTION, true) {
 
         parser.continuableTypeCheck(BoolType, right.type, right.position)
 
-        stmt.assumptions.mergeAll(newCtx.assumptions) { v1, v2 ->
-            v1.copy(type = v1.type.commonAssignableFromType(v2.type))
-        }
+        stmt.assumptions.mergeAll(newCtx.assumptions, Type::commonAssignableFromType)
 
         if ((stmt.inverseAssumptions.keys + newCtx.inverseAssumptions.keys).size == 1) {
             // cant trust any assumptions about outside if depends on multiple variables
-            stmt.inverseAssumptions.mergeAll(newCtx.inverseAssumptions) { v1, v2 ->
-                v1.copy(type = v1.type.commonAssignableToType(v2.type))
-            }
+            stmt.inverseAssumptions.mergeAll(newCtx.inverseAssumptions, Type::commonAssignableToType)
         } else {
             stmt.inverseAssumptions.clear()
         }
 
 
-        return LogicalAndOperation(left, right, token.position)
+        return LogicalAndOperation(left, right, left.position.span(right.position))
     }
 }

@@ -1,5 +1,5 @@
 package xyz.avarel.lobos.parser
 
-import xyz.avarel.lobos.lexer.Position
+import xyz.avarel.lobos.lexer.Section
 
-class SyntaxException(message: String, val position: Position): RuntimeException("$message at $position")
+class SyntaxException(message: String, val position: Section) : RuntimeException("$message at $position")

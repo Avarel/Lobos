@@ -13,8 +13,6 @@ class UnionType(val left: Type, val right: Type): ExistentialType, TypeTemplate 
         left.universalType.commonSuperTypeWith(right.universalType)
     }
 
-    override val implNamespace: String get() = universalType.implNamespace
-
     override fun getMember(key: String): Type? {
         val left = left.getMember(key) ?: return null
         val right = right.getMember(key) ?: return null

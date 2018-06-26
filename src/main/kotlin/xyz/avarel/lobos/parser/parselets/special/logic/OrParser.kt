@@ -8,6 +8,7 @@ import xyz.avarel.lobos.parser.Precedence
 import xyz.avarel.lobos.parser.continuableTypeCheck
 import xyz.avarel.lobos.parser.mergeAll
 import xyz.avarel.lobos.parser.parselets.BinaryParser
+import xyz.avarel.lobos.typesystem.Type
 import xyz.avarel.lobos.typesystem.base.BoolType
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
@@ -25,17 +26,13 @@ object OrParser: BinaryParser(Precedence.DISJUNCTION, true) {
 
         if ((stmt.assumptions.keys + newCtx.assumptions.keys).size == 1) {
             // can only assume if it is only one variable
-            stmt.assumptions.mergeAll(newCtx.assumptions) { v1, v2 ->
-                v1.copy(type = v1.type.commonAssignableToType(v2.type))
-            }
+            stmt.assumptions.mergeAll(newCtx.assumptions, Type::commonAssignableToType)
         } else {
             stmt.assumptions.clear()
         }
 
-        stmt.inverseAssumptions.mergeAll(newCtx.inverseAssumptions) { v1, v2 ->
-            v1.copy(type = v1.type.commonAssignableFromType(v2.type))
-        }
+        stmt.inverseAssumptions.mergeAll(newCtx.inverseAssumptions, Type::commonAssignableFromType)
 
-        return LogicalAndOperation(left, right, token.position)
+        return LogicalAndOperation(left, right, left.position.span(right.position))
     }
 }

@@ -3,14 +3,12 @@ package xyz.avarel.lobos.parser.parselets.special
 import xyz.avarel.lobos.ast.Expr
 import xyz.avarel.lobos.ast.IndexAccessExpr
 import xyz.avarel.lobos.ast.PropertyAccessExpr
-import xyz.avarel.lobos.ast.misc.InvokeExpr
-import xyz.avarel.lobos.ast.variables.IdentExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
-import xyz.avarel.lobos.parser.*
-import xyz.avarel.lobos.typesystem.base.Namespace
-import xyz.avarel.lobos.typesystem.base.NeverType
-import xyz.avarel.lobos.typesystem.complex.FunctionType
+import xyz.avarel.lobos.parser.InfixParser
+import xyz.avarel.lobos.parser.Parser
+import xyz.avarel.lobos.parser.Precedence
+import xyz.avarel.lobos.parser.SyntaxException
 import xyz.avarel.lobos.typesystem.complex.TupleType
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
@@ -36,44 +34,7 @@ object DotParser: InfixParser {
                 val name = ident.string
 
                 val member = left.type.getMember(name)
-
-                if (member == null) {
-                    val implName = left.type.implNamespace!!
-
-                    val implNamespace = scope.getAssumption(implName)?.type as? Namespace
-                            ?: throw SyntaxException("There is no impl for ${left.type} in this scope", token.position)
-
-                    val implMember = implNamespace.getMember(name) as? FunctionType
-                            ?: throw SyntaxException("${left.type} does not have member/valid self function named $name", token.position)
-
-                    val arguments = mutableListOf<Expr>().also { it += left }
-
-                    parser.eat(TokenType.L_PAREN)
-                    if (!parser.match(TokenType.R_PAREN)) {
-                        do {
-                            arguments += parser.parseExpr(scope, StmtContext())
-                        } while (parser.match(TokenType.COMMA))
-                        parser.eat(TokenType.R_PAREN)
-                    }
-
-                    val returnType = enhancedCheckInvocation(parser, true, implMember, arguments, stmt.expectedType, token.position)
-
-                    if (returnType == NeverType) {
-                        scope.terminates = true
-                    }
-
-                    return InvokeExpr(
-                            returnType,
-                            PropertyAccessExpr(
-                                    implNamespace,
-                                    IdentExpr(implName, implMember, token.position),
-                                    name,
-                                    token.position
-                            ),
-                            arguments,
-                            token.position
-                    )
-                }
+                        ?: throw SyntaxException("${left.type} does not have member named $name", token.position)
 
                 return PropertyAccessExpr(member, left, name, token.position)
             }
