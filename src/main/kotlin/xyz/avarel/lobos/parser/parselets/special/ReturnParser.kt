@@ -1,32 +1,22 @@
 package xyz.avarel.lobos.parser.parselets.special
 
-import xyz.avarel.lobos.ast.Expr
-import xyz.avarel.lobos.ast.nodes.ReturnExpr
-import xyz.avarel.lobos.ast.nodes.UnitExpr
+import xyz.avarel.lobos.ast.expr.Expr
+import xyz.avarel.lobos.ast.expr.nodes.ReturnExpr
+import xyz.avarel.lobos.ast.expr.nodes.TupleExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
+import xyz.avarel.lobos.parser.Modifier
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.PrefixParser
-import xyz.avarel.lobos.parser.SyntaxException
-import xyz.avarel.lobos.parser.typeCheck
-import xyz.avarel.lobos.typesystem.scope.ScopeContext
-import xyz.avarel.lobos.typesystem.scope.StmtContext
 
 object ReturnParser: PrefixParser {
-    override fun parse(parser: Parser, scope: ScopeContext, stmt: StmtContext, token: Token): Expr {
+    override fun parse(parser: Parser, modifiers: List<Modifier>, token: Token): Expr {
         val expr = if (parser.matchAny(TokenType.NL, TokenType.SEMICOLON)) {
-            UnitExpr(parser.last.position)
+            TupleExpr(token.position)
         } else {
-            parser.parseExpr(scope, stmt)
+            parser.parseExpr()
         }
 
-        if (scope.expectedReturnType == null) {
-            throw SyntaxException("Return is not valid in this context", token.position)
-        }
-
-        typeCheck(scope.expectedReturnType!!, expr.type, expr.position)
-
-        scope.terminates = true
         return ReturnExpr(expr, token.position)
     }
 }

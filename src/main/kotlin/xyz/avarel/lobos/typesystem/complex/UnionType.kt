@@ -4,9 +4,8 @@ import xyz.avarel.lobos.typesystem.*
 import xyz.avarel.lobos.typesystem.base.NeverType
 import xyz.avarel.lobos.typesystem.generics.GenericParameter
 import xyz.avarel.lobos.typesystem.generics.GenericType
-import xyz.avarel.lobos.typesystem.literals.ExistentialType
 
-class UnionType(val left: Type, val right: Type): ExistentialType, TypeTemplate {
+class UnionType(val left: Type, val right: Type) : TypeTemplate {
     override var genericParameters = listOf(left, right).findGenericParameters()
 
     override val universalType: Type by lazy {

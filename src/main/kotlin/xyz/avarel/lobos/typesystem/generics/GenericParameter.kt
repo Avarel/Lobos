@@ -14,18 +14,4 @@ class GenericParameter(
             append(parentType)
         }
     }
-//
-//    override fun equals(other: Any?): Boolean {
-//        return when {
-//            this === other -> true
-//            other !is GenericParameter -> false
-//            else -> name == other.name && parentType == other.parentType
-//        }
-//    }
-//
-//    override fun hashCode(): Int {
-//        var result = name.hashCode()
-//        result = 31 * result + (parentType?.hashCode() ?: 0)
-//        return result
-//    }
 }

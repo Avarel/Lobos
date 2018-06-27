@@ -1,9 +1,8 @@
 package xyz.avarel.lobos.parser
 
-import xyz.avarel.lobos.ast.ops.BinaryOperationType
+import xyz.avarel.lobos.ast.expr.ops.BinaryOperationType
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.parser.parselets.BinaryOperatorParser
-import xyz.avarel.lobos.parser.parselets.BooleanParser
 import xyz.avarel.lobos.parser.parselets.IfParser
 import xyz.avarel.lobos.parser.parselets.declarations.*
 import xyz.avarel.lobos.parser.parselets.nodes.*

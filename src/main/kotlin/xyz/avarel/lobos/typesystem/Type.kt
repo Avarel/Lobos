@@ -4,7 +4,6 @@ import xyz.avarel.lobos.typesystem.base.AnyType
 import xyz.avarel.lobos.typesystem.base.InvalidType
 import xyz.avarel.lobos.typesystem.base.NeverType
 import xyz.avarel.lobos.typesystem.base.NullType
-import xyz.avarel.lobos.typesystem.complex.ExcludedType
 import xyz.avarel.lobos.typesystem.complex.UnionType
 
 // GO WITH EXPLICIT TYPES FOR NOW, INFERENCE TOO HARD
@@ -73,17 +72,15 @@ interface Type {
     }
 
     fun commonAssignableToType(other: Type): Type {
-        return when {
-            this == other -> this
-            other is ExcludedType && this == other.targetType -> this
+        return when (other) {
+            this -> this
             else -> UnionType(this, other)
         }
     }
 
     fun commonAssignableFromType(other: Type): Type {
-        return when {
-            this == other -> this
-            other is ExcludedType && this == other.targetType -> other
+        return when (other) {
+            this -> this
             else -> NeverType
         }
     }

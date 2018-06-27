@@ -1,13 +1,10 @@
 package xyz.avarel.lobos.typesystem
 
-import xyz.avarel.lobos.typesystem.base.BoolType
 import xyz.avarel.lobos.typesystem.base.NeverType
 import xyz.avarel.lobos.typesystem.complex.UnionType
 import xyz.avarel.lobos.typesystem.generics.GenericBodyType
 import xyz.avarel.lobos.typesystem.generics.GenericParameter
 import xyz.avarel.lobos.typesystem.generics.GenericType
-import xyz.avarel.lobos.typesystem.literals.LiteralFalseType
-import xyz.avarel.lobos.typesystem.literals.LiteralTrueType
 
 fun List<Type>.findGenericParameters(): List<GenericParameter> {
     val list = mutableListOf<GenericParameter>()
@@ -34,7 +31,6 @@ fun List<Type>.toType(): Type {
     return when {
         list.isEmpty() -> NeverType
         list.size == 1 -> list[0]
-        list.size == 2 && LiteralTrueType in list && LiteralFalseType in list -> BoolType
         else -> list.reduce { a, b ->
             when {
                 a == b -> a
