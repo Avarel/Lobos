@@ -74,7 +74,11 @@ fun main(args: Array<String>) {
         external let mut x: i32
         external let a: 3
 
-        a = 1 + 2
+        external def what(a: i32, b: i32)
+
+        let b: () = what("hello", "there", "why")
+
+
     """.trimIndent()
 
     val lexer = Tokenizer(reader = source.reader())
@@ -105,13 +109,13 @@ fun main(args: Array<String>) {
                     append(' ')
                 }
                 when (it.position.length) {
-                    0, 1 -> append('^')
+                    0, 1 -> append("^ ")
                     else -> {
                         append('└')
                         kotlin.repeat(it.position.length - 2) {
                             append('─')
                         }
-                        append('┘')
+                        append("┘ ")
                     }
                 }
                 append(it.message)

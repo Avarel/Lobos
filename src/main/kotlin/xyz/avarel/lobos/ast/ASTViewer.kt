@@ -11,21 +11,37 @@ import xyz.avarel.lobos.ast.variables.IdentExpr
 import xyz.avarel.lobos.ast.variables.LetExpr
 
 class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boolean): ExprVisitor<Unit> {
-    fun Expr.ast(buf: StringBuilder, indent: String = "", isTail: Boolean) = accept(ASTViewer(buf, indent, isTail))
+    fun Expr.ast(indent: String = this@ASTViewer.indent + if (isTail) "    " else "│   ", tail: Boolean) = accept(ASTViewer(buf, indent, tail))
 
-    fun Expr.astLabel(label: String, buf: StringBuilder, indent: String, tail: Boolean) {
-        buf.append(indent).append(if (tail) "└── " else "├── ").append(label).append(':')
+    fun Expr.astLabel(label: String, indent: String = this@ASTViewer.indent + if (isTail) "    " else "│   ", tail: Boolean) {
+        listOf(this).astGroup(label, indent, tail)
+    }
 
-        buf.append('\n')
-        ast(buf, indent + if (tail) "    " else "│   ", true)
+    fun List<Expr>.astGroup(label: String, indent: String = this@ASTViewer.indent + if (isTail) "    " else "│   ", tail: Boolean) {
+        label("$label:", tail)
+
+        for (i in indices) {
+            this[i].ast(indent = indent + if (tail) "    " else "│   ", tail = i == lastIndex)
+        }
     }
 
     private fun defaultAst(string: String) {
-        buf.append(indent).append(if (isTail) "└── " else "├── ").append(string)
+        buf.apply {
+            append(indent)
+            append(if (isTail) "└── " else "├── ")
+            append(string)
+            append('\n')
+        }
     }
 
     private fun label(string: String, tail: Boolean) {
-        buf.append(indent).append(if (isTail) "    " else "│   ").append(if (tail) "└── " else "├── ").append(string)
+        buf.apply {
+            append(indent)
+            append(if (isTail) "    " else "│   ")
+            append(if (tail) "└── " else "├── ")
+            append(string)
+            append('\n')
+        }
     }
 
     override fun visit(expr: NullExpr) = defaultAst("null ref")
@@ -46,44 +62,39 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
 
     override fun visit(expr: MultiExpr) {
         for (i in 0 until expr.list.size - 1) {
-            expr.list[i].ast(buf, indent, false)
-            buf.append('\n')
+            expr.list[i].ast(indent, false)
         }
         if (expr.list.isNotEmpty()) {
-            expr.list.last().ast(buf, indent, true)
+            expr.list.last().ast(indent, true)
         }
     }
 
     override fun visit(expr: ModuleExpr) {
         defaultAst("module ${expr.name}")
 
-        buf.append('\n')
-        expr.body.ast(buf, indent, true)
+        expr.body.ast(tail = true)
     }
 
     override fun visit(expr: NamedFunctionExpr) {
         defaultAst("function ${expr.name}")
 
-        buf.append('\n')
         label(expr.parameters.entries.joinToString(prefix = "parameters: (", postfix = ")") { (name, type) -> "$name: $type" }, false)
 
-        buf.append('\n')
         label("return: ${expr.returnType}", false)
 
-        buf.append('\n')
-        expr.body.astLabel("body", buf, indent + if (isTail) "    " else "│   ", true)
+        expr.body.astLabel("body", tail = true)
     }
 
     override fun visit(expr: LetExpr) {
         defaultAst("let ${expr.name}")
-        buf.append('\n')
-        expr.expr.ast(buf, indent + if (isTail) "    " else "│   ", true)
+
+        expr.expr.ast(tail = true)
     }
 
     override fun visit(expr: AssignExpr) {
         defaultAst("assign ${expr.name}")
-        buf.append('\n')
-        expr.expr.ast(buf, indent + if (isTail) "    " else "│   ", true)
+
+        expr.expr.ast(tail = true)
     }
 
     override fun visit(expr: IdentExpr) = defaultAst("variable ${expr.name}")
@@ -91,137 +102,107 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
     override fun visit(expr: TupleExpr) {
         defaultAst("tuple")
 
-        buf.append('\n')
         for (i in 0 until expr.list.size - 1) {
-            expr.list[i].ast(buf, indent + if (isTail) "    " else "│   ", false)
+            expr.list[i].ast(tail = false)
             buf.append('\n')
         }
         if (expr.list.isNotEmpty()) {
-            expr.list.last().ast(buf, indent + if (isTail) "    " else "│   ", true)
+            expr.list.last().ast(tail = true)
         }
     }
     override fun visit(expr: InvokeExpr) {
         defaultAst("invoke")
 
-        buf.append('\n')
-        expr.target.astLabel("target", buf, indent + if (isTail) "    " else "│   ", expr.arguments.isEmpty())
+        expr.target.astLabel("target", tail = expr.arguments.isEmpty())
 
-        buf.append('\n')
-        for (i in 0 until expr.arguments.size) {
-            expr.arguments[i].ast(buf, indent + if (isTail) "    " else "│   ", i == expr.arguments.size - 1)
-            buf.append('\n')
-        }
+        expr.arguments.astGroup("arguments", tail = true)
     }
 
     override fun visit(expr: UnaryOperation) {
         defaultAst("binary ${expr.operator}")
 
-        buf.append('\n')
-        expr.target.ast(buf, indent + if (isTail) "    " else "│   ", true)
+        expr.target.ast(tail = true)
     }
 
     override fun visit(expr: BinaryOperation) {
         defaultAst("binary ${expr.operator}")
 
-        buf.append('\n')
-        expr.left.ast(buf, indent + if (isTail) "    " else "│   ", false)
+        expr.left.ast(tail = false)
 
-        buf.append('\n')
-        expr.right.ast(buf, indent + if (isTail) "    " else "│   ", true)
+        expr.right.ast(tail = true)
     }
 
     override fun visit(expr: LogicalAndOperation) {
         defaultAst("logical and")
 
-        buf.append('\n')
-        expr.left.ast(buf, indent + if (isTail) "    " else "│   ", false)
+        expr.left.ast(tail = false)
 
-        buf.append('\n')
-        expr.right.ast(buf, indent + if (isTail) "    " else "│   ", true)
+        expr.right.ast(tail = true)
     }
 
     override fun visit(expr: LogicalOrOperation) {
         defaultAst("logical or")
 
-        buf.append('\n')
-        expr.left.ast(buf, indent + if (isTail) "    " else "│   ", false)
+        expr.left.ast(tail = false)
 
-        buf.append('\n')
-        expr.right.ast(buf, indent + if (isTail) "    " else "│   ", true)
+        expr.right.ast(tail = true)
     }
 
     override fun visit(expr: LogicalNotOperation) {
         defaultAst("logical not")
 
-        buf.append('\n')
-        expr.target.ast(buf, indent + if (isTail) "    " else "│   ", false)
+        expr.target.ast(tail = false)
     }
 
     override fun visit(expr: EqualsOperation) {
         defaultAst("equals")
 
-        buf.append('\n')
-        expr.left.ast(buf, indent + if (isTail) "    " else "│   ", false)
+        expr.left.ast(tail = false)
 
-        buf.append('\n')
-        expr.right.ast(buf, indent + if (isTail) "    " else "│   ", true)
+        expr.right.ast(tail = true)
     }
 
     override fun visit(expr: ReturnExpr) {
         defaultAst("return")
 
-        buf.append('\n')
-        expr.expr.ast(buf, indent + if (isTail) "    " else "│   ", true)
+        expr.expr.ast(tail = true)
     }
 
     override fun visit(expr: IfExpr) {
         defaultAst("if")
 
-        buf.append('\n')
-        expr.condition.astLabel("condition", buf, indent + if (isTail) "    " else "│   ", false)
+        expr.condition.astLabel("condition", tail = false)
 
-        buf.append('\n')
-        expr.thenBranch.astLabel("then", buf, indent + if (isTail) "    " else "│   ", expr.elseBranch == null)
+        expr.thenBranch.astLabel("then", tail = expr.elseBranch == null)
 
         if (expr.elseBranch != null) {
-            buf.append('\n')
-            expr.elseBranch.astLabel("else", buf, indent + if (isTail) "    " else "│   ", true)
+            expr.elseBranch.astLabel("else", tail = true)
         }
     }
 
     override fun visit(expr: IndexAccessExpr) {
         defaultAst("index access")
 
-        buf.append('\n')
-        expr.target.astLabel("target", buf, indent + if (isTail) "    " else "│   ", false)
+        expr.target.astLabel("target", tail = false)
 
-        buf.append('\n')
         label("index: ${expr.index}", true)
     }
 
     override fun visit(expr: PropertyAccessExpr) {
         defaultAst("property access")
 
-        buf.append('\n')
-        expr.target.astLabel("target", buf, indent + if (isTail) "    " else "│   ", false)
+        expr.target.astLabel("target", tail = false)
 
-        buf.append('\n')
         label("name: ${expr.name}", true)
     }
 
     override fun visit(expr: InvokeMemberExpr) {
         defaultAst("invoke member function")
 
-        buf.append('\n')
-        expr.target.astLabel("target", buf, indent + if (isTail) "    " else "│   ", false)
+        expr.target.astLabel("target", tail = false)
 
-        buf.append('\n')
         label("name: ${expr.name}", expr.arguments.isEmpty())
 
-        buf.append('\n')
-        for (i in 0 until expr.arguments.size) {
-            expr.arguments[i].ast(buf, indent + if (isTail) "    " else "│   ", i == expr.arguments.size - 1)
-            buf.append('\n')
-        }
+        expr.arguments.astGroup("arguments", tail = true)
     }
 }

@@ -19,9 +19,9 @@ object ModuleParser : PrefixParser {
         val name = parser.eat(TokenType.IDENT).string
 
         val scopeContext = scope.subContext()
-        val body = parser.parseBlock(scope)
+        val body = parser.parseBlock(scopeContext)
 
-        scope.putVariable(name, ModuleType(name, scope), false)
+        scope.putVariable(name, ModuleType(name, scopeContext), false)
 
         return ModuleExpr(name, body, token.position)
     }

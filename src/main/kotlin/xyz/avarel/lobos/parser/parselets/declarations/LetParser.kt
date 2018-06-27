@@ -7,7 +7,6 @@ import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.parser.*
 import xyz.avarel.lobos.typesystem.Type
-import xyz.avarel.lobos.typesystem.TypeTemplate
 import xyz.avarel.lobos.typesystem.base.AnyType
 import xyz.avarel.lobos.typesystem.scope.ScopeContext
 import xyz.avarel.lobos.typesystem.scope.StmtContext
@@ -43,7 +42,8 @@ object LetParser: PrefixParser {
             if (type != null) {
                 scope.putVariable(name, type, isMutable)
 
-                val exprType = enhancedInfer(parser, type, expr.type, assign.position)
+                val exprType = checkNotGeneric(expr, expr.position)
+
                 if (type.isAssignableFrom(exprType)) {
                     if (expr.type != type) { // If assumption is necessary
                         scope.putAssumption(name, exprType)
@@ -52,10 +52,7 @@ object LetParser: PrefixParser {
                     throw SyntaxException("Expected $type but found $exprType", assign.position)
                 }
             } else {
-                val exprType = expr.type
-                if (exprType is TypeTemplate && exprType.genericParameters.isNotEmpty()) {
-                    throw SyntaxException("Not enough information to infer type parameters of expression", token.position)
-                }
+                val exprType = checkNotGeneric(expr, expr.position)
 
                 scope.putVariable(name, exprType.universalType, isMutable)
                 scope.putAssumption(name, exprType)

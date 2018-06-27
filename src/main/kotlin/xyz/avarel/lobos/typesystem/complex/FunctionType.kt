@@ -6,7 +6,6 @@ import xyz.avarel.lobos.typesystem.base.NeverType
 import xyz.avarel.lobos.typesystem.generics.GenericParameter
 
 class FunctionType(
-        val selfArgument: Boolean,
         val argumentTypes: List<Type>,
         val returnType: Type
 ): TypeTemplate {
@@ -24,7 +23,7 @@ class FunctionType(
     }
 
     override fun template(types: Map<GenericParameter, Type>): FunctionType {
-        return FunctionType(selfArgument, argumentTypes.map { it.template(types) }, returnType.template(types))
+        return FunctionType(argumentTypes.map { it.template(types) }, returnType.template(types))
     }
 
     override fun extract(type: Type): Map<GenericParameter, Type> {
@@ -43,25 +42,6 @@ class FunctionType(
 
         return map
     }
-
-    // fn equals(a: i32, b: i32) <- union 1
-    // fn equals(a: null, b: null) <- union 2
-    // fn equals(a: i32 | null, b: i32 | null) <- what i want
-    // fn equals(a: never, b: never) <- what happens when trying to access the member of a union
-//
-//    override fun commonSuperTypeWith(other: Type): Type {
-//        return when {
-//            other !is FunctionType || other.argumentTypes.size != argumentTypes.size -> super.commonSuperTypeWith(other)
-//            else -> {
-//                val arguments = argumentTypes.zip(other.argumentTypes).fold(mutableListOf<Type>()) { list, (a, b) ->
-//                    list.add(a.commonSuperTypeWith(b))
-//                    list
-//                }
-//                val returns = returnType.commonSuperTypeWith(other.returnType)
-//                return FunctionType(selfArgument && other.selfArgument, arguments, returns)
-//            }
-//        }
-//    }
 
     override fun toString() = buildString {
         if (genericParameters.isNotEmpty()) {

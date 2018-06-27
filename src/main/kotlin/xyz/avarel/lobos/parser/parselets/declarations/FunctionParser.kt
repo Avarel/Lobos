@@ -26,7 +26,9 @@ object FunctionParser: PrefixParser {
 
         val (genericParameters, argumentScope) = parser.parseGenericArgumentsScope(scope) ?: emptyList<GenericParameter>() to scope
 
-        val bodyScope = ScopeContext(argumentScope, argumentScope.allVariables().toMutableMap())
+        // The function should only see the declarations, any assumption is void
+        val bodyScope = ScopeContext(argumentScope, argumentScope.allVariables().toMutableMap()).subContext()
+
         val parameters = mutableMapOf<String, Type>()
 
         parser.eat(TokenType.L_PAREN)
@@ -58,7 +60,7 @@ object FunctionParser: PrefixParser {
         }
 
         if (Modifier.EXTERNAL in stmt.modifiers) {
-            val type = FunctionType(false, parameters.values.toList(), returnType)
+            val type = FunctionType(parameters.values.toList(), returnType)
 
             type.genericParameters = genericParameters
 
@@ -67,7 +69,7 @@ object FunctionParser: PrefixParser {
             return DummyExpr
         }
 
-        val type = FunctionType(false, parameters.values.toList(), returnType)
+        val type = FunctionType(parameters.values.toList(), returnType)
         type.genericParameters = genericParameters
 
         bodyScope.variables[name] = type
@@ -76,7 +78,13 @@ object FunctionParser: PrefixParser {
         val body = parser.parseStatements(bodyScope, TokenType.L_BRACE to TokenType.R_BRACE)
 
         if (!bodyScope.terminates) {
-            parser.continuableTypeCheck(returnType, body.type, (body as? MultiExpr)?.list?.last()?.position ?: body.position)
+            parser.safe {
+                typeCheck(
+                        returnType,
+                        body.type,
+                        (body as? MultiExpr)?.list?.last()?.position ?: body.position
+                )
+            }
         }
 
         scope.variables[name] = type

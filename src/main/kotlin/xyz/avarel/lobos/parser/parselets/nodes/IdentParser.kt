@@ -29,7 +29,7 @@ object IdentParser: PrefixParser {
                     throw SyntaxException("Reference $name is not mutable", token.position.span(expr.position))
                 }
 
-                val exprType = enhancedInfer(parser, scope.getVariable(name)!!, expr.type, token.position)
+                val exprType = checkNotGeneric(expr, expr.position)
 
                 typeCheck(declaredType, exprType, expr.position)
 

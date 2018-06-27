@@ -32,10 +32,6 @@ class UnionType(val left: Type, val right: Type): ExistentialType, TypeTemplate 
 
         return when {
             other.size < generics.size -> {
-                println("what " + toList())
-                println(generics)
-                println(type)
-                println(other)
                 throw IllegalArgumentException("Insufficient types in union to infer generics")
             }
             generics.isNotEmpty() -> {
