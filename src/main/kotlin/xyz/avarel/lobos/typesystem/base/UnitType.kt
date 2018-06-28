@@ -1,9 +1,9 @@
 package xyz.avarel.lobos.typesystem.base
 
 import xyz.avarel.lobos.typesystem.Type
+import xyz.avarel.lobos.typesystem.complex.TupleType
 
-object UnitType: Type {
-    override fun isAssignableFrom(other: Type) = other === this
-
+object UnitType : TupleType(emptyList()) {
+    override val universalType: Type get() = this
     override fun toString() = "()"
 }

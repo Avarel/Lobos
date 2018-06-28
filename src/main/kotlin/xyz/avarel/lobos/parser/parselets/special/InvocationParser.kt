@@ -6,6 +6,7 @@ import xyz.avarel.lobos.ast.expr.invoke.InvokeExpr
 import xyz.avarel.lobos.ast.expr.invoke.InvokeMemberExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
+import xyz.avarel.lobos.lexer.span
 import xyz.avarel.lobos.parser.InfixParser
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.Precedence
@@ -25,7 +26,7 @@ object InvocationParser: InfixParser {
 
         val rParen = parser.last
 
-        val position = token.position.span(rParen.position)
+        val position = token.span(rParen)
 
         if (left is PropertyAccessExpr) {
             return InvokeMemberExpr(left.target, left.name, arguments, position)

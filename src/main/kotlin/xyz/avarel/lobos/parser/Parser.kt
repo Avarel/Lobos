@@ -148,6 +148,7 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
             errors += SyntaxException("Unexpected $token", token.position)
             return InvalidExpr(token.position)
         }
+
         val expr = try {
             parser.parse(this, modifiers, token)
         } catch (e: SyntaxException) {

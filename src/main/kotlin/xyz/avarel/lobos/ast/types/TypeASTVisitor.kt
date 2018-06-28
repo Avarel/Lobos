@@ -8,12 +8,12 @@ import xyz.avarel.lobos.ast.types.complex.TemplatingTypeAST
 import xyz.avarel.lobos.ast.types.complex.TupleTypeAST
 import xyz.avarel.lobos.ast.types.complex.UnionTypeAST
 
-interface TypeVisitor<R> {
-    fun visit(type: IdentTypeAST): R
-    fun visit(type: NeverTypeAST): R
-    fun visit(type: NullTypeAST): R
-    fun visit(type: FunctionTypeAST): R
-    fun visit(type: TupleTypeAST): R
-    fun visit(type: UnionTypeAST): R
-    fun visit(type: TemplatingTypeAST): R
+interface TypeASTVisitor<R> {
+    fun visit(typeAst: IdentTypeAST): R
+    fun visit(typeAst: NeverTypeAST): R
+    fun visit(typeAst: NullTypeAST): R
+    fun visit(typeAst: FunctionTypeAST): R
+    fun visit(typeAst: TupleTypeAST): R
+    fun visit(typeAst: UnionTypeAST): R
+    fun visit(typeAst: TemplatingTypeAST): R
 }

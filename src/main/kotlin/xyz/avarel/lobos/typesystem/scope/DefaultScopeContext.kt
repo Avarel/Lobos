@@ -2,7 +2,7 @@ package xyz.avarel.lobos.typesystem.scope
 
 import xyz.avarel.lobos.typesystem.base.*
 
-object DefaultParserContext: ScopeContext() {
+object DefaultScopeContext : ScopeContext() {
     init {
         this.types["i32"] = I32Type
         this.types["i64"] = I64Type

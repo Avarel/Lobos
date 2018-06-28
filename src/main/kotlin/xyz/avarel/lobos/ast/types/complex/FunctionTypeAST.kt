@@ -1,14 +1,14 @@
 package xyz.avarel.lobos.ast.types.complex
 
 import xyz.avarel.lobos.ast.types.AbstractTypeAST
-import xyz.avarel.lobos.ast.types.TypeVisitor
+import xyz.avarel.lobos.ast.types.TypeASTVisitor
 import xyz.avarel.lobos.lexer.Section
 
-class FunctionTypeAST(val types: List<AbstractTypeAST>, val returnType: AbstractTypeAST, position: Section) : AbstractTypeAST(buildString {
+class FunctionTypeAST(val arguments: List<AbstractTypeAST>, val returnType: AbstractTypeAST, position: Section) : AbstractTypeAST(buildString {
     append('(')
-    types.joinTo(this)
+    arguments.joinTo(this)
     append(") -> ")
     append(returnType)
 }, position) {
-    override fun <R> accept(visitor: TypeVisitor<R>) = visitor.visit(this)
+    override fun <R> accept(visitor: TypeASTVisitor<R>) = visitor.visit(this)
 }

@@ -4,6 +4,7 @@ import xyz.avarel.lobos.ast.expr.Expr
 import xyz.avarel.lobos.ast.expr.nodes.TupleExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
+import xyz.avarel.lobos.lexer.span
 import xyz.avarel.lobos.parser.Modifier
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.PrefixParser
@@ -11,7 +12,7 @@ import xyz.avarel.lobos.parser.PrefixParser
 object TupleParser: PrefixParser {
     override fun parse(parser: Parser, modifiers: List<Modifier>, token: Token): Expr {
         if (parser.match(TokenType.R_PAREN)) {
-            return TupleExpr(emptyList(), token.position.span(parser.last.position))
+            return TupleExpr(emptyList(), token.span(parser.last))
         }
 
         val expr = parser.parseExpr()
@@ -27,7 +28,7 @@ object TupleParser: PrefixParser {
                 parser.eat(TokenType.R_PAREN)
             }
 
-            return TupleExpr(exprValues, token.position.span(parser.last.position))
+            return TupleExpr(exprValues, token.span(parser.last))
         }
 
         parser.eat(TokenType.R_PAREN)

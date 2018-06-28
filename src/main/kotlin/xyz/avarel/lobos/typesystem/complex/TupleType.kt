@@ -5,7 +5,8 @@ import xyz.avarel.lobos.typesystem.*
 import xyz.avarel.lobos.typesystem.base.NeverType
 import xyz.avarel.lobos.typesystem.generics.GenericParameter
 
-class TupleType(val valueTypes: List<Type>): TypeTemplate {
+open class TupleType(val valueTypes: List<Type>) : TypeTemplate {
+
     override var genericParameters = valueTypes.findGenericParameters()
 
     init {

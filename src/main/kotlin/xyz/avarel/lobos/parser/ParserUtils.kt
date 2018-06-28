@@ -168,7 +168,7 @@ fun typeCheck(expectedType: Type, foundType: Type, position: Section) {
 //    val argumentTypes = arguments.map(Expr::type)
 //
 //    if (targetArgumentTypes.size != argumentTypes.size) {
-//        errors += SyntaxException("Expected ${targetArgumentTypes.size} arguments, but found ${argumentTypes.size}", position)
+//        errors += SyntaxException("Expected ${targetArgumentTypes.size} arguments, but found ${argumentTypes.size} arguments", position)
 //    }
 //
 //    for (i in targetArgumentTypes.indices) {
@@ -245,105 +245,6 @@ inline fun <K, V> MutableMap<K, V>.mergeAll(other: Map<K, V>, remappingFunction:
         } ?: put(k, v)
     }
 }
-
-///**
-// * Infer generic types for the subject type based on the target type.
-// *      target = subject
-// *      (i32, i64) = <T, R>(T, R)
-// *      -> {T: i32, R: i64}
-// *      -> subject is templated as (i32, i64)
-// */
-//fun enhancedInfer(parser: Parser, target: Type, subject: Type, position: Section): Type {
-//    return if (subject is TypeTemplate && subject.genericParameters.isNotEmpty()) {
-//        val map = try {
-//            subject.extract(target)
-//        } catch (e: IllegalArgumentException) {
-//            parser.errors += SyntaxException(e.message ?: "Failed to infer generic parameters", position)
-//            emptyMap<GenericParameter, Type>()
-//        }
-//
-//        if (map.size != subject.genericParameters.size || !map.keys.containsAll(subject.genericParameters)) {
-//            throw SyntaxException("Failed to infer generic parameters", position)
-//        }
-//
-//        return subject.template(map)
-//    } else subject
-//}
-//
-///**
-// * Check invocation of the [target] based on the [arguments].
-// * This also handles generic inference by extracting generic information from the arguments.
-// * @return [target] return type.
-// * @throws SyntaxException if [target] is not a [FunctionType].
-// */
-//fun enhancedCheckInvocation(parser: Parser, target: Type, arguments: List<Expr>, returnType: Type?, position: Section): Type {
-//    if (target !is FunctionType) {
-//        throw SyntaxException("$target is not invokable", position)
-//    }
-//
-//    var fnType = target
-//    var argumentTypes = arguments.map(Expr::type)
-//
-//    if (fnType.genericParameters.isNotEmpty()) {
-//        val map = enhancedExtract(parser, fnType, arguments, returnType, position)
-//        if (map.size != fnType.genericParameters.size || !map.keys.containsAll(fnType.genericParameters)) {
-//            throw SyntaxException("Failed to infer generic parameters", position)
-//        }
-//        fnType = fnType.template(map)
-//
-//        if (fnType.argumentTypes.size == argumentTypes.size && argumentTypes.filterIsInstance<TypeTemplate>().isNotEmpty()) {
-//            argumentTypes = argumentTypes.zip(fnType.argumentTypes)
-//                    .mapIndexed { i, (a, b) ->
-//                        a to try {
-//                            a.extract(b).filterValues { it !is GenericType }
-//                        } catch (e: IllegalArgumentException) {
-//                            throw SyntaxException(e.message ?: "Failed to infer generic parameters", arguments[i].position)
-//                        }
-//                    }.map { (a, map) ->
-//                        a.template(map)
-//                    }
-//        }
-//    }
-//
-//    parser.safe { fnType.checkInvocation(argumentTypes, position) }
-//
-//    return fnType.returnType
-//}
-//
-//
-//fun enhancedExtract(parser: Parser, target: FunctionType, arguments: List<Expr>, returnType: Type?, position: Section): Map<GenericParameter, Type> {
-//    if (arguments.size < target.argumentTypes.size) {
-//        parser.errors += SyntaxException("Can not infer, insufficient arguments", position)
-//        return emptyMap()
-//    }
-//
-//    val extracted = mutableMapOf<GenericParameter, Type>() // generic arguments
-//
-//    // Infer generic arguments from argument types.
-//    target.argumentTypes.zip(arguments) { a, b ->
-//        val map = try {
-//            a.extract(b.type).filterValues { it !is GenericType }
-//        } catch (e: IllegalArgumentException) {
-//            parser.errors += SyntaxException(e.message ?: "Inference failed", b.position)
-//            return@zip
-//        }
-//
-//        extracted.mergeAll(map, Type::commonSuperTypeWith)
-//    }
-//
-//    // Infer return type if it has not been yet inferred.
-//    if (returnType != null) {
-//        if ((target.returnType as? TypeTemplate)?.genericParameters?.let { extracted.keys.containsAll(it) } == false) {
-//            try {
-//                extracted.mergeAll(target.returnType.extract(returnType)) { v1, _ -> v1 }
-//            } catch (e: IllegalArgumentException) {
-//                parser.errors += SyntaxException(e.message ?: "Inference failed", position)
-//            }
-//        }
-//    }
-//
-//    return extracted
-//}
 
 inline fun <R> Parser.safe(block: () -> R): R? {
     return try {

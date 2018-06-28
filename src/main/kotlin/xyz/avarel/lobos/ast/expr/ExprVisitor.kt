@@ -27,8 +27,6 @@ interface ExprVisitor<R> {
     fun visit(expr: StringExpr): R
     fun visit(expr: BooleanExpr): R
 
-    fun visit(expr: MultiExpr): R
-
     fun visit(expr: ModuleExpr): R
     fun visit(expr: NamedFunctionExpr): R
     fun visit(expr: TypeAliasExpr): R
@@ -58,4 +56,6 @@ interface ExprVisitor<R> {
 
     fun visit(expr: ExternalLetExpr): R
     fun visit(expr: ExternalNamedFunctionExpr): R
+
+    fun visit(expr: MultiExpr): R
 }

@@ -8,7 +8,6 @@ open class ScopeContext(
         val types: MutableMap<String, Type> = hashMapOf()
 ) {
     val mutableVariables: MutableSet<String> = hashSetOf()
-
     val assumptions: MutableMap<String, Type> = hashMapOf()
 
     var expectedReturnType: Type? = null

@@ -6,6 +6,7 @@ import xyz.avarel.lobos.ast.expr.external.ExternalLetExpr
 import xyz.avarel.lobos.ast.types.AbstractTypeAST
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
+import xyz.avarel.lobos.lexer.span
 import xyz.avarel.lobos.parser.*
 
 object LetParser: PrefixParser {
@@ -19,12 +20,12 @@ object LetParser: PrefixParser {
 
         if (Modifier.EXTERNAL in modifiers) {
             if (type == null) throw SyntaxException("Type annotation required for extern definitions", token.position)
-            return ExternalLetExpr(isMutable, name, type, token.position.span(type.position))
+            return ExternalLetExpr(isMutable, name, type, token.span(type))
         }
 
         parser.eat(TokenType.ASSIGN)
 
         val expr = parser.parseExpr()
-        return LetExpr(isMutable, name, type, expr, token.position.span(expr.position))
+        return LetExpr(isMutable, name, type, expr, token.span(expr))
     }
 }
