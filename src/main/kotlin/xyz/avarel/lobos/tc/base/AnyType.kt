@@ -1,6 +1,6 @@
-package xyz.avarel.lobos.typesystem.base
+package xyz.avarel.lobos.tc.base
 
-import xyz.avarel.lobos.typesystem.Type
+import xyz.avarel.lobos.tc.Type
 
 /**
  * Represents the top of the inheritable type hierarchy.

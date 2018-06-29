@@ -1,9 +1,9 @@
-package xyz.avarel.lobos.typesystem.complex
+package xyz.avarel.lobos.tc.complex
 
 import xyz.avarel.lobos.parser.mergeAll
-import xyz.avarel.lobos.typesystem.*
-import xyz.avarel.lobos.typesystem.base.NeverType
-import xyz.avarel.lobos.typesystem.generics.GenericParameter
+import xyz.avarel.lobos.tc.*
+import xyz.avarel.lobos.tc.base.NeverType
+import xyz.avarel.lobos.tc.generics.GenericParameter
 
 class FunctionType(
         val argumentTypes: List<Type>,
@@ -44,10 +44,6 @@ class FunctionType(
     }
 
     override fun toString() = buildString {
-        if (genericParameters.isNotEmpty()) {
-            genericParameters.joinTo(this, prefix = "<", postfix = ">")
-        }
-
         argumentTypes.joinTo(this, prefix = "(", postfix = ")")
 
         append(" -> ")

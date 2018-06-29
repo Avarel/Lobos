@@ -7,14 +7,15 @@ import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.parser.Modifier
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.PrefixParser
-import xyz.avarel.lobos.parser.parseBlock
+import xyz.avarel.lobos.parser.parseDeclarations
 
 object ModuleParser : PrefixParser {
     override fun parse(parser: Parser, modifiers: List<Modifier>, token: Token): Expr {
         val name = parser.eat(TokenType.IDENT).string
 
-        val body = parser.parseBlock()
+        val declarations = parser.parseDeclarations()
 
-        return ModuleExpr(name, body, token.position)
+        return ModuleExpr(name, declarations, token.position)
+        // TODO external modules?
     }
 }

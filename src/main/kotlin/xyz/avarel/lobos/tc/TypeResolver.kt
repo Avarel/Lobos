@@ -1,4 +1,4 @@
-package xyz.avarel.lobos.typesystem
+package xyz.avarel.lobos.tc
 
 import xyz.avarel.lobos.ast.types.TypeASTVisitor
 import xyz.avarel.lobos.ast.types.basic.IdentTypeAST
@@ -9,13 +9,13 @@ import xyz.avarel.lobos.ast.types.complex.TemplatingTypeAST
 import xyz.avarel.lobos.ast.types.complex.TupleTypeAST
 import xyz.avarel.lobos.ast.types.complex.UnionTypeAST
 import xyz.avarel.lobos.parser.TypeException
-import xyz.avarel.lobos.typesystem.base.InvalidType
-import xyz.avarel.lobos.typesystem.base.NeverType
-import xyz.avarel.lobos.typesystem.base.NullType
-import xyz.avarel.lobos.typesystem.base.UnitType
-import xyz.avarel.lobos.typesystem.complex.FunctionType
-import xyz.avarel.lobos.typesystem.complex.TupleType
-import xyz.avarel.lobos.typesystem.scope.ScopeContext
+import xyz.avarel.lobos.tc.base.InvalidType
+import xyz.avarel.lobos.tc.base.NeverType
+import xyz.avarel.lobos.tc.base.NullType
+import xyz.avarel.lobos.tc.base.UnitType
+import xyz.avarel.lobos.tc.complex.FunctionType
+import xyz.avarel.lobos.tc.complex.TupleType
+import xyz.avarel.lobos.tc.scope.ScopeContext
 
 class TypeResolver(
         val scope: ScopeContext,

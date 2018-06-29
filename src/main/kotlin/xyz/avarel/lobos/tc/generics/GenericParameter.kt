@@ -1,7 +1,7 @@
-package xyz.avarel.lobos.typesystem.generics
+package xyz.avarel.lobos.tc.generics
 
-import xyz.avarel.lobos.typesystem.Type
-import xyz.avarel.lobos.typesystem.base.AnyType
+import xyz.avarel.lobos.tc.Type
+import xyz.avarel.lobos.tc.base.AnyType
 
 class GenericParameter(
         val name: String,

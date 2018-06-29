@@ -1,10 +1,10 @@
-package xyz.avarel.lobos.typesystem
+package xyz.avarel.lobos.tc
 
-import xyz.avarel.lobos.typesystem.base.NeverType
-import xyz.avarel.lobos.typesystem.complex.UnionType
-import xyz.avarel.lobos.typesystem.generics.GenericBodyType
-import xyz.avarel.lobos.typesystem.generics.GenericParameter
-import xyz.avarel.lobos.typesystem.generics.GenericType
+import xyz.avarel.lobos.tc.base.NeverType
+import xyz.avarel.lobos.tc.complex.UnionType
+import xyz.avarel.lobos.tc.generics.GenericBodyType
+import xyz.avarel.lobos.tc.generics.GenericParameter
+import xyz.avarel.lobos.tc.generics.GenericType
 
 fun List<Type>.findGenericParameters(): List<GenericParameter> {
     val list = mutableListOf<GenericParameter>()

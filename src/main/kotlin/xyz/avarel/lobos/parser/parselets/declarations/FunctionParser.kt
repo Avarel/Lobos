@@ -26,20 +26,20 @@ object FunctionParser: PrefixParser {
                 val paramName = paramIdent.string
 
                 parser.eat(TokenType.COLON)
-                val type = parser.parseType()
+                val type = parser.parseTypeAST()
 
                 if (paramName in arguments) {
                     parser.errors += SyntaxException("Parameter $paramName has already been declared", paramIdent.position)
                 }
 
-                arguments[paramName] = ArgumentParameterAST(name, type)
+                arguments[paramName] = ArgumentParameterAST(paramName, type)
             } while (parser.match(TokenType.COMMA))
 
             parser.eat(TokenType.R_PAREN)
         }
 
         val returnType = if (parser.match(TokenType.ARROW)) {
-            parser.parseType()
+            parser.parseTypeAST()
         } else {
             TupleTypeAST(parser.last.position)
         }

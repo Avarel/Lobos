@@ -1,6 +1,6 @@
-package xyz.avarel.lobos.typesystem.scope
+package xyz.avarel.lobos.tc.scope
 
-import xyz.avarel.lobos.typesystem.base.*
+import xyz.avarel.lobos.tc.base.*
 
 object DefaultScopeContext : ScopeContext() {
     init {

@@ -16,7 +16,7 @@ object TypeAliasParser: PrefixParser {
 
         parser.eat(TokenType.ASSIGN)
 
-        val type = parser.parseType()
+        val type = parser.parseTypeAST()
 
         return TypeAliasExpr(name, generics, type, token.span(type))
     }

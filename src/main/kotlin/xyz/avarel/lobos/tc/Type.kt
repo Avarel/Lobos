@@ -1,10 +1,10 @@
-package xyz.avarel.lobos.typesystem
+package xyz.avarel.lobos.tc
 
-import xyz.avarel.lobos.typesystem.base.AnyType
-import xyz.avarel.lobos.typesystem.base.InvalidType
-import xyz.avarel.lobos.typesystem.base.NeverType
-import xyz.avarel.lobos.typesystem.base.NullType
-import xyz.avarel.lobos.typesystem.complex.UnionType
+import xyz.avarel.lobos.tc.base.AnyType
+import xyz.avarel.lobos.tc.base.InvalidType
+import xyz.avarel.lobos.tc.base.NeverType
+import xyz.avarel.lobos.tc.base.NullType
+import xyz.avarel.lobos.tc.complex.UnionType
 
 // GO WITH EXPLICIT TYPES FOR NOW, INFERENCE TOO HARD
 
@@ -26,7 +26,7 @@ interface Type {
      * base string type. This is mainly used when the parser has to
      * completely infer the type of the expression.
      *
-     * @see xyz.avarel.lobos.typesystem.literals.ExistentialType
+     * TODO rewrite this
      */
     val universalType: Type get() = this
 
@@ -98,6 +98,4 @@ interface Type {
             else -> this
         }
     }
-
-    fun toNestedString() = toString()
 }

@@ -22,6 +22,7 @@ interface ExprVisitor<R> {
     fun visit(expr: I32Expr): R
     fun visit(expr: I64Expr): R
     fun visit(expr: F64Expr): R
+    fun visit(expr: NullExpr): R
 
     fun visit(expr: InvalidExpr): R
     fun visit(expr: StringExpr): R
@@ -42,7 +43,6 @@ interface ExprVisitor<R> {
 
     fun visit(expr: ReturnExpr): R
     fun visit(expr: IfExpr): R
-    fun visit(expr: NullExpr): R
 
     fun visit(expr: LogicalOrOperation): R
     fun visit(expr: LogicalAndOperation): R

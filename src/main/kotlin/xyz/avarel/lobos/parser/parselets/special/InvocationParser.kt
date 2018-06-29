@@ -26,7 +26,7 @@ object InvocationParser: InfixParser {
 
         val rParen = parser.last
 
-        val position = token.span(rParen)
+        val position = left.span(rParen)
 
         if (left is PropertyAccessExpr) {
             return InvokeMemberExpr(left.target, left.name, arguments, position)

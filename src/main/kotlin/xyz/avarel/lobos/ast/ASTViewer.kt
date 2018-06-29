@@ -28,6 +28,8 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
     }
 
     fun List<Expr>.astGroup(label: String, indent: String = this@ASTViewer.indent + if (isTail) "    " else "│   ", tail: Boolean) {
+        if (isEmpty()) return
+
         label("$label:", tail)
 
         for (i in indices) {
@@ -80,12 +82,16 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
     override fun visit(expr: ModuleExpr) {
         defaultAst("module ${expr.name}")
 
-        expr.body.ast(tail = true)
+        expr.declarationsAST.let { declarations ->
+            declarations.modules.astGroup("submodules", tail = false)
+            declarations.functions.astGroup("functions", tail = false)
+            declarations.variables.astGroup("variables", tail = true)
+        }
     }
 
     override fun visit(expr: NamedFunctionExpr) {
         defaultAst("function")
-        label("name: ${expr.name}", true)
+        label("name: ${expr.name}", false)
 
         if (expr.generics.isNotEmpty()) {
             label(expr.generics.joinToString(prefix = "generics: <", postfix = ">"), false)
@@ -102,7 +108,7 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         defaultAst("let")
         label("name: ${expr.name}", false)
 
-        expr.expr.ast(tail = true)
+        expr.value.ast(tail = true)
     }
 
     override fun visit(expr: TypeAliasExpr) {
@@ -138,7 +144,7 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
     override fun visit(expr: AssignExpr) {
         defaultAst("assign ${expr.name}")
 
-        expr.expr.ast(tail = true)
+        expr.value.ast(tail = true)
     }
 
     override fun visit(expr: IdentExpr) = defaultAst("variable ${expr.name}")

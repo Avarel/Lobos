@@ -14,13 +14,4 @@ class UnaryOperatorParser(val operator: UnaryOperationType) : PrefixParser {
         val target = parser.parseExpr()
         return UnaryOperation(target, operator, token.span(target))
     }
-
-//    private fun resolveUnaryOpType(operationType: UnaryOperationType, target: Type, position: Section): Type {
-//        when (target) {
-//            I32Type,
-//            I64Type,
-//            F64Type -> return target
-//        }
-//        throw SyntaxException("$target is incompatible", position)
-//    }
 }

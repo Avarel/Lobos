@@ -105,7 +105,11 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
         return expr
     }
 
-    fun parseStatements(delimiterPair: Pair<TokenType, TokenType>? = null): Expr {
+    fun parseStatements(
+            delimiterPair: Pair<TokenType, TokenType>? = null,
+            modifiers: List<Modifier> = emptyList(),
+            allowedTokens: List<TokenType> = emptyList()
+    ): Expr {
         if (eof) throw SyntaxException("Expected expression but reached end of file", last.position)
 
         delimiterPair?.first?.let(this::eat)
@@ -118,7 +122,7 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
             if (eof || (delimiterPair != null && nextIs(delimiterPair.second))) {
                 break
             }
-            val expr = parseExpr()
+            val expr = parseExpr(0, modifiers, allowedTokens)
 
             if (expr is InvalidExpr) {
                 if (delimiterPair != null) {
@@ -140,10 +144,19 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
         }
     }
 
-    fun parseExpr(precedence: Int = 0, modifiers: List<Modifier> = emptyList()): Expr {
+    fun parseExpr(
+            precedence: Int = 0,
+            modifiers: List<Modifier> = emptyList(),
+            allowedTokens: List<TokenType> = emptyList()
+    ): Expr {
         if (eof) throw SyntaxException("Expected expression but reached end of file", last.position)
 
         val token = eat()
+
+        if (allowedTokens.isNotEmpty() && token.type !in allowedTokens) {
+            throw SyntaxException("Expected any of $allowedTokens but found ${token.type}", token.position)
+        }
+
         val parser = grammar.prefixParsers[token.type] ?: let {
             errors += SyntaxException("Unexpected $token", token.position)
             return InvalidExpr(token.position)

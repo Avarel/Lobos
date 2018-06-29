@@ -1,9 +1,11 @@
 package xyz.avarel.lobos.parser
 
 import xyz.avarel.lobos.ast.expr.ops.BinaryOperationType
+import xyz.avarel.lobos.ast.expr.ops.UnaryOperationType
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.parser.parselets.BinaryOperatorParser
 import xyz.avarel.lobos.parser.parselets.IfParser
+import xyz.avarel.lobos.parser.parselets.UnaryOperatorParser
 import xyz.avarel.lobos.parser.parselets.declarations.*
 import xyz.avarel.lobos.parser.parselets.nodes.*
 import xyz.avarel.lobos.parser.parselets.special.DotParser
@@ -32,8 +34,10 @@ object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
         prefix(TokenType.EXTERNAL, ExternalParser)
         prefix(TokenType.BANG, NotUnaryParser)
 
-        infix(TokenType.DOT, DotParser)
+        prefix(TokenType.PLUS, UnaryOperatorParser(UnaryOperationType.POSITIVE))
+        prefix(TokenType.MINUS, UnaryOperatorParser(UnaryOperationType.NEGATIVE))
 
+        infix(TokenType.DOT, DotParser)
         infix(TokenType.L_PAREN, InvocationParser)
         infix(TokenType.EQ, EqualsBinaryParser)
         infix(TokenType.NEQ, NotEqualsBinaryParser)

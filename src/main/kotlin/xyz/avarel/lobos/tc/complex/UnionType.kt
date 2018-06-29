@@ -1,9 +1,9 @@
-package xyz.avarel.lobos.typesystem.complex
+package xyz.avarel.lobos.tc.complex
 
-import xyz.avarel.lobos.typesystem.*
-import xyz.avarel.lobos.typesystem.base.NeverType
-import xyz.avarel.lobos.typesystem.generics.GenericParameter
-import xyz.avarel.lobos.typesystem.generics.GenericType
+import xyz.avarel.lobos.tc.*
+import xyz.avarel.lobos.tc.base.NeverType
+import xyz.avarel.lobos.tc.generics.GenericParameter
+import xyz.avarel.lobos.tc.generics.GenericType
 
 class UnionType(val left: Type, val right: Type) : TypeTemplate {
     override var genericParameters = listOf(left, right).findGenericParameters()
@@ -82,8 +82,6 @@ class UnionType(val left: Type, val right: Type) : TypeTemplate {
     }
 
     override fun toString() = "$left | $right"
-
-    override fun toNestedString() = "($this)"
 
     override fun equals(other: Any?): Boolean {
         return when {

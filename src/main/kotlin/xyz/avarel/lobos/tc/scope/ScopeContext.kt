@@ -1,6 +1,6 @@
-package xyz.avarel.lobos.typesystem.scope
+package xyz.avarel.lobos.tc.scope
 
-import xyz.avarel.lobos.typesystem.Type
+import xyz.avarel.lobos.tc.Type
 
 open class ScopeContext(
         val parent: ScopeContext? = null,

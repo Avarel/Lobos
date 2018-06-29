@@ -1,17 +1,14 @@
-package xyz.avarel.lobos.typesystem.complex
+package xyz.avarel.lobos.tc.complex
 
 import xyz.avarel.lobos.parser.mergeAll
-import xyz.avarel.lobos.typesystem.*
-import xyz.avarel.lobos.typesystem.base.NeverType
-import xyz.avarel.lobos.typesystem.generics.GenericParameter
+import xyz.avarel.lobos.tc.*
+import xyz.avarel.lobos.tc.base.NeverType
+import xyz.avarel.lobos.tc.generics.GenericParameter
 
 open class TupleType(val valueTypes: List<Type>) : TypeTemplate {
-
     override var genericParameters = valueTypes.findGenericParameters()
 
-    init {
-        require(valueTypes.isNotEmpty())
-    }
+    override val isUnitType: Boolean get() = valueTypes.all(Type::isUnitType)
 
     override val universalType: Type by lazy { TupleType(valueTypes.map(Type::universalType)) }
 

@@ -12,31 +12,4 @@ class BinaryOperatorParser(precedence: Int, val operator: BinaryOperationType, l
         val right = parser.parseExpr(precedence - if (leftAssoc) 0 else 1)
         return BinaryOperation(left, right, operator, left.span(right))
     }
-//
-//    private fun resolveBinaryOpType(operationType: BinaryOperationType, left: Type, right: Type, position: Section): Type {
-//        when (left) {
-//            StrType,
-//            is LiteralStrType -> if (operationType == BinaryOperationType.ADD) return StrType
-//            I32Type,
-//            is LiteralIntType -> when (right) {
-//                I32Type,
-//                is LiteralIntType -> return I32Type
-//                I64Type,
-//                F64Type -> return right
-//            }
-//            I64Type -> when (right) {
-//                I32Type,
-//                is LiteralIntType,
-//                I64Type -> return I64Type
-//                F64Type -> F64Type
-//            }
-//            F64Type -> when (right) {
-//                I32Type,
-//                is LiteralIntType,
-//                I64Type,
-//                F64Type -> return F64Type
-//            }
-//        }
-//        throw SyntaxException("$left is incompatible with $right", position)
-//    }
 }

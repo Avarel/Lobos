@@ -4,9 +4,9 @@ import xyz.avarel.lobos.ast.ASTViewer
 import xyz.avarel.lobos.lexer.Tokenizer
 import xyz.avarel.lobos.parser.DefaultGrammar
 import xyz.avarel.lobos.parser.Parser
-import xyz.avarel.lobos.typesystem.TypeChecker
-import xyz.avarel.lobos.typesystem.scope.DefaultScopeContext
-import xyz.avarel.lobos.typesystem.scope.StmtContext
+import xyz.avarel.lobos.tc.TypeChecker
+import xyz.avarel.lobos.tc.scope.DefaultScopeContext
+import xyz.avarel.lobos.tc.scope.StmtContext
 
 /* Smart Compiler
 let y: 1|3|5|7|"string" = "string";
@@ -72,7 +72,9 @@ struct Point {
 
 fun main(args: Array<String>) {
     val source = """
-        let a: i32 = 1
+        external def to_string(obj: any) -> str
+
+        let what = "hello " + to_string(1)
     """.trimIndent()
 
     val lexer = Tokenizer(reader = source.reader())
@@ -93,7 +95,7 @@ fun main(args: Array<String>) {
         println()
         println("|> ERRORS:")
 
-        ast.accept(TypeChecker(DefaultScopeContext.subContext(), StmtContext()) { parser.errors += it })
+        ast.accept(TypeChecker(DefaultScopeContext.subContext(), StmtContext(), false) { parser.errors += it })
 
         val lines = source.lines()
         parser.errors.forEach {

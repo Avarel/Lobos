@@ -5,6 +5,7 @@ import xyz.avarel.lobos.ast.expr.access.PropertyAccessExpr
 import xyz.avarel.lobos.ast.expr.access.TupleIndexAccessExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
+import xyz.avarel.lobos.lexer.span
 import xyz.avarel.lobos.parser.InfixParser
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.Precedence
@@ -18,11 +19,11 @@ object DotParser: InfixParser {
         return when (ident.type) {
             TokenType.INT -> {
                 val index = ident.string.toInt()
-                TupleIndexAccessExpr(left, index, token.position)
+                TupleIndexAccessExpr(left, index, left.span(ident))
             }
             TokenType.IDENT -> {
                 val name = ident.string
-                PropertyAccessExpr(left, name, token.position)
+                PropertyAccessExpr(left, name, left.span(ident))
             }
             else -> throw SyntaxException("Invalid identifier", ident.position)
         }

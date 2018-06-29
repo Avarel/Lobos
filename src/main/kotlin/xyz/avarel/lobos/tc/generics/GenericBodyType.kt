@@ -1,8 +1,8 @@
-package xyz.avarel.lobos.typesystem.generics
+package xyz.avarel.lobos.tc.generics
 
-import xyz.avarel.lobos.typesystem.AbstractType
-import xyz.avarel.lobos.typesystem.Type
-import xyz.avarel.lobos.typesystem.base.AnyType
+import xyz.avarel.lobos.tc.AbstractType
+import xyz.avarel.lobos.tc.Type
+import xyz.avarel.lobos.tc.base.AnyType
 
 class GenericBodyType(val genericParameter: GenericParameter): AbstractType(genericParameter.name, genericParameter.parentType ?: AnyType) {
     override fun isAssignableFrom(other: Type): Boolean {

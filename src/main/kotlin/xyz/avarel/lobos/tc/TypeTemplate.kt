@@ -1,6 +1,6 @@
-package xyz.avarel.lobos.typesystem
+package xyz.avarel.lobos.tc
 
-import xyz.avarel.lobos.typesystem.generics.GenericParameter
+import xyz.avarel.lobos.tc.generics.GenericParameter
 
 interface TypeTemplate: Type {
     /**

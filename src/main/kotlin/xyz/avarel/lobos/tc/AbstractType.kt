@@ -1,8 +1,8 @@
-package xyz.avarel.lobos.typesystem
+package xyz.avarel.lobos.tc
 
-import xyz.avarel.lobos.typesystem.base.AnyType
-import xyz.avarel.lobos.typesystem.base.NeverType
-import xyz.avarel.lobos.typesystem.complex.UnionType
+import xyz.avarel.lobos.tc.base.AnyType
+import xyz.avarel.lobos.tc.base.NeverType
+import xyz.avarel.lobos.tc.complex.UnionType
 
 abstract class AbstractType(val name: String, override val parentType: Type = AnyType): Type {
     override fun isAssignableFrom(other: Type): Boolean {

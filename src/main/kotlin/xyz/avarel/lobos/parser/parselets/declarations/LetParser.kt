@@ -16,7 +16,7 @@ object LetParser: PrefixParser {
         val ident = parser.eat(TokenType.IDENT)
         val name = ident.string
 
-        val type: AbstractTypeAST? = if (parser.match(TokenType.COLON)) parser.parseType() else null
+        val type: AbstractTypeAST? = if (parser.match(TokenType.COLON)) parser.parseTypeAST() else null
 
         if (Modifier.EXTERNAL in modifiers) {
             if (type == null) throw SyntaxException("Type annotation required for extern definitions", token.position)

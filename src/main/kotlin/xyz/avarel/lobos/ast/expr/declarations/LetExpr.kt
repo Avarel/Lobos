@@ -10,7 +10,7 @@ class LetExpr(
         val mutable: Boolean,
         val name: String,
         val type: AbstractTypeAST?,
-        val expr: Expr,
+        val value: Expr,
         position: Section
 ) : AbstractExpr(position) {
     override fun <R> accept(visitor: ExprVisitor<R>) = visitor.visit(this)

@@ -1,7 +1,7 @@
-package xyz.avarel.lobos.typesystem.base
+package xyz.avarel.lobos.tc.base
 
-import xyz.avarel.lobos.typesystem.AbstractType
-import xyz.avarel.lobos.typesystem.Type
+import xyz.avarel.lobos.tc.AbstractType
+import xyz.avarel.lobos.tc.Type
 
 /**
  * This type can be assigned to anything, because technically, it will never return.
