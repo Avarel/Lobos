@@ -41,14 +41,14 @@ interface Type {
     /**
      * @returns `true` if [other] is assignable to this type.
      */
-    fun isAssignableFrom(other: Type): Boolean
+    infix fun isAssignableFrom(other: Type): Boolean
 
     /**
      * Get an associated type of this type.
      */
     fun getMember(key: String): Type? = parentType.getMember(key)
 
-    fun commonSuperTypeWith(other: Type): Type {
+    infix fun commonSuperTypeWith(other: Type): Type {
         when {
             this == other -> return this
             other == NeverType || this == NeverType -> return NeverType
@@ -71,14 +71,14 @@ interface Type {
         }
     }
 
-    fun commonAssignableToType(other: Type): Type {
+    infix fun commonAssignableToType(other: Type): Type {
         return when (other) {
             this -> this
             else -> UnionType(this, other)
         }
     }
 
-    fun commonAssignableFromType(other: Type): Type {
+    infix fun commonAssignableFromType(other: Type): Type {
         return when (other) {
             this -> this
             else -> NeverType
@@ -86,15 +86,18 @@ interface Type {
     }
 
     fun filter(other: Type): Type {
-        return when (other) {
-            this -> this
+        return when {
+            this == other -> this
+            this isAssignableFrom other -> other
             else -> NeverType
         }
     }
 
     fun exclude(other: Type): Type {
-        return when (other) {
-            this -> NeverType
+        return when {
+            this == other -> NeverType
+        // this isAssignableFrom other -> NeverType
+        // potential spot for the return of exclusion types?
             else -> this
         }
     }

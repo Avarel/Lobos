@@ -4,5 +4,9 @@ enum class BinaryOperationType {
     ADD,
     SUBTRACT,
     MULTIPLY,
-    DIVIDE
+    DIVIDE,
+    EQUALS,
+    NOT_EQUALS,
+    AND,
+    OR
 }

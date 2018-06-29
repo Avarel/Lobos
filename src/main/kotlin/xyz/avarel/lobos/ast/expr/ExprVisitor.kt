@@ -15,7 +15,8 @@ import xyz.avarel.lobos.ast.expr.misc.IfExpr
 import xyz.avarel.lobos.ast.expr.misc.InvalidExpr
 import xyz.avarel.lobos.ast.expr.misc.MultiExpr
 import xyz.avarel.lobos.ast.expr.nodes.*
-import xyz.avarel.lobos.ast.expr.ops.*
+import xyz.avarel.lobos.ast.expr.ops.BinaryOperation
+import xyz.avarel.lobos.ast.expr.ops.UnaryOperation
 import xyz.avarel.lobos.ast.expr.variables.AssignExpr
 
 interface ExprVisitor<R> {
@@ -43,11 +44,6 @@ interface ExprVisitor<R> {
 
     fun visit(expr: ReturnExpr): R
     fun visit(expr: IfExpr): R
-
-    fun visit(expr: LogicalOrOperation): R
-    fun visit(expr: LogicalAndOperation): R
-    fun visit(expr: LogicalNotOperation): R
-    fun visit(expr: EqualsOperation): R
 
     fun visit(expr: IndexAccessExpr): R
     fun visit(expr: PropertyAccessExpr): R

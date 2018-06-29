@@ -17,7 +17,8 @@ import xyz.avarel.lobos.ast.expr.misc.IfExpr
 import xyz.avarel.lobos.ast.expr.misc.InvalidExpr
 import xyz.avarel.lobos.ast.expr.misc.MultiExpr
 import xyz.avarel.lobos.ast.expr.nodes.*
-import xyz.avarel.lobos.ast.expr.ops.*
+import xyz.avarel.lobos.ast.expr.ops.BinaryOperation
+import xyz.avarel.lobos.ast.expr.ops.UnaryOperation
 import xyz.avarel.lobos.ast.expr.variables.AssignExpr
 
 class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boolean): ExprVisitor<Unit> {
@@ -108,6 +109,8 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         defaultAst("let")
         label("name: ${expr.name}", false)
 
+        label("type: ${expr.type}", false)
+
         expr.value.ast(tail = true)
     }
 
@@ -176,36 +179,6 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
 
     override fun visit(expr: BinaryOperation) {
         defaultAst("binary ${expr.operator}")
-
-        expr.left.ast(tail = false)
-
-        expr.right.ast(tail = true)
-    }
-
-    override fun visit(expr: LogicalAndOperation) {
-        defaultAst("logical and")
-
-        expr.left.ast(tail = false)
-
-        expr.right.ast(tail = true)
-    }
-
-    override fun visit(expr: LogicalOrOperation) {
-        defaultAst("logical or")
-
-        expr.left.ast(tail = false)
-
-        expr.right.ast(tail = true)
-    }
-
-    override fun visit(expr: LogicalNotOperation) {
-        defaultAst("logical not")
-
-        expr.target.ast(tail = false)
-    }
-
-    override fun visit(expr: EqualsOperation) {
-        defaultAst("equals")
 
         expr.left.ast(tail = false)
 

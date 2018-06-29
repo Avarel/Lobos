@@ -11,7 +11,6 @@ import xyz.avarel.lobos.parser.parselets.nodes.*
 import xyz.avarel.lobos.parser.parselets.special.DotParser
 import xyz.avarel.lobos.parser.parselets.special.InvocationParser
 import xyz.avarel.lobos.parser.parselets.special.ReturnParser
-import xyz.avarel.lobos.parser.parselets.special.logic.*
 
 object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
     init {
@@ -32,22 +31,22 @@ object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
         prefix(TokenType.TYPE, TypeAliasParser)
         prefix(TokenType.DEF, FunctionParser)
         prefix(TokenType.EXTERNAL, ExternalParser)
-        prefix(TokenType.BANG, NotUnaryParser)
 
+        prefix(TokenType.BANG, UnaryOperatorParser(UnaryOperationType.NOT))
         prefix(TokenType.PLUS, UnaryOperatorParser(UnaryOperationType.POSITIVE))
         prefix(TokenType.MINUS, UnaryOperatorParser(UnaryOperationType.NEGATIVE))
 
         infix(TokenType.DOT, DotParser)
         infix(TokenType.L_PAREN, InvocationParser)
-        infix(TokenType.EQ, EqualsBinaryParser)
-        infix(TokenType.NEQ, NotEqualsBinaryParser)
+        infix(TokenType.EQ, BinaryOperatorParser(Precedence.EQUALITY, BinaryOperationType.EQUALS))
+        infix(TokenType.NEQ, BinaryOperatorParser(Precedence.EQUALITY, BinaryOperationType.NOT_EQUALS))
         infix(TokenType.PLUS, BinaryOperatorParser(Precedence.ADDITIVE, BinaryOperationType.ADD))
         infix(TokenType.MINUS, BinaryOperatorParser(Precedence.ADDITIVE, BinaryOperationType.SUBTRACT))
         infix(TokenType.ASTERISK, BinaryOperatorParser(Precedence.MULTIPLICATIVE, BinaryOperationType.MULTIPLY))
         infix(TokenType.F_SLASH, BinaryOperatorParser(Precedence.MULTIPLICATIVE, BinaryOperationType.DIVIDE))
 
-        infix(TokenType.AND, AndParser)
-        infix(TokenType.OR, OrParser)
+        infix(TokenType.AND, BinaryOperatorParser(Precedence.CONJUNCTION, BinaryOperationType.AND))
+        infix(TokenType.OR, BinaryOperatorParser(Precedence.DISJUNCTION, BinaryOperationType.OR))
     }
 
     fun prefix(type: TokenType, parselet: PrefixParser) {

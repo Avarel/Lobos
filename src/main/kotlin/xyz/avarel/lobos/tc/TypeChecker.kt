@@ -17,11 +17,15 @@ import xyz.avarel.lobos.ast.expr.misc.IfExpr
 import xyz.avarel.lobos.ast.expr.misc.InvalidExpr
 import xyz.avarel.lobos.ast.expr.misc.MultiExpr
 import xyz.avarel.lobos.ast.expr.nodes.*
-import xyz.avarel.lobos.ast.expr.ops.*
+import xyz.avarel.lobos.ast.expr.ops.BinaryOperation
+import xyz.avarel.lobos.ast.expr.ops.BinaryOperationType
+import xyz.avarel.lobos.ast.expr.ops.UnaryOperation
+import xyz.avarel.lobos.ast.expr.ops.UnaryOperationType
 import xyz.avarel.lobos.ast.expr.variables.AssignExpr
 import xyz.avarel.lobos.ast.types.TypeAST
 import xyz.avarel.lobos.lexer.Section
 import xyz.avarel.lobos.parser.TypeException
+import xyz.avarel.lobos.parser.mergeAll
 import xyz.avarel.lobos.tc.base.*
 import xyz.avarel.lobos.tc.complex.FunctionType
 import xyz.avarel.lobos.tc.complex.TupleType
@@ -61,17 +65,17 @@ class TypeChecker(
 
         expr.declarationsAST.let { declarations ->
             // defer modules //
-            declarations.modules.forEach { it.accept(subScope, StmtContext(), true) }
+            declarations.modules.forEach { it.accept(subScope, StmtContext(false), true) }
             // defer functions //
-            declarations.functions.forEach { it.accept(subScope, StmtContext(), true) }
+            declarations.functions.forEach { it.accept(subScope, StmtContext(false), true) }
 
             if (!deferBody) {
                 // check lets //
-                declarations.variables.forEach { it.accept(subScope, StmtContext()) }
+                declarations.variables.forEach { it.accept(subScope, StmtContext(false)) }
                 // check modules modules //
-                declarations.modules.forEach { it.accept(subScope, StmtContext()) }
+                declarations.modules.forEach { it.accept(subScope, StmtContext(false)) }
                 // check function bodies //
-                declarations.functions.forEach { it.accept(subScope, StmtContext()) }
+                declarations.functions.forEach { it.accept(subScope, StmtContext(false)) }
             }
         }
 
@@ -112,7 +116,7 @@ class TypeChecker(
 
         if (!deferBody) {
             bodyScope.expectedReturnType = returnType
-            val resultType = expr.body.accept(bodyScope, StmtContext())
+            val resultType = expr.body.accept(bodyScope, StmtContext(true))
             if (!bodyScope.terminates) {
                 catchError {
                     typeCheck(
@@ -156,7 +160,7 @@ class TypeChecker(
             errorHandler(TypeException("Variable ${expr.name} has already been declared", expr.position))
         }
 
-        val exprType = expr.value.accept(scope, stmtExpectExpr())
+        val exprType = expr.value.accept(scope, StmtContext(true))
 
         if (catchError { requireNotGeneric(exprType, expr.value.position) }) return InvalidType
 
@@ -185,9 +189,10 @@ class TypeChecker(
 
         if (!mutable) {
             errorHandler(TypeException("Reference ${expr.name} is not mutable", expr.position))
+            return InvalidType
         }
 
-        val exprType = expr.accept(scope, stmtExpectExpr())
+        val exprType = expr.accept(scope, StmtContext(true))
         if (!catchError { typeCheck(type, exprType, expr.value.position) }) {
             scope.putAssumption(expr.name, exprType)
         }
@@ -196,8 +201,9 @@ class TypeChecker(
     }
 
     override fun visit(expr: IdentExpr): Type {
-        return scope.getAssumption(expr.name) ?: let {
-            errorHandler(TypeException("Reference ${expr.name} does not exist in this scope", expr.position))
+        val key = expr.name
+        return stmt.getAssumption(key) ?: scope.getAssumption(key) ?: let {
+            errorHandler(TypeException("Reference $key does not exist in this scope", expr.position))
             return InvalidType
         }
     }
@@ -205,7 +211,7 @@ class TypeChecker(
     override fun visit(expr: TupleExpr): Type {
         return when {
             expr.list.isEmpty() -> UnitType
-            else -> TupleType(expr.list.map { it.accept(scope, stmtExpectExpr()) })
+            else -> TupleType(expr.list.map { it.accept(scope, StmtContext(true)) })
         }
     }
 
@@ -214,64 +220,121 @@ class TypeChecker(
     }
 
     override fun visit(expr: UnaryOperation): Type {
-        val target = expr.target.accept(scope, stmtExpectExpr())
-        when (target) {
-            I32Type,
-            I64Type,
-            F64Type -> return target
+        val target = expr.target.accept(scope, StmtContext(true))
+
+        when (expr.operator) {
+            UnaryOperationType.NOT -> TODO()
+            else -> when (target) {
+                I32Type,
+                I64Type,
+                F64Type -> return target
+            }
         }
+
         errorHandler(TypeException("$target is incompatible", expr.position))
         return InvalidType
     }
 
     override fun visit(expr: BinaryOperation): Type {
-        val left = expr.left.accept(scope, stmtExpectExpr())
-        val right = expr.right.accept(scope, stmtExpectExpr())
-        when (left) {
-            StrType -> if (expr.operator == BinaryOperationType.ADD) return StrType
-            I32Type -> when (right) {
-                I32Type -> return I32Type
-                I64Type,
-                F64Type -> return right
+        val left = expr.left.accept(scope, stmt)
+
+        when (expr.operator) {
+            BinaryOperationType.EQUALS, BinaryOperationType.NOT_EQUALS -> {
+                val right = expr.right.accept(scope, StmtContext(true))
+                if (!left.isAssignableFrom(right) && !right.isAssignableFrom(left)) {
+                    errorHandler(TypeException("$left and $right are incompatible", expr.position))
+                } else {
+                    inferTypeAssertion(true, expr.left, left, right, Type::filter, Type::exclude) { key, assumption, reciprocal ->
+                        stmt.putAssumption(key, assumption)
+                        stmt.putReciprocal(key, reciprocal)
+                    }
+                    inferTypeAssertion(true, expr.right, right, left, Type::filter, Type::exclude) { key, assumption, reciprocal ->
+                        stmt.putAssumption(key, assumption)
+                        stmt.putReciprocal(key, reciprocal)
+                    }
+                    if (expr.operator == BinaryOperationType.NOT_EQUALS) {
+                        val tmp = stmt.assumptions
+                        stmt.assumptions = stmt.reciprocals
+                        stmt.reciprocals = tmp
+                    }
+                }
+
+                return BoolType
             }
-            I64Type -> when (right) {
-                I32Type,
-                I64Type -> return I64Type
-                F64Type -> F64Type
+            BinaryOperationType.AND -> {
+                val rightCtx = StmtContext(true).also {
+                    it.assumptions.putAll(stmt.assumptions)
+                }
+                val right = expr.right.accept(scope, rightCtx)
+                catchError { typeCheck(BoolType, left, expr.left.position) }
+                catchError { typeCheck(BoolType, right, expr.right.position) }
+
+                stmt.assumptions.mergeAll(rightCtx.assumptions, Type::commonAssignableFromType)
+
+                if ((stmt.reciprocals.keys + rightCtx.reciprocals.keys).size == 1) {
+                    stmt.reciprocals.mergeAll(rightCtx.reciprocals, Type::commonAssignableToType)
+                } else {
+                    // cant trust any assumptions about outside if depends on multiple variables
+                    stmt.reciprocals.clear()
+                }
+                return BoolType
             }
-            F64Type -> when (right) {
-                I32Type,
-                I64Type,
-                F64Type -> return F64Type
+            BinaryOperationType.OR -> {
+                val rightCtx = StmtContext(true).also {
+                    it.assumptions.putAll(stmt.reciprocals)
+                }
+                val right = expr.right.accept(scope, rightCtx)
+                catchError { typeCheck(BoolType, left, expr.left.position) }
+                catchError { typeCheck(BoolType, right, expr.right.position) }
+
+                stmt.reciprocals.mergeAll(rightCtx.reciprocals, Type::commonAssignableFromType)
+
+                if ((stmt.assumptions.keys + rightCtx.assumptions.keys).size == 1) {
+                    stmt.reciprocals.mergeAll(rightCtx.assumptions, Type::commonAssignableToType)
+                } else {
+                    // cant trust any reciprocals if depends on multiple variables
+                    stmt.assumptions.clear()
+                }
+                return BoolType
+            }
+            else -> {
+                val right = expr.right.accept(scope, stmt)
+                when (left) {
+                    StrType -> if (expr.operator == BinaryOperationType.ADD) return StrType
+                    I32Type -> when (right) {
+                        I32Type -> return I32Type
+                        I64Type,
+                        F64Type -> return right
+                    }
+                    I64Type -> when (right) {
+                        I32Type,
+                        I64Type -> return I64Type
+                        F64Type -> return F64Type
+                    }
+                    F64Type -> when (right) {
+                        I32Type,
+                        I64Type,
+                        F64Type -> return F64Type
+                    }
+                }
+                errorHandler(TypeException("$left is incompatible with $right", expr.position))
+                return InvalidType
             }
         }
-        errorHandler(TypeException("$left is incompatible with $right", expr.position))
-        return InvalidType
     }
 
     override fun visit(expr: ReturnExpr): Type {
-        TODO("not implemented")
-//        catchError { typeCheck(scope.expectedReturnType, expr.accept(scope, stmtExpectExpr()), expr.position) }
-//        return InvalidType
+        val expectedReturnType = scope.expectedReturnType
+        if (expectedReturnType == null) {
+            errorHandler(TypeException("return is not valid in this context", expr.position))
+        } else {
+            catchError { typeCheck(expectedReturnType, expr.accept(scope, StmtContext(true)), expr.position) }
+        }
+        scope.terminates = true
+        return NeverType
     }
 
     override fun visit(expr: IfExpr): Type {
-        TODO("not implemented")
-    }
-
-    override fun visit(expr: LogicalOrOperation): Type {
-        TODO("not implemented")
-    }
-
-    override fun visit(expr: LogicalAndOperation): Type {
-        TODO("not implemented")
-    }
-
-    override fun visit(expr: LogicalNotOperation): Type {
-        TODO("not implemented")
-    }
-
-    override fun visit(expr: EqualsOperation): Type {
         TODO("not implemented")
     }
 
@@ -280,7 +343,7 @@ class TypeChecker(
     }
 
     override fun visit(expr: PropertyAccessExpr): Type {
-        val target = expr.target.accept(scope, stmtExpectExpr())
+        val target = expr.target.accept(scope, StmtContext(true))
         val type = target.getMember(expr.name)
 
         if (type == null) {
@@ -295,7 +358,7 @@ class TypeChecker(
     }
 
     override fun visit(expr: TupleIndexAccessExpr): Type {
-        val type = expr.target.accept(scope, stmtExpectExpr())
+        val type = expr.target.accept(scope, StmtContext(true))
 
         if (type !is TupleType) {
             errorHandler(TypeException("$type is not a tuple type", expr.target.position))
@@ -355,23 +418,23 @@ class TypeChecker(
 
     override fun visit(expr: MultiExpr): Type {
         for (i in 0 until expr.list.lastIndex) {
-            expr.list[i].accept(scope, StmtContext(), deferBody)
+            expr.list[i].accept(scope, StmtContext(false), deferBody)
         }
-        return expr.list.last().accept(scope, StmtContext(), deferBody)
+        return expr.list.last().accept(scope, StmtContext(stmt.expectExpr), deferBody)
     }
 
-    fun Expr.accept(scope: ScopeContext, stmt: StmtContext, deferFunctionBody: Boolean = false): Type {
+    private fun Expr.accept(scope: ScopeContext, stmt: StmtContext, deferFunctionBody: Boolean = false): Type {
         return accept(TypeChecker(scope, stmt, deferFunctionBody, errorHandler))
     }
 
-    fun TypeAST.resolve(scope: ScopeContext): Type {
+    private fun TypeAST.resolve(scope: ScopeContext): Type {
         return accept(TypeResolver(scope, errorHandler))
     }
 
     /**
      * Throws an error if [foundType] can not be assigned to [expectedType].
      */
-    fun typeCheck(expectedType: Type, foundType: Type, position: Section) {
+    private fun typeCheck(expectedType: Type, foundType: Type, position: Section) {
         if (!expectedType.isAssignableFrom(foundType)) {
             throw TypeException("Expected $expectedType but found $foundType", position)
         }
@@ -382,15 +445,15 @@ class TypeChecker(
      * @return [target] return type.
      * @throws TypeException if [target] is not a function.
      */
-    fun checkInvocation(target: Expr, arguments: List<Expr>, position: Section): Type {
-        val targetType = target.accept(scope, stmtExpectExpr())
+    private fun checkInvocation(target: Expr, arguments: List<Expr>, position: Section): Type {
+        val targetType = target.accept(scope, StmtContext(true))
         if (targetType !is FunctionType) {
             errorHandler(TypeException("$targetType can not be invoked", target.position))
             return InvalidType
         }
 
         val targetArgumentTypes = targetType.argumentTypes
-        val argumentTypes = arguments.map { it.accept(scope, stmtExpectExpr()) }
+        val argumentTypes = arguments.map { it.accept(scope, StmtContext(true)) }
 
         if (targetArgumentTypes.size != argumentTypes.size) {
             errorHandler(TypeException("Expected ${targetArgumentTypes.size} arguments, but found ${argumentTypes.size} arguments", position))
@@ -401,48 +464,42 @@ class TypeChecker(
             catchError { typeCheck(targetArgumentTypes[i], argumentTypes[i], arguments[i].position) }
         }
 
-        return targetType.returnType
+        return targetType.returnType.also {
+            if (it === NeverType) scope.terminates = true
+        }
     }
 
-    //fun inferAssumptionExpr(
-    //        removeUnitOnly: Boolean,
-    //        scope: ScopeContext,
-    //        ctx: StmtContext,
-    //        target: Expr,
-    //        other: Expr,
-    //        function: Pair<(Type, Type) -> Type, (Type, Type) -> Type> // forward and inverse
-    //): Triple<String, Type, Type>? {
-    //    if (target !is IdentExpr) return null
-    //
-    //    val key = target.name
-    //    val effectiveType = ctx.assumptions[key] ?: scope.getAssumption(key)!!
-    //    val otherType = other.type
-    //
-    //    if (removeUnitOnly && !otherType.isUnitType) {
-    //        return null
-    //    }
-    //
-    //    val assumption = function.first(effectiveType, otherType)
-    //    val inverse = function.second(effectiveType, otherType)
-    //
-    //    return Triple(key, assumption, inverse)
-    //}
+    private inline fun inferTypeAssertion(
+            unitOnly: Boolean,
+            target: Expr,
+            targetType: Type,
+            subjectType: Type,
+            function: (Type, Type) -> Type,
+            inverse: (Type, Type) -> Type,
+            success: (key: String, assumption: Type, reciprocal: Type) -> Unit
+    ) {
+        if (target !is IdentExpr) return
+        if (unitOnly && !subjectType.isUnitType) return
 
-    fun requireNotExpr(position: Section) {
-        if (stmt.expectedType != null) {
+        val assumption = function(targetType, subjectType)
+        val reciprocal = inverse(targetType, subjectType)
+
+        success(target.name, assumption, reciprocal)
+    }
+
+    private fun requireNotExpr(position: Section) {
+        if (stmt.expectExpr) {
             throw TypeException("Not a valid expression", position)
         }
     }
 
-    fun stmtExpectExpr() = StmtContext(AnyType)
-
-    fun requireNotGeneric(type: Type, position: Section) {
+    private fun requireNotGeneric(type: Type, position: Section) {
         if (type is TypeTemplate && type.genericParameters.isNotEmpty()) {
             throw TypeException("Missing generic type parameters", position)
         }
     }
 
-    inline fun catchError(block: () -> Unit): Boolean {
+    private inline fun catchError(block: () -> Unit): Boolean {
         return try {
             block()
             false

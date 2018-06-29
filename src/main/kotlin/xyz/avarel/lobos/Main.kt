@@ -67,14 +67,13 @@ struct Point {
     x: i32
     y: i32
 }
-
  */
 
 fun main(args: Array<String>) {
     val source = """
-        external def to_string(obj: any) -> str
+        external let x: i32 | null
 
-        let what = "hello " + to_string(1)
+       let b: bool = x != null && x + 2 == 3
     """.trimIndent()
 
     val lexer = Tokenizer(reader = source.reader())
@@ -95,7 +94,7 @@ fun main(args: Array<String>) {
         println()
         println("|> ERRORS:")
 
-        ast.accept(TypeChecker(DefaultScopeContext.subContext(), StmtContext(), false) { parser.errors += it })
+        ast.accept(TypeChecker(DefaultScopeContext.subContext(), StmtContext(false), false) { parser.errors += it })
 
         val lines = source.lines()
         parser.errors.forEach {

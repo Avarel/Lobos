@@ -5,6 +5,7 @@ import xyz.avarel.lobos.ast.expr.nodes.ReturnExpr
 import xyz.avarel.lobos.ast.expr.nodes.TupleExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
+import xyz.avarel.lobos.lexer.span
 import xyz.avarel.lobos.parser.Modifier
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.PrefixParser
@@ -17,6 +18,6 @@ object ReturnParser: PrefixParser {
             parser.parseExpr()
         }
 
-        return ReturnExpr(expr, token.position)
+        return ReturnExpr(expr, token.span(expr))
     }
 }
