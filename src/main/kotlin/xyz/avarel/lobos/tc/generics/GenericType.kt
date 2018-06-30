@@ -4,7 +4,6 @@ import xyz.avarel.lobos.tc.AbstractType
 import xyz.avarel.lobos.tc.Type
 import xyz.avarel.lobos.tc.TypeTemplate
 import xyz.avarel.lobos.tc.base.AnyType
-import java.util.*
 
 class GenericType(val genericParameter: GenericParameter): AbstractType(genericParameter.name, genericParameter.parentType ?: AnyType), TypeTemplate {
     override var genericParameters = listOf(genericParameter)
@@ -21,14 +20,6 @@ class GenericType(val genericParameter: GenericParameter): AbstractType(genericP
         }
 
         return type
-    }
-
-    override fun extract(type: Type): Map<GenericParameter, Type> {
-        if (genericParameter.parentType != null && !genericParameter.parentType.isAssignableFrom(type)) {
-            throw IllegalArgumentException("$type does not satisfy type bound $this")
-        }
-
-        return Collections.singletonMap(genericParameter, type)
     }
 
     override fun equals(other: Any?): Boolean {

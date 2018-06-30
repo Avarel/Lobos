@@ -51,6 +51,7 @@ enum class TokenType {
     DOT,
     COMMA,
     COLON,
+    DOUBLE_COLON,
     SEMICOLON,
 
     NL,

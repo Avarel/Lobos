@@ -1,9 +1,11 @@
 package xyz.avarel.lobos.tc.complex
 
-import xyz.avarel.lobos.parser.mergeAll
-import xyz.avarel.lobos.tc.*
+import xyz.avarel.lobos.tc.Type
+import xyz.avarel.lobos.tc.TypeTemplate
 import xyz.avarel.lobos.tc.base.NeverType
+import xyz.avarel.lobos.tc.findGenericParameters
 import xyz.avarel.lobos.tc.generics.GenericParameter
+import xyz.avarel.lobos.tc.template
 
 open class TupleType(val valueTypes: List<Type>) : TypeTemplate {
     override var genericParameters = valueTypes.findGenericParameters()
@@ -14,20 +16,6 @@ open class TupleType(val valueTypes: List<Type>) : TypeTemplate {
 
     override fun template(types: Map<GenericParameter, Type>): Type {
         return TupleType(valueTypes.map { it.template(types) })
-    }
-
-    override fun extract(type: Type): Map<GenericParameter, Type> {
-        if (type !is TupleType) throw IllegalArgumentException("Expected tuple, found $type")
-
-        if (type.valueTypes.size < valueTypes.size) return emptyMap()
-
-        val map = mutableMapOf<GenericParameter, Type>()
-
-        valueTypes.zip(type.valueTypes).forEach { (a, b) ->
-            map.mergeAll(a.extract(b), Type::commonAssignableToType)
-        }
-
-        return map
     }
 
     override fun isAssignableFrom(other: Type): Boolean {
@@ -67,5 +55,21 @@ open class TupleType(val valueTypes: List<Type>) : TypeTemplate {
         }
 
         append(')')
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return when {
+            this === other -> true
+            other !is TupleType -> false
+            valueTypes != other.valueTypes -> false
+            genericParameters != other.genericParameters -> false
+            else -> true
+        }
+    }
+
+    override fun hashCode(): Int {
+        var result = valueTypes.hashCode()
+        result = 31 * result + genericParameters.hashCode()
+        return result
     }
 }

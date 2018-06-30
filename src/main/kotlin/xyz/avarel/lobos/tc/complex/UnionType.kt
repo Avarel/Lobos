@@ -3,7 +3,6 @@ package xyz.avarel.lobos.tc.complex
 import xyz.avarel.lobos.tc.*
 import xyz.avarel.lobos.tc.base.NeverType
 import xyz.avarel.lobos.tc.generics.GenericParameter
-import xyz.avarel.lobos.tc.generics.GenericType
 
 class UnionType(val left: Type, val right: Type) : TypeTemplate {
     override var genericParameters = listOf(left, right).findGenericParameters()
@@ -20,31 +19,6 @@ class UnionType(val left: Type, val right: Type) : TypeTemplate {
 
     override fun template(types: Map<GenericParameter, Type>): Type {
         return listOf(left.template(types), right.template(types)).toType()
-    }
-
-    override fun extract(type: Type): Map<GenericParameter, Type> {
-        val list = toList()
-        val generics = list.filterIsInstance<GenericType>()
-        val types = list.filter { it !is GenericType }
-        val other = type.toList().toMutableList().apply { removeAll(types) }
-
-
-        return when {
-            other.size < generics.size -> {
-                throw IllegalArgumentException("Insufficient types in union to infer generics")
-            }
-            generics.isNotEmpty() -> {
-                val map = mutableMapOf<GenericParameter, Type>()
-
-                for (i in 0 until generics.lastIndex) {
-                    map[generics[i].genericParameter] = other[i]
-                }
-
-                map[generics[generics.lastIndex].genericParameter] = other.subList(generics.lastIndex, other.size).toType()
-                map
-            }
-            else -> emptyMap()
-        }
     }
 
     override fun isAssignableFrom(other: Type): Boolean = when (other) {

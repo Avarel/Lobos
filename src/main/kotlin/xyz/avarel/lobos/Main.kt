@@ -6,7 +6,6 @@ import xyz.avarel.lobos.parser.DefaultGrammar
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.tc.TypeChecker
 import xyz.avarel.lobos.tc.scope.DefaultScopeContext
-import xyz.avarel.lobos.tc.scope.StmtContext
 
 /* Smart Compiler
 let y: 1|3|5|7|"string" = "string";
@@ -71,9 +70,10 @@ struct Point {
 
 fun main(args: Array<String>) {
     val source = """
-        external let x: i32 | null
-
-       let b: bool = x != null && x + 2 == 3
+        type Predicate<T> = (T) -> bool
+        def why<T>(value: T) -> bool { true }
+        let x: Predicate<i32> = why::<i32>
+        let y: bool = x(5)
     """.trimIndent()
 
     val lexer = Tokenizer(reader = source.reader())
@@ -96,10 +96,9 @@ fun main(args: Array<String>) {
 
         ast.accept(TypeChecker(
                 DefaultScopeContext.subContext(),
-                StmtContext(),
+                null,
                 false
-        ) { parser.errors += it })
-
+        ) { parser.errors += it }).also { println("return type -> $it") }
 
         val lines = source.lines()
         parser.errors.forEach {

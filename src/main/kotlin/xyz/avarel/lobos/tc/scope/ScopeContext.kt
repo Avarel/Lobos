@@ -42,6 +42,10 @@ open class ScopeContext(
         return types[key] ?: parent?.getType(key)
     }
 
+    fun putType(key: String, type: Type) {
+        types[key] = type
+    }
+
     fun subContext() = ScopeContext(this).also { it.expectedReturnType = expectedReturnType }
 }
 

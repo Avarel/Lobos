@@ -1,9 +1,11 @@
 package xyz.avarel.lobos.tc.complex
 
-import xyz.avarel.lobos.parser.mergeAll
-import xyz.avarel.lobos.tc.*
+import xyz.avarel.lobos.tc.Type
+import xyz.avarel.lobos.tc.TypeTemplate
 import xyz.avarel.lobos.tc.base.NeverType
+import xyz.avarel.lobos.tc.findGenericParameters
 import xyz.avarel.lobos.tc.generics.GenericParameter
+import xyz.avarel.lobos.tc.template
 
 class FunctionType(
         val argumentTypes: List<Type>,
@@ -26,27 +28,28 @@ class FunctionType(
         return FunctionType(argumentTypes.map { it.template(types) }, returnType.template(types))
     }
 
-    override fun extract(type: Type): Map<GenericParameter, Type> {
-        if (type !is FunctionType)
-            throw IllegalArgumentException("Expected function, found $type")
-        if (type.argumentTypes.size < argumentTypes.size)
-            throw IllegalArgumentException("Expected ${argumentTypes.size} arguments, found ${type.argumentTypes.size}")
-
-        val map = mutableMapOf<GenericParameter, Type>()
-
-        argumentTypes.zip(type.argumentTypes) { a, b ->
-            map.mergeAll(a.extract(b), Type::commonAssignableToType)
-        }
-
-        map.mergeAll(returnType.extract(type.returnType)) { v1, _ -> v1 }
-
-        return map
-    }
-
     override fun toString() = buildString {
         argumentTypes.joinTo(this, prefix = "(", postfix = ")")
 
         append(" -> ")
         append(returnType)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return when {
+            this === other -> true
+            other !is FunctionType -> false
+            argumentTypes != other.argumentTypes -> false
+            returnType != other.returnType -> false
+            genericParameters != other.genericParameters -> false
+            else -> true
+        }
+    }
+
+    override fun hashCode(): Int {
+        var result = argumentTypes.hashCode()
+        result = 31 * result + returnType.hashCode()
+        result = 31 * result + genericParameters.hashCode()
+        return result
     }
 }

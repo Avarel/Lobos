@@ -35,7 +35,10 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
                 else -> list += makeToken(TokenType.DOT)
             }
             ',' -> list += makeToken(TokenType.COMMA)
-            ':' -> list += makeToken(TokenType.COLON)
+            ':' -> list += when {
+                match(':') -> makeToken(TokenType.DOUBLE_COLON)
+                else -> makeToken(TokenType.COLON)
+            }
             ';' -> list += makeToken(TokenType.SEMICOLON)
             '\n' -> list += makeToken(TokenType.NL)
             '+' -> list += makeToken(TokenType.PLUS)
@@ -46,31 +49,31 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
             '*' -> list += makeToken(TokenType.ASTERISK)
             '/' -> list += makeToken(TokenType.F_SLASH)
             '\\' -> list += makeToken(TokenType.B_SLASH)
-            '!' -> when {
-                match('=') -> list += makeToken(TokenType.NEQ, 2)
-                else -> list += makeToken(TokenType.BANG)
+            '!' -> list += when {
+                match('=') -> makeToken(TokenType.NEQ, 2)
+                else -> makeToken(TokenType.BANG)
             }
             '?' -> list += makeToken(TokenType.QUESTION)
-            '=' -> when {
-                match('=') -> list += makeToken(TokenType.EQ, 2)
-                else -> list += makeToken(TokenType.ASSIGN)
+            '=' -> list += when {
+                match('=') -> makeToken(TokenType.EQ, 2)
+                else -> makeToken(TokenType.ASSIGN)
             }
-            '|' -> when {
-                match('|') -> list += makeToken(TokenType.OR, 2)
-                match('>') -> list += makeToken(TokenType.PIPE_FORWARD, 2)
-                else -> list += makeToken(TokenType.PIPE)
+            '|' -> list += when {
+                match('|') -> makeToken(TokenType.OR, 2)
+                match('>') -> makeToken(TokenType.PIPE_FORWARD, 2)
+                else -> makeToken(TokenType.PIPE)
             }
-            '&' -> when {
-                match('&') -> list += makeToken(TokenType.AND, 2)
-                else -> list += makeToken(TokenType.AMP)
+            '&' -> list += when {
+                match('&') -> makeToken(TokenType.AND, 2)
+                else -> makeToken(TokenType.AMP)
             }
-            '<' -> when {
-                match('=') -> list += makeToken(TokenType.LTE, 2)
-                else -> list += makeToken(TokenType.LT)
+            '<' -> list += when {
+                match('=') -> makeToken(TokenType.LTE, 2)
+                else -> makeToken(TokenType.LT)
             }
-            '>' -> when {
-                match('=') -> list += makeToken(TokenType.GTE, 2)
-                else -> list += makeToken(TokenType.GT)
+            '>' -> list += when {
+                match('=') -> makeToken(TokenType.GTE, 2)
+                else -> makeToken(TokenType.GT)
             }
             '"' -> parseStringTo(list, '"', true)
             '\'' -> parseStringTo(list, '\'', false)

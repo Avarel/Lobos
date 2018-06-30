@@ -14,12 +14,6 @@ interface TypeTemplate: Type {
     fun template(types: Map<GenericParameter, Type>): Type
 
     fun template(types: List<Type>) = template(genericParameters.zip(types).toMap())
-
-    /**
-     * Extract generic parameters.
-     */
-    fun extract(type: Type): Map<GenericParameter, Type>
-
 }
 
 fun Type.template(types: Map<GenericParameter, Type>): Type {
@@ -28,8 +22,4 @@ fun Type.template(types: Map<GenericParameter, Type>): Type {
 
 fun Type.template(types: List<Type>): Type {
     return (this as? TypeTemplate)?.template(types) ?: this
-}
-
-fun Type.extract(type: Type): Map<GenericParameter, Type> {
-    return (this as? TypeTemplate)?.extract(type) ?: emptyMap()
 }

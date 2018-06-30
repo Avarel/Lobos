@@ -136,13 +136,13 @@ fun Parser.parseSingleTypeAST(): AbstractTypeAST {
 }
 
 private fun Parser.constructTupleOrFunctionType(valueTypes: List<AbstractTypeAST>, position: Section): AbstractTypeAST {
-   return when {
+    return when {
         match(TokenType.ARROW) -> {
             val returnType = parseTypeAST()
             FunctionTypeAST(valueTypes, returnType, position)
         }
-       valueTypes.isEmpty() -> TupleTypeAST(position)
-       else -> TupleTypeAST(valueTypes, position)
+        valueTypes.isEmpty() -> TupleTypeAST(position)
+        else -> TupleTypeAST(valueTypes, position)
     }
 }
 

@@ -1,4 +1,4 @@
-package xyz.avarel.lobos.parser.parselets.nodes
+package xyz.avarel.lobos.parser.parselets.special
 
 import xyz.avarel.lobos.ast.expr.Expr
 import xyz.avarel.lobos.ast.expr.nodes.TupleExpr
@@ -9,7 +9,7 @@ import xyz.avarel.lobos.parser.Modifier
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.PrefixParser
 
-object TupleParser: PrefixParser {
+object ParenParser : PrefixParser {
     override fun parse(parser: Parser, modifiers: List<Modifier>, token: Token): Expr {
         if (parser.match(TokenType.R_PAREN)) {
             return TupleExpr(emptyList(), token.span(parser.last))

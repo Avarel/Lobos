@@ -45,9 +45,7 @@ class TypeResolver(
     override fun visit(typeAst: TupleTypeAST): Type {
         if (typeAst.types.isEmpty()) return UnitType
 
-        return TupleType(
-                typeAst.types.map { it.accept(this) }
-        )
+        return TupleType(typeAst.types.map { it.accept(this) })
     }
 
     override fun visit(typeAst: UnionTypeAST): Type {
@@ -60,7 +58,7 @@ class TypeResolver(
         val target = typeAst.target.accept(this)
 
         if (target !is TypeTemplate) {
-            errorHandler(TypeException("$target is not a templatable type", typeAst.target.position))
+            errorHandler(TypeException("$target is not a generic type", typeAst.target.position))
             return InvalidType
         }
 

@@ -16,6 +16,7 @@ import xyz.avarel.lobos.ast.expr.invoke.InvokeMemberExpr
 import xyz.avarel.lobos.ast.expr.misc.IfExpr
 import xyz.avarel.lobos.ast.expr.misc.InvalidExpr
 import xyz.avarel.lobos.ast.expr.misc.MultiExpr
+import xyz.avarel.lobos.ast.expr.misc.TemplateExpr
 import xyz.avarel.lobos.ast.expr.nodes.*
 import xyz.avarel.lobos.ast.expr.ops.BinaryOperation
 import xyz.avarel.lobos.ast.expr.ops.UnaryOperation
@@ -157,12 +158,20 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
 
         for (i in 0 until expr.list.size - 1) {
             expr.list[i].ast(tail = false)
-            buf.append('\n')
         }
         if (expr.list.isNotEmpty()) {
             expr.list.last().ast(tail = true)
         }
     }
+
+    override fun visit(expr: TemplateExpr) {
+        defaultAst("template")
+
+        expr.target.astLabel("target", tail = false)
+
+        label(expr.typeArguments.joinToString(prefix = "type arguments: <", postfix = ">"), true)
+    }
+
     override fun visit(expr: InvokeExpr) {
         defaultAst("invoke")
 

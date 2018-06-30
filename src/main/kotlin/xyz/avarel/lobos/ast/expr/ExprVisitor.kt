@@ -14,6 +14,7 @@ import xyz.avarel.lobos.ast.expr.invoke.InvokeMemberExpr
 import xyz.avarel.lobos.ast.expr.misc.IfExpr
 import xyz.avarel.lobos.ast.expr.misc.InvalidExpr
 import xyz.avarel.lobos.ast.expr.misc.MultiExpr
+import xyz.avarel.lobos.ast.expr.misc.TemplateExpr
 import xyz.avarel.lobos.ast.expr.nodes.*
 import xyz.avarel.lobos.ast.expr.ops.BinaryOperation
 import xyz.avarel.lobos.ast.expr.ops.UnaryOperation
@@ -38,6 +39,7 @@ interface ExprVisitor<R> {
     fun visit(expr: IdentExpr): R
     fun visit(expr: TupleExpr): R
 
+    fun visit(expr: TemplateExpr): R
     fun visit(expr: InvokeExpr): R
     fun visit(expr: UnaryOperation): R
     fun visit(expr: BinaryOperation): R
