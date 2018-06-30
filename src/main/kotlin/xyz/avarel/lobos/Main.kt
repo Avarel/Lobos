@@ -94,7 +94,12 @@ fun main(args: Array<String>) {
         println()
         println("|> ERRORS:")
 
-        ast.accept(TypeChecker(DefaultScopeContext.subContext(), StmtContext(false), false) { parser.errors += it })
+        ast.accept(TypeChecker(
+                DefaultScopeContext.subContext(),
+                StmtContext(),
+                false
+        ) { parser.errors += it })
+
 
         val lines = source.lines()
         parser.errors.forEach {
