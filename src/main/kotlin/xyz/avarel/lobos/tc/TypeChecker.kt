@@ -250,18 +250,27 @@ class TypeChecker(
     }
 
     override fun visit(expr: UnaryOperation): Type {
-        val target = expr.target.visitValue(scope, StmtContext(), true)
+        val stmt = stmt ?: StmtContext() // locally, b/c chains matter
+        val target = expr.target.visitValue(scope, stmt, true)
 
         when (expr.operator) {
-            UnaryOperationType.NOT -> TODO()
-            else -> when (target) {
+            UnaryOperationType.NOT -> when (target) {
+                BoolType -> {
+                    val tmp = stmt.assumptions
+                    stmt.assumptions = stmt.reciprocals
+                    stmt.reciprocals = tmp
+                    return BoolType
+                }
+            }
+            UnaryOperationType.POSITIVE,
+            UnaryOperationType.NEGATIVE -> when (target) {
                 I32Type,
                 I64Type,
                 F64Type -> return target
             }
         }
 
-        errorHandler(TypeException("$target is incompatible", expr.position))
+        errorHandler(TypeException("Operator ${expr.operator} is incompatible with $target", expr.position))
         return InvalidType
     }
 
@@ -348,7 +357,7 @@ class TypeChecker(
                         F64Type -> return F64Type
                     }
                 }
-                errorHandler(TypeException("$left is incompatible with $right", expr.position))
+                errorHandler(TypeException("Operator ${expr.operator} is incompatible with $left and $right", expr.position))
                 return InvalidType
             }
         }

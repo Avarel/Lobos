@@ -70,10 +70,7 @@ struct Point {
 
 fun main(args: Array<String>) {
     val source = """
-        type Predicate<T> = (T) -> bool
-        def why<T>(value: T) -> bool { true }
-        let x: Predicate<i32> = why::<i32>
-        let y: bool = x(5)
+        external let a: i32 | null
     """.trimIndent()
 
     val lexer = Tokenizer(reader = source.reader())

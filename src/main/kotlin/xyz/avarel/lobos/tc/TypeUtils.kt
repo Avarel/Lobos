@@ -6,7 +6,7 @@ import xyz.avarel.lobos.tc.generics.GenericBodyType
 import xyz.avarel.lobos.tc.generics.GenericParameter
 import xyz.avarel.lobos.tc.generics.GenericType
 
-fun List<Type>.findGenericParameters(): List<GenericParameter> {
+fun Collection<Type>.findGenericParameters(): List<GenericParameter> {
     val list = mutableListOf<GenericParameter>()
     for (type in this) {
         when (type) {
