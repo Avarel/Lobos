@@ -4,37 +4,36 @@ import xyz.avarel.lobos.tc.Type
 
 open class ScopeContext(
         val parent: ScopeContext? = null,
-        val variables: MutableMap<String, Type> = hashMapOf(),
+        val allowMutableParentAssumptions: Boolean = true,
+        val variables: MutableMap<String, VariableInfo> = hashMapOf(),
         val types: MutableMap<String, Type> = hashMapOf()
 ) {
-    val mutableVariables: MutableSet<String> = hashSetOf()
     val assumptions: MutableMap<String, Type> = hashMapOf()
 
     var expectedReturnType: Type? = null
     var terminates: Boolean = false
 
-    private fun getMutability(key: String): Boolean {
-        return key in mutableVariables || parent?.getMutability(key) ?: false
+    fun getDeclaration(key: String): VariableInfo? {
+        return variables[key] ?: parent?.getDeclaration(key)
     }
 
-    fun getDeclaration(key: String): Pair<Type, Boolean>? {
-        return getVariable(key)?.let { it to getMutability(key) }
-    }
-
-    fun getVariable(key: String): Type? {
-        return variables[key] ?: parent?.getVariable(key)
-    }
-
-    fun putVariable(key: String, type: Type, mutable: Boolean) {
-        variables[key] = type
-        if (mutable) mutableVariables += key
+    fun declare(key: String, type: Type, mutable: Boolean) {
+        variables[key] = VariableInfo(type, mutable)
     }
 
     fun getAssumption(key: String): Type? {
-        return assumptions[key] ?: variables[key] ?: parent?.getAssumption(key)
+        return assumptions[key] ?: variables[key]?.type ?: parent?.getAssumption(key)?.let { parentAssumption ->
+            when {
+                allowMutableParentAssumptions -> parentAssumption
+                else -> parent.getDeclaration(key)!!.let { (type, mutable) ->
+                    if (mutable) return type
+                    return parentAssumption
+                }
+            }
+        }
     }
 
-    fun putAssumption(key: String, type: Type) {
+    fun assume(key: String, type: Type) {
         assumptions[key] = type
     }
 
@@ -46,6 +45,8 @@ open class ScopeContext(
         types[key] = type
     }
 
-    fun subContext() = ScopeContext(this).also { it.expectedReturnType = expectedReturnType }
+    fun subContext(allowParentAssumptions: Boolean = true) = ScopeContext(this, allowParentAssumptions).also {
+        it.expectedReturnType = expectedReturnType
+    }
 }
 

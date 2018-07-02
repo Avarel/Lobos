@@ -1,8 +1,8 @@
 package xyz.avarel.lobos.parser.parselets.nodes
 
 import xyz.avarel.lobos.ast.expr.Expr
+import xyz.avarel.lobos.ast.expr.access.AssignExpr
 import xyz.avarel.lobos.ast.expr.nodes.IdentExpr
-import xyz.avarel.lobos.ast.expr.variables.AssignExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.parser.Modifier

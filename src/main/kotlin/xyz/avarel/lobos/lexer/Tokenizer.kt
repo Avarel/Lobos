@@ -121,6 +121,7 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
             "type" -> makeToken(TokenType.TYPE, 4)
             "def" -> makeToken(TokenType.DEF, 3)
             "external" -> makeToken(TokenType.EXTERNAL, 8)
+            "struct" -> makeToken(TokenType.STRUCT, 6)
             else -> makeToken(TokenType.IDENT, str)
         }
     }

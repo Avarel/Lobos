@@ -3,18 +3,19 @@ package xyz.avarel.lobos.tc.complex
 import xyz.avarel.lobos.tc.*
 import xyz.avarel.lobos.tc.base.NeverType
 import xyz.avarel.lobos.tc.generics.GenericParameter
+import xyz.avarel.lobos.tc.scope.VariableInfo
 
 class UnionType(val left: Type, val right: Type) : TypeTemplate {
     override var genericParameters = listOf(left, right).findGenericParameters()
 
     override val universalType: Type by lazy {
-        left.universalType.commonSuperTypeWith(right.universalType)
+        left.universalType commonSuperTypeWith right.universalType
     }
 
-    override fun getMember(key: String): Type? {
+    override fun getMember(key: String): VariableInfo? {
         val left = left.getMember(key) ?: return null
         val right = right.getMember(key) ?: return null
-        return left.commonAssignableToType(right)
+        return VariableInfo(left.type commonAssignableToType right.type, left.mutable && right.mutable)
     }
 
     override fun template(types: Map<GenericParameter, Type>): Type {
@@ -23,8 +24,8 @@ class UnionType(val left: Type, val right: Type) : TypeTemplate {
 
     override fun isAssignableFrom(other: Type): Boolean = when (other) {
         NeverType -> true
-        is UnionType -> this.isAssignableFrom(other.left) && isAssignableFrom(other.right)
-        else -> left.isAssignableFrom(other) || right.isAssignableFrom(other)
+        is UnionType -> this isAssignableFrom other.left && isAssignableFrom(other.right)
+        else -> left isAssignableFrom other || right isAssignableFrom other
     }
 
     override fun commonAssignableToType(other: Type): Type {

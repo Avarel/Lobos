@@ -20,7 +20,7 @@ object FunctionParser: PrefixParser {
         parser.eat(TokenType.L_PAREN)
         if (!parser.match(TokenType.R_PAREN)) {
             do {
-//                val isMutable = parser.match(TokenType.MUT)
+                val isMutable = parser.match(TokenType.MUT)
 
                 val paramIdent = parser.eat(TokenType.IDENT)
                 val paramName = paramIdent.string
@@ -32,7 +32,7 @@ object FunctionParser: PrefixParser {
                     parser.errors += SyntaxException("Parameter $paramName has already been declared", paramIdent.position)
                 }
 
-                arguments[paramName] = ArgumentParameterAST(paramName, type)
+                arguments[paramName] = ArgumentParameterAST(isMutable, paramName, type)
             } while (parser.match(TokenType.COMMA))
 
             parser.eat(TokenType.R_PAREN)

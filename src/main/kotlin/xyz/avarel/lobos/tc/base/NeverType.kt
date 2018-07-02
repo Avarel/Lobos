@@ -2,6 +2,7 @@ package xyz.avarel.lobos.tc.base
 
 import xyz.avarel.lobos.tc.AbstractType
 import xyz.avarel.lobos.tc.Type
+import xyz.avarel.lobos.tc.scope.VariableInfo
 
 /**
  * This type can be assigned to anything, because technically, it will never return.
@@ -10,7 +11,7 @@ import xyz.avarel.lobos.tc.Type
 object NeverType: AbstractType("!") {
     override val parentType: Type = this
     override fun isAssignableFrom(other: Type) = other === this
-    override fun getMember(key: String): Type? = null
+    override fun getMember(key: String): VariableInfo? = null
 
     override fun commonAssignableToType(other: Type) = other
     override fun commonAssignableFromType(other: Type) = this

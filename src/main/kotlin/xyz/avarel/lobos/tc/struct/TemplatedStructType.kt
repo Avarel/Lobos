@@ -1,20 +1,18 @@
-package xyz.avarel.lobos.tc.complex
+package xyz.avarel.lobos.tc.struct
 
 import xyz.avarel.lobos.tc.Type
-import xyz.avarel.lobos.tc.TypeTemplate
 import xyz.avarel.lobos.tc.findGenericParameters
 import xyz.avarel.lobos.tc.generics.GenericParameter
+import xyz.avarel.lobos.tc.scope.VariableInfo
 import xyz.avarel.lobos.tc.template
 
-class TemplatedStructType(val base: StructType, val typeArguments: Map<GenericParameter, Type>) : TypeTemplate {
-    val members: Map<String, Type> = base.members.mapValues { it.value.template(typeArguments) }
-    override var genericParameters: List<GenericParameter> = members.values.findGenericParameters()
+class TemplatedStructType(val base: BaseStructType, val typeArguments: Map<GenericParameter, Type>) : StructType {
+    override val name: String get() = base.name
+    override val members: Map<String, VariableInfo> = base.members.mapValues { VariableInfo(it.value.type.template(typeArguments), it.value.mutable) }
 
-    override fun getMember(key: String): Type? {
-        return members[key]
-    }
+    override var genericParameters: List<GenericParameter> = members.values.map(VariableInfo::type).findGenericParameters()
 
-    override fun template(types: Map<GenericParameter, Type>): Type {
+    override fun template(types: Map<GenericParameter, Type>): StructType {
         require(types.keys == genericParameters.toSet())
         return TemplatedStructType(base, typeArguments + types)
     }
@@ -26,7 +24,7 @@ class TemplatedStructType(val base: StructType, val typeArguments: Map<GenericPa
 
         return members.all { (key, value) ->
             other.members[key]?.let {
-                value.isAssignableFrom(it)
+                value.type.isAssignableFrom(it.type)
             } ?: false
         }
     }

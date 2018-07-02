@@ -1,8 +1,6 @@
 package xyz.avarel.lobos.ast.expr
 
-import xyz.avarel.lobos.ast.expr.access.IndexAccessExpr
-import xyz.avarel.lobos.ast.expr.access.PropertyAccessExpr
-import xyz.avarel.lobos.ast.expr.access.TupleIndexAccessExpr
+import xyz.avarel.lobos.ast.expr.access.*
 import xyz.avarel.lobos.ast.expr.declarations.LetExpr
 import xyz.avarel.lobos.ast.expr.declarations.ModuleExpr
 import xyz.avarel.lobos.ast.expr.declarations.NamedFunctionExpr
@@ -18,7 +16,6 @@ import xyz.avarel.lobos.ast.expr.misc.TemplateExpr
 import xyz.avarel.lobos.ast.expr.nodes.*
 import xyz.avarel.lobos.ast.expr.ops.BinaryOperation
 import xyz.avarel.lobos.ast.expr.ops.UnaryOperation
-import xyz.avarel.lobos.ast.expr.variables.AssignExpr
 
 interface ExprVisitor<R> {
     fun visit(expr: I32Expr): R
@@ -48,7 +45,9 @@ interface ExprVisitor<R> {
     fun visit(expr: IfExpr): R
 
     fun visit(expr: IndexAccessExpr): R
+    fun visit(expr: IndexAssignExpr): R
     fun visit(expr: PropertyAccessExpr): R
+    fun visit(expr: PropertyAssignExpr): R
     fun visit(expr: InvokeMemberExpr): R
     fun visit(expr: TupleIndexAccessExpr): R
 

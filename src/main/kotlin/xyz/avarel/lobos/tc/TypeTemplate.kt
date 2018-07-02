@@ -12,14 +12,8 @@ interface TypeTemplate: Type {
      * Apply type parameters to the type template.
      */
     fun template(types: Map<GenericParameter, Type>): Type
-
-    fun template(types: List<Type>) = template(genericParameters.zip(types).toMap())
 }
 
 fun Type.template(types: Map<GenericParameter, Type>): Type {
-    return (this as? TypeTemplate)?.template(types) ?: this
-}
-
-fun Type.template(types: List<Type>): Type {
     return (this as? TypeTemplate)?.template(types) ?: this
 }

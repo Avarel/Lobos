@@ -2,9 +2,7 @@ package xyz.avarel.lobos.tc
 
 import xyz.avarel.lobos.ast.expr.Expr
 import xyz.avarel.lobos.ast.expr.ExprVisitor
-import xyz.avarel.lobos.ast.expr.access.IndexAccessExpr
-import xyz.avarel.lobos.ast.expr.access.PropertyAccessExpr
-import xyz.avarel.lobos.ast.expr.access.TupleIndexAccessExpr
+import xyz.avarel.lobos.ast.expr.access.*
 import xyz.avarel.lobos.ast.expr.declarations.LetExpr
 import xyz.avarel.lobos.ast.expr.declarations.ModuleExpr
 import xyz.avarel.lobos.ast.expr.declarations.NamedFunctionExpr
@@ -22,7 +20,6 @@ import xyz.avarel.lobos.ast.expr.ops.BinaryOperation
 import xyz.avarel.lobos.ast.expr.ops.BinaryOperationType
 import xyz.avarel.lobos.ast.expr.ops.UnaryOperation
 import xyz.avarel.lobos.ast.expr.ops.UnaryOperationType
-import xyz.avarel.lobos.ast.expr.variables.AssignExpr
 import xyz.avarel.lobos.ast.types.TypeAST
 import xyz.avarel.lobos.lexer.Section
 import xyz.avarel.lobos.parser.TypeException
@@ -53,7 +50,7 @@ class TypeChecker(
         val subScope = scope.subContext()
 
         if (expr.name in scope.variables) {
-            if (!scope.getDeclaration(expr.name)!!.second) {
+            if (!scope.getDeclaration(expr.name)!!.mutable) {
                 // if a module is mutable in this scope, it's body's typecheck is being deferred
                 errorHandler(TypeException("Module ${expr.name} has already been declared", expr.position))
                 return null
@@ -64,37 +61,37 @@ class TypeChecker(
 
         expr.declarationsAST.let { declarations ->
             // defer modules //
-            declarations.modules.forEach { it.visitValue(subScope, deferBody = true) }
+            declarations.modules.forEach { it.visitStmt(subScope, deferBody = true) }
             // defer functions //
-            declarations.functions.forEach { it.visitValue(subScope, deferBody = true) }
+            declarations.functions.forEach { it.visitStmt(subScope, deferBody = true) }
 
             if (!deferBody) {
                 // check lets //
-                declarations.variables.forEach { it.visitValue(subScope) }
+                declarations.variables.forEach { it.visitStmt(subScope) }
                 // check modules modules //
-                declarations.modules.forEach { it.visitValue(subScope) }
+                declarations.modules.forEach { it.visitStmt(subScope) }
                 // check function bodies //
-                declarations.functions.forEach { it.visitValue(subScope) }
+                declarations.functions.forEach { it.visitStmt(subScope) }
             }
         }
 
-        this.scope.putVariable(expr.name, type, deferBody)
+        this.scope.declare(expr.name, type, deferBody)
 
         return null
     }
 
     override fun visit(expr: NamedFunctionExpr): Type? {
         if (expr.name in scope.variables) {
-            if (!scope.getDeclaration(expr.name)!!.second) {
+            if (!scope.getDeclaration(expr.name)!!.mutable) {
                 // if a function is mutable in this scope, it's body's typecheck is being deferred
-                errorHandler(TypeException("Function ${expr.name} has already been declared", expr.position))
+                errorHandler(TypeException("Reference ${expr.name} has already been declared", expr.position))
                 return null
             }
         }
 
         val genericParameters = expr.generics.map { GenericParameter(it.name, it.parentType?.resolve(scope)) }
         val argumentScope = scope.subContext()
-        val bodyScope = scope.subContext()
+        val bodyScope = scope.subContext(false)
 
         genericParameters.forEach {
             argumentScope.putType(it.name, GenericType(it))
@@ -102,7 +99,7 @@ class TypeChecker(
 
         val arguments = expr.arguments.map {
             it.type.resolve(argumentScope).also { type ->
-                bodyScope.putVariable(it.name, type.transformToBodyType(), false)
+                bodyScope.declare(it.name, type.transformToBodyType(), false)
             }
         }
 
@@ -123,7 +120,7 @@ class TypeChecker(
             }
         }
 
-        scope.putVariable(expr.name, type, deferBody)
+        scope.declare(expr.name, type, deferBody)
         return null
     }
 
@@ -158,20 +155,20 @@ class TypeChecker(
 
     override fun visit(expr: LetExpr): Type? {
         if (expr.name in scope.variables) {
-            errorHandler(TypeException("Variable ${expr.name} has already been declared", expr.position))
+            errorHandler(TypeException("Reference ${expr.name} has already been declared", expr.position))
         }
 
         val exprType = expr.value.visitValue(scope, StmtContext(), true)
 
         if (expr.type == null) {
-            scope.putVariable(expr.name, exprType.universalType, expr.mutable)
+            scope.declare(expr.name, exprType.universalType, expr.mutable)
         } else {
             val type = expr.type.resolve(scope)
 
-            scope.putVariable(expr.name, type, expr.mutable)
+            scope.declare(expr.name, type, expr.mutable)
 
             if (type.isAssignableFrom(exprType)) {
-                scope.putAssumption(expr.name, exprType)
+                scope.assume(expr.name, exprType)
             } else {
                 errorHandler(TypeException("Expected $type but found $exprType", expr.value.position))
             }
@@ -193,7 +190,7 @@ class TypeChecker(
 
         val exprType = expr.visitValue(scope, StmtContext(), true)
         if (checkType(type, exprType, expr.value.position)) {
-            scope.putAssumption(expr.name, exprType)
+            scope.assume(expr.name, exprType)
         }
 
         return null
@@ -378,19 +375,28 @@ class TypeChecker(
         TODO("not implemented")
     }
 
+
     override fun visit(expr: IndexAccessExpr): Type {
+        TODO("not implemented")
+    }
+
+    override fun visit(expr: IndexAssignExpr): Type? {
         TODO("not implemented")
     }
 
     override fun visit(expr: PropertyAccessExpr): Type {
         val target = expr.target.visitValue(scope, StmtContext(), true)
-        val type = target.getMember(expr.name)
+        val type = target.getMember(expr.name)?.type
 
         if (type == null) {
             errorHandler(TypeException("$target does not have member ${expr.name}", expr.position))
         }
 
         return type ?: InvalidType
+    }
+
+    override fun visit(expr: PropertyAssignExpr): Type? {
+        TODO("not implemented")
     }
 
     override fun visit(expr: InvokeMemberExpr): Type {
@@ -415,21 +421,21 @@ class TypeChecker(
 
     override fun visit(expr: ExternalLetExpr): Type? {
         if (expr.name in scope.variables) {
-            errorHandler(TypeException("Variable ${expr.name} has already been declared", expr.position))
+            errorHandler(TypeException("Reference ${expr.name} has already been declared", expr.position))
         }
 
         val exprType = expr.type.resolve(scope)
 
-        scope.putVariable(expr.name, exprType, expr.mutable)
+        scope.declare(expr.name, exprType, expr.mutable)
 
         return null
     }
 
     override fun visit(expr: ExternalNamedFunctionExpr): Type? {
         if (expr.name in scope.variables) {
-            if (!scope.getDeclaration(expr.name)!!.second) {
+            if (!scope.getDeclaration(expr.name)!!.mutable) {
                 // if a function is mutable in this scope, it's body's typecheck is being deferred
-                errorHandler(TypeException("Function ${expr.name} has already been declared", expr.position))
+                errorHandler(TypeException("Reference ${expr.name} has already been declared", expr.position))
                 return null
             }
         }
@@ -444,7 +450,7 @@ class TypeChecker(
 
         val arguments = expr.arguments.map {
             it.type.resolve(argumentScope).also { type ->
-                bodyScope.putVariable(it.name, type.transformToBodyType(), false)
+                bodyScope.declare(it.name, type.transformToBodyType(), false)
             }
         }
 
@@ -453,7 +459,7 @@ class TypeChecker(
         val type = FunctionType(arguments.toList(), returnType)
         type.genericParameters = genericParameters
 
-        scope.putVariable(expr.name, type, deferBody)
+        scope.declare(expr.name, type, deferBody)
         return null
     }
 
@@ -464,8 +470,7 @@ class TypeChecker(
         return if (stmt != null) {
             expr.list.last().visitValue(scope, StmtContext(), deferBody)
         } else {
-            expr.list.last().visitStmt(scope, null, deferBody)
-            null
+            expr.list.last().visitStmt(scope, stmt?.let { StmtContext() }, deferBody)
         }
     }
 

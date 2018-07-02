@@ -5,6 +5,7 @@ import xyz.avarel.lobos.tc.base.InvalidType
 import xyz.avarel.lobos.tc.base.NeverType
 import xyz.avarel.lobos.tc.base.NullType
 import xyz.avarel.lobos.tc.complex.UnionType
+import xyz.avarel.lobos.tc.scope.VariableInfo
 
 // GO WITH EXPLICIT TYPES FOR NOW, INFERENCE TOO HARD
 
@@ -46,7 +47,7 @@ interface Type {
     /**
      * Get an associated type of this type.
      */
-    fun getMember(key: String): Type? = parentType.getMember(key)
+    fun getMember(key: String): VariableInfo? = parentType.getMember(key)
 
     infix fun commonSuperTypeWith(other: Type): Type {
         when {

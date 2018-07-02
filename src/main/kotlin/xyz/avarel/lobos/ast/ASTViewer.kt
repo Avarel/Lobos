@@ -2,9 +2,7 @@ package xyz.avarel.lobos.ast
 
 import xyz.avarel.lobos.ast.expr.Expr
 import xyz.avarel.lobos.ast.expr.ExprVisitor
-import xyz.avarel.lobos.ast.expr.access.IndexAccessExpr
-import xyz.avarel.lobos.ast.expr.access.PropertyAccessExpr
-import xyz.avarel.lobos.ast.expr.access.TupleIndexAccessExpr
+import xyz.avarel.lobos.ast.expr.access.*
 import xyz.avarel.lobos.ast.expr.declarations.LetExpr
 import xyz.avarel.lobos.ast.expr.declarations.ModuleExpr
 import xyz.avarel.lobos.ast.expr.declarations.NamedFunctionExpr
@@ -20,7 +18,6 @@ import xyz.avarel.lobos.ast.expr.misc.TemplateExpr
 import xyz.avarel.lobos.ast.expr.nodes.*
 import xyz.avarel.lobos.ast.expr.ops.BinaryOperation
 import xyz.avarel.lobos.ast.expr.ops.UnaryOperation
-import xyz.avarel.lobos.ast.expr.variables.AssignExpr
 
 class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boolean): ExprVisitor<Unit> {
     fun Expr.ast(indent: String = this@ASTViewer.indent + if (isTail) "    " else "│   ", tail: Boolean) = accept(ASTViewer(buf, indent, tail))
@@ -39,7 +36,7 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         }
     }
 
-    private fun defaultAst(string: String) {
+    private fun base(string: String) {
         buf.apply {
             append(indent)
             append(if (isTail) "└── " else "├── ")
@@ -58,19 +55,19 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         }
     }
 
-    override fun visit(expr: NullExpr) = defaultAst("null ref")
+    override fun visit(expr: NullExpr) = base("null ref")
 
-    override fun visit(expr: InvalidExpr) = defaultAst("[Invalid expression.]")
+    override fun visit(expr: InvalidExpr) = base("[Invalid expression.]")
 
-    override fun visit(expr: I32Expr) = defaultAst("i32: ${expr.value}")
+    override fun visit(expr: I32Expr) = base("i32: ${expr.value}")
 
-    override fun visit(expr: I64Expr) = defaultAst("i64: ${expr.value}")
+    override fun visit(expr: I64Expr) = base("i64: ${expr.value}")
 
-    override fun visit(expr: F64Expr) = defaultAst("f64: ${expr.value}")
+    override fun visit(expr: F64Expr) = base("f64: ${expr.value}")
 
-    override fun visit(expr: StringExpr) = defaultAst("\"${expr.value}\"")
+    override fun visit(expr: StringExpr) = base("\"${expr.value}\"")
 
-    override fun visit(expr: BooleanExpr) = defaultAst(expr.value.toString())
+    override fun visit(expr: BooleanExpr) = base(expr.value.toString())
 
     override fun visit(expr: MultiExpr) {
         for (i in 0 until expr.list.size - 1) {
@@ -82,7 +79,7 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
     }
 
     override fun visit(expr: ModuleExpr) {
-        defaultAst("module ${expr.name}")
+        base("module ${expr.name}")
 
         expr.declarationsAST.let { declarations ->
             declarations.modules.astGroup("submodules", tail = false)
@@ -92,7 +89,8 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
     }
 
     override fun visit(expr: NamedFunctionExpr) {
-        defaultAst("function")
+        base("function")
+
         label("name: ${expr.name}", false)
 
         if (expr.generics.isNotEmpty()) {
@@ -100,23 +98,20 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         }
 
         label(expr.arguments.joinToString(prefix = "arguments: (", postfix = ")"), false)
-
         label("return: ${expr.returnType}", false)
-
         expr.body.astLabel("body", tail = true)
     }
 
     override fun visit(expr: LetExpr) {
-        defaultAst("let")
+        base("let")
+
         label("name: ${expr.name}", false)
-
         label("type: ${expr.type}", false)
-
-        expr.value.ast(tail = true)
+        expr.value.astLabel("tail", tail = true)
     }
 
     override fun visit(expr: TypeAliasExpr) {
-        defaultAst("typealias")
+        base("typealias")
 
         label("name: ${expr.name}", false)
 
@@ -128,12 +123,14 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
     }
 
     override fun visit(expr: ExternalLetExpr) {
-        defaultAst("external let")
+        base("external let")
+
         label("name: ${expr.name}", true)
     }
 
     override fun visit(expr: ExternalNamedFunctionExpr) {
-        defaultAst("external function")
+        base("external function")
+
         label("name: ${expr.name}", true)
 
         if (expr.generics.isNotEmpty()) {
@@ -141,20 +138,19 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         }
 
         label(expr.arguments.joinToString(prefix = "arguments: (", postfix = ")"), false)
-
         label("return: ${expr.returnType}", true)
     }
 
     override fun visit(expr: AssignExpr) {
-        defaultAst("assign ${expr.name}")
+        base("assign ${expr.name}")
 
         expr.value.ast(tail = true)
     }
 
-    override fun visit(expr: IdentExpr) = defaultAst("variable ${expr.name}")
+    override fun visit(expr: IdentExpr) = base("variable ${expr.name}")
 
     override fun visit(expr: TupleExpr) {
-        defaultAst("tuple")
+        base("tuple")
 
         for (i in 0 until expr.list.size - 1) {
             expr.list[i].ast(tail = false)
@@ -165,46 +161,42 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
     }
 
     override fun visit(expr: TemplateExpr) {
-        defaultAst("template")
+        base("template")
 
         expr.target.astLabel("target", tail = false)
-
         label(expr.typeArguments.joinToString(prefix = "type arguments: <", postfix = ">"), true)
     }
 
     override fun visit(expr: InvokeExpr) {
-        defaultAst("invoke")
+        base("invoke")
 
         expr.target.astLabel("target", tail = expr.arguments.isEmpty())
-
         expr.arguments.astGroup("arguments", tail = true)
     }
 
     override fun visit(expr: UnaryOperation) {
-        defaultAst("binary ${expr.operator}")
+        base("binary ${expr.operator}")
 
         expr.target.ast(tail = true)
     }
 
     override fun visit(expr: BinaryOperation) {
-        defaultAst("binary ${expr.operator}")
+        base("binary ${expr.operator}")
 
         expr.left.ast(tail = false)
-
         expr.right.ast(tail = true)
     }
 
     override fun visit(expr: ReturnExpr) {
-        defaultAst("return")
+        base("return")
 
         expr.expr.ast(tail = true)
     }
 
     override fun visit(expr: IfExpr) {
-        defaultAst("if")
+        base("if")
 
         expr.condition.astLabel("condition", tail = false)
-
         expr.thenBranch.astLabel("then", tail = expr.elseBranch == null)
 
         if (expr.elseBranch != null) {
@@ -213,36 +205,47 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
     }
 
     override fun visit(expr: IndexAccessExpr) {
-        defaultAst("index access")
+        base("index access")
 
         expr.target.astLabel("target", tail = false)
+        expr.index.astLabel("index", tail = true)
+    }
 
-        label("index: ${expr.index}", true)
+    override fun visit(expr: IndexAssignExpr) {
+        base("index assign")
+
+        expr.target.astLabel("target", tail = false)
+        expr.index.astLabel("index", tail = false)
+        expr.value.astLabel("value", tail = true)
     }
 
     override fun visit(expr: TupleIndexAccessExpr) {
-        defaultAst("tuple index access")
+        base("tuple index access")
 
         expr.target.astLabel("target", tail = false)
-
         label("index: ${expr.index}", true)
     }
 
     override fun visit(expr: PropertyAccessExpr) {
-        defaultAst("property access")
+        base("property access")
 
         expr.target.astLabel("target", tail = false)
-
         label("name: ${expr.name}", true)
     }
 
-    override fun visit(expr: InvokeMemberExpr) {
-        defaultAst("invoke member function")
+    override fun visit(expr: PropertyAssignExpr) {
+        base("property access")
 
         expr.target.astLabel("target", tail = false)
+        label("name: ${expr.name}", true)
+        expr.value.astLabel("value", tail = true)
+    }
 
+    override fun visit(expr: InvokeMemberExpr) {
+        base("invoke member function")
+
+        expr.target.astLabel("target", tail = false)
         label("name: ${expr.name}", expr.arguments.isEmpty())
-
         expr.arguments.astGroup("arguments", tail = true)
     }
 }

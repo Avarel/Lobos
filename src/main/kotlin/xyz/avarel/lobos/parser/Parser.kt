@@ -49,28 +49,6 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
         }
     }
 
-    fun matchComplete(type: TokenType): Boolean {
-        return if (nextIs(type)) {
-            while (nextIs(type)) {
-                eat()
-            }
-            true
-        } else {
-            false
-        }
-    }
-
-    fun matchCompleteAny(vararg type: TokenType): Boolean {
-        return if (nextIsAny(*type)) {
-            while (nextIsAny(*type)) {
-                eat()
-            }
-            true
-        } else {
-            false
-        }
-    }
-
     fun peek(distance: Int = 0) = tokens[index + distance]
 
     fun nextIs(type: TokenType) = !eof && peek().type == type
@@ -113,10 +91,10 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
         if (eof) throw SyntaxException("Expected expression but reached end of file", last.position)
 
         delimiterPair?.first?.let(this::eat)
-        matchCompleteAny(TokenType.SEMICOLON, TokenType.NL)
+        matchAllWhitespace()
 
         val list = mutableListOf<Expr>()
-        matchCompleteAny(TokenType.SEMICOLON, TokenType.NL)
+        matchAllWhitespace()
 
         do {
             if (eof || (delimiterPair != null && nextIs(delimiterPair.second))) {
@@ -133,7 +111,7 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
             } else {
                 list += expr
             }
-        } while (!eof && matchCompleteAny(TokenType.SEMICOLON, TokenType.NL))
+        } while (!eof && matchAllWhitespace())
 
         delimiterPair?.second?.let(this::eat)
 

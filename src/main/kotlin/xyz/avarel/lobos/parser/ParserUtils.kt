@@ -19,8 +19,6 @@ import xyz.avarel.lobos.ast.types.complex.TupleTypeAST
 import xyz.avarel.lobos.ast.types.complex.UnionTypeAST
 import xyz.avarel.lobos.lexer.Section
 import xyz.avarel.lobos.lexer.TokenType
-import xyz.avarel.lobos.tc.Type
-import xyz.avarel.lobos.tc.scope.ScopeContext
 
 val declarationTokens = listOf(
         TokenType.MOD,
@@ -29,6 +27,16 @@ val declarationTokens = listOf(
         TokenType.EXTERNAL,
         TokenType.TYPE
 )
+
+fun Parser.matchAllWhitespace(): Boolean {
+    val type = arrayOf(TokenType.SEMICOLON, TokenType.NL)
+    return if (nextIsAny(*type)) {
+        do eat() while (nextIsAny(*type))
+        true
+    } else {
+        false
+    }
+}
 
 fun Parser.parseDeclarations(): DeclarationsAST {
     val expr = parseStatements(TokenType.L_BRACE to TokenType.R_BRACE, emptyList(), declarationTokens)
@@ -171,10 +179,6 @@ fun Parser.parseGenericParameters(): List<GenericParameterAST> {
 
     eat(TokenType.GT)
     return genericParameters
-}
-
-fun ScopeContext.allVariables(): Map<String, Type> {
-    return parent?.allVariables()?.let { it + this.variables } ?: this.variables
 }
 
 inline fun <K, V> MutableMap<K, V>.mergeAll(other: Map<K, V>, remappingFunction: (V, V) -> V) {

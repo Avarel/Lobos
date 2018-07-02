@@ -30,17 +30,17 @@ open class TupleType(val valueTypes: List<Type>) : TypeTemplate {
     }
 
     override fun commonAssignableToType(other: Type): Type {
-        if (other is TupleType && other.valueTypes.size == valueTypes.size) {
-            return TupleType(valueTypes.zip(other.valueTypes, Type::commonAssignableToType))
+        return when {
+            other is TupleType && other.valueTypes.size == valueTypes.size -> TupleType(valueTypes.zip(other.valueTypes, Type::commonAssignableToType))
+            else -> super.commonAssignableToType(other)
         }
-        return super.commonAssignableToType(other)
     }
 
     override fun commonAssignableFromType(other: Type): Type {
-        if (other is TupleType && other.valueTypes.size == valueTypes.size) {
-            return TupleType(valueTypes.zip(other.valueTypes, Type::commonAssignableFromType))
+        return when {
+            other is TupleType && other.valueTypes.size == valueTypes.size -> TupleType(valueTypes.zip(other.valueTypes, Type::commonAssignableFromType))
+            else -> super.commonAssignableFromType(other)
         }
-        return super.commonAssignableFromType(other)
     }
 
     override fun toString() = buildString {

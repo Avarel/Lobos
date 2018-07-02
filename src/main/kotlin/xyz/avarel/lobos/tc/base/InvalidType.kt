@@ -2,6 +2,7 @@ package xyz.avarel.lobos.tc.base
 
 import xyz.avarel.lobos.tc.AbstractType
 import xyz.avarel.lobos.tc.Type
+import xyz.avarel.lobos.tc.scope.VariableInfo
 
 /**
  * Signifies when type inference has failed.
@@ -10,7 +11,7 @@ import xyz.avarel.lobos.tc.Type
 object InvalidType: AbstractType("[Invalid type.]") {
     override val parentType: Type = this
     override fun isAssignableFrom(other: Type) = false
-    override fun getMember(key: String): Type? = null
+    override fun getMember(key: String): VariableInfo? = null
 
     override fun commonAssignableToType(other: Type) = this
     override fun commonAssignableFromType(other: Type) = this

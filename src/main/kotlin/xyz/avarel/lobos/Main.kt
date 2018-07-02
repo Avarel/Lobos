@@ -6,6 +6,7 @@ import xyz.avarel.lobos.parser.DefaultGrammar
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.tc.TypeChecker
 import xyz.avarel.lobos.tc.scope.DefaultScopeContext
+import java.io.File
 
 /* Smart Compiler
 let y: 1|3|5|7|"string" = "string";
@@ -69,21 +70,13 @@ struct Point {
  */
 
 fun main(args: Array<String>) {
-    val source = """
-        external let a: i32 | null
-    """.trimIndent()
+    val source = File("script.waf")
 
-    val lexer = Tokenizer(reader = source.reader())
+    val lexer = Tokenizer(reader = File("script.waf").reader())
     lexer.parse().let {
 //        println()
 //        println("|> TOKENS:")
 //        it.forEach(::println)
-
-        println()
-        println("|> SOURCE:")
-
-
-        println(source)
 
         val parser = Parser(DefaultGrammar, lexer.fileName, it)
         val ast = parser.parse()
@@ -97,7 +90,7 @@ fun main(args: Array<String>) {
                 false
         ) { parser.errors += it }).also { println("return type -> $it") }
 
-        val lines = source.lines()
+        val lines = source.readLines()
         parser.errors.forEach {
             val line = lines[it.position.lineNumber.toInt() - 1]
             val msg = buildString {

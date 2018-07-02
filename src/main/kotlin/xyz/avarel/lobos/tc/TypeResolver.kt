@@ -69,6 +69,6 @@ class TypeResolver(
             return InvalidType
         }
 
-        return target.template(arguments)
+        return target.template(target.genericParameters.zip(arguments).toMap())
     }
 }
