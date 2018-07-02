@@ -9,10 +9,7 @@ import xyz.avarel.lobos.ast.expr.external.ExternalLetExpr
 import xyz.avarel.lobos.ast.expr.external.ExternalNamedFunctionExpr
 import xyz.avarel.lobos.ast.expr.invoke.InvokeExpr
 import xyz.avarel.lobos.ast.expr.invoke.InvokeMemberExpr
-import xyz.avarel.lobos.ast.expr.misc.IfExpr
-import xyz.avarel.lobos.ast.expr.misc.InvalidExpr
-import xyz.avarel.lobos.ast.expr.misc.MultiExpr
-import xyz.avarel.lobos.ast.expr.misc.TemplateExpr
+import xyz.avarel.lobos.ast.expr.misc.*
 import xyz.avarel.lobos.ast.expr.nodes.*
 import xyz.avarel.lobos.ast.expr.ops.BinaryOperation
 import xyz.avarel.lobos.ast.expr.ops.UnaryOperation
@@ -34,7 +31,10 @@ interface ExprVisitor<R> {
     fun visit(expr: AssignExpr): R
 
     fun visit(expr: IdentExpr): R
+
     fun visit(expr: TupleExpr): R
+    fun visit(expr: ListLiteralExpr): R
+    fun visit(expr: MapLiteralExpr): R
 
     fun visit(expr: TemplateExpr): R
     fun visit(expr: InvokeExpr): R
@@ -44,8 +44,8 @@ interface ExprVisitor<R> {
     fun visit(expr: ReturnExpr): R
     fun visit(expr: IfExpr): R
 
-    fun visit(expr: IndexAccessExpr): R
-    fun visit(expr: IndexAssignExpr): R
+    fun visit(expr: SubscriptAccessExpr): R
+    fun visit(expr: SubscriptAssignExpr): R
     fun visit(expr: PropertyAccessExpr): R
     fun visit(expr: PropertyAssignExpr): R
     fun visit(expr: InvokeMemberExpr): R

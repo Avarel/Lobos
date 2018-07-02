@@ -11,10 +11,7 @@ import xyz.avarel.lobos.ast.expr.external.ExternalLetExpr
 import xyz.avarel.lobos.ast.expr.external.ExternalNamedFunctionExpr
 import xyz.avarel.lobos.ast.expr.invoke.InvokeExpr
 import xyz.avarel.lobos.ast.expr.invoke.InvokeMemberExpr
-import xyz.avarel.lobos.ast.expr.misc.IfExpr
-import xyz.avarel.lobos.ast.expr.misc.InvalidExpr
-import xyz.avarel.lobos.ast.expr.misc.MultiExpr
-import xyz.avarel.lobos.ast.expr.misc.TemplateExpr
+import xyz.avarel.lobos.ast.expr.misc.*
 import xyz.avarel.lobos.ast.expr.nodes.*
 import xyz.avarel.lobos.ast.expr.ops.BinaryOperation
 import xyz.avarel.lobos.ast.expr.ops.UnaryOperation
@@ -55,6 +52,8 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         }
     }
 
+    override fun visit(expr: IdentExpr) = base("variable ${expr.name}")
+
     override fun visit(expr: NullExpr) = base("null ref")
 
     override fun visit(expr: InvalidExpr) = base("[Invalid expression.]")
@@ -70,21 +69,18 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
     override fun visit(expr: BooleanExpr) = base(expr.value.toString())
 
     override fun visit(expr: MultiExpr) {
-        for (i in 0 until expr.list.size - 1) {
-            expr.list[i].ast(indent, false)
-        }
-        if (expr.list.isNotEmpty()) {
-            expr.list.last().ast(indent, true)
+        for (i in 0 until expr.list.size) {
+            expr.list[i].ast(indent, i == expr.list.lastIndex)
         }
     }
 
     override fun visit(expr: ModuleExpr) {
         base("module ${expr.name}")
 
-        expr.declarationsAST.let { declarations ->
-            declarations.modules.astGroup("submodules", tail = false)
-            declarations.functions.astGroup("functions", tail = false)
-            declarations.variables.astGroup("variables", tail = true)
+        expr.declarationsAST.let { d ->
+            d.modules.astGroup("submodules", tail = d.functions.isEmpty() && d.variables.isEmpty())
+            d.functions.astGroup("functions", tail = d.variables.isEmpty())
+            d.variables.astGroup("variables", tail = true)
         }
     }
 
@@ -147,16 +143,28 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         expr.value.ast(tail = true)
     }
 
-    override fun visit(expr: IdentExpr) = base("variable ${expr.name}")
-
     override fun visit(expr: TupleExpr) {
         base("tuple")
 
-        for (i in 0 until expr.list.size - 1) {
-            expr.list[i].ast(tail = false)
+        for (i in 0 until expr.list.size) {
+            expr.list[i].ast(tail = i == expr.list.lastIndex)
         }
-        if (expr.list.isNotEmpty()) {
-            expr.list.last().ast(tail = true)
+    }
+
+    override fun visit(expr: ListLiteralExpr) {
+        base("list literal")
+
+        for (i in 0 until expr.list.size) {
+            expr.list[i].ast(tail = i == expr.list.lastIndex)
+        }
+    }
+
+    override fun visit(expr: MapLiteralExpr) {
+        base("map literal")
+
+        for ((i, entry) in expr.map.entries.withIndex()) {
+            entry.key.astLabel("key $i", tail = false)
+            entry.value.astLabel("value $i", tail = i == expr.map.size - 1)
         }
     }
 
@@ -204,14 +212,14 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         }
     }
 
-    override fun visit(expr: IndexAccessExpr) {
+    override fun visit(expr: SubscriptAccessExpr) {
         base("index access")
 
         expr.target.astLabel("target", tail = false)
         expr.index.astLabel("index", tail = true)
     }
 
-    override fun visit(expr: IndexAssignExpr) {
+    override fun visit(expr: SubscriptAssignExpr) {
         base("index assign")
 
         expr.target.astLabel("target", tail = false)

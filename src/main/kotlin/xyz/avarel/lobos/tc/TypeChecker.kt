@@ -11,10 +11,7 @@ import xyz.avarel.lobos.ast.expr.external.ExternalLetExpr
 import xyz.avarel.lobos.ast.expr.external.ExternalNamedFunctionExpr
 import xyz.avarel.lobos.ast.expr.invoke.InvokeExpr
 import xyz.avarel.lobos.ast.expr.invoke.InvokeMemberExpr
-import xyz.avarel.lobos.ast.expr.misc.IfExpr
-import xyz.avarel.lobos.ast.expr.misc.InvalidExpr
-import xyz.avarel.lobos.ast.expr.misc.MultiExpr
-import xyz.avarel.lobos.ast.expr.misc.TemplateExpr
+import xyz.avarel.lobos.ast.expr.misc.*
 import xyz.avarel.lobos.ast.expr.nodes.*
 import xyz.avarel.lobos.ast.expr.ops.BinaryOperation
 import xyz.avarel.lobos.ast.expr.ops.BinaryOperationType
@@ -25,7 +22,9 @@ import xyz.avarel.lobos.lexer.Section
 import xyz.avarel.lobos.parser.TypeException
 import xyz.avarel.lobos.parser.mergeAll
 import xyz.avarel.lobos.tc.base.*
+import xyz.avarel.lobos.tc.complex.ArrayType
 import xyz.avarel.lobos.tc.complex.FunctionType
+import xyz.avarel.lobos.tc.complex.MapType
 import xyz.avarel.lobos.tc.complex.TupleType
 import xyz.avarel.lobos.tc.generics.GenericParameter
 import xyz.avarel.lobos.tc.generics.GenericType
@@ -110,7 +109,7 @@ class TypeChecker(
 
         if (!deferBody) {
             bodyScope.expectedReturnType = returnType
-            val resultType = expr.body.visitValue(bodyScope, StmtContext(), true)
+            val resultType = expr.body.visitValue(bodyScope, StmtContext())
             if (!bodyScope.terminates) {
                 checkType(
                         returnType,
@@ -158,7 +157,7 @@ class TypeChecker(
             errorHandler(TypeException("Reference ${expr.name} has already been declared", expr.position))
         }
 
-        val exprType = expr.value.visitValue(scope, StmtContext(), true)
+        val exprType = expr.value.visitValue(scope, StmtContext())
 
         if (expr.type == null) {
             scope.declare(expr.name, exprType.universalType, expr.mutable)
@@ -188,7 +187,7 @@ class TypeChecker(
             return null
         }
 
-        val exprType = expr.visitValue(scope, StmtContext(), true)
+        val exprType = expr.visitValue(scope, StmtContext())
         if (checkType(type, exprType, expr.value.position)) {
             scope.assume(expr.name, exprType)
         }
@@ -207,7 +206,26 @@ class TypeChecker(
     override fun visit(expr: TupleExpr): Type {
         return when {
             expr.list.isEmpty() -> UnitType
-            else -> TupleType(expr.list.map { it.visitValue(scope, StmtContext(), true) })
+            else -> TupleType(expr.list.map { it.visitValue(scope, StmtContext()) })
+        }
+    }
+
+    override fun visit(expr: ListLiteralExpr): Type? {
+        return if (expr.list.isEmpty()) {
+            ArrayType(NeverType)
+        } else {
+            val valueType = expr.list.map { it.visitValue(scope, StmtContext()) }.reduce(Type::commonSuperTypeWith)
+            ArrayType(valueType)
+        }
+    }
+
+    override fun visit(expr: MapLiteralExpr): Type? {
+        return if (expr.map.isEmpty()) {
+            MapType(NeverType, NeverType)
+        } else {
+            val keyType = expr.map.keys.map { it.visitValue(scope, StmtContext()) }.reduce(Type::commonSuperTypeWith)
+            val valueType = expr.map.values.map { it.visitValue(scope, StmtContext()) }.reduce(Type::commonSuperTypeWith)
+            MapType(keyType, valueType)
         }
     }
 
@@ -248,7 +266,7 @@ class TypeChecker(
 
     override fun visit(expr: UnaryOperation): Type {
         val stmt = stmt ?: StmtContext() // locally, b/c chains matter
-        val target = expr.target.visitValue(scope, stmt, true)
+        val target = expr.target.visitValue(scope, stmt)
 
         when (expr.operator) {
             UnaryOperationType.NOT -> when (target) {
@@ -273,11 +291,11 @@ class TypeChecker(
 
     override fun visit(expr: BinaryOperation): Type {
         val stmt = stmt ?: StmtContext() // locally, b/c chains matter
-        val left = expr.left.visitValue(scope, stmt, true)
+        val left = expr.left.visitValue(scope, stmt)
 
         when (expr.operator) {
             BinaryOperationType.EQUALS, BinaryOperationType.NOT_EQUALS -> {
-                val right = expr.right.visitValue(scope, StmtContext(), true)
+                val right = expr.right.visitValue(scope, StmtContext())
                 if (!left.isAssignableFrom(right) && !right.isAssignableFrom(left)) {
                     errorHandler(TypeException("$left and $right are incompatible", expr.position))
                 } else {
@@ -302,7 +320,7 @@ class TypeChecker(
                 val rightCtx = StmtContext().also {
                     it.assumptions.putAll(stmt.assumptions)
                 }
-                val right = expr.right.visitValue(scope, rightCtx, true)
+                val right = expr.right.visitValue(scope, rightCtx)
                 checkType(BoolType, left, expr.left.position)
                 checkType(BoolType, right, expr.right.position)
 
@@ -320,7 +338,7 @@ class TypeChecker(
                 val rightCtx = StmtContext().also {
                     it.assumptions.putAll(stmt.reciprocals)
                 }
-                val right = expr.right.visitValue(scope, rightCtx, true)
+                val right = expr.right.visitValue(scope, rightCtx)
                 checkType(BoolType, left, expr.left.position)
                 checkType(BoolType, right, expr.right.position)
 
@@ -365,7 +383,7 @@ class TypeChecker(
         if (expectedReturnType == null) {
             errorHandler(TypeException("return is not valid in this context", expr.position))
         } else {
-            checkType(expectedReturnType, expr.visitValue(scope, StmtContext(), true), expr.position)
+            checkType(expectedReturnType, expr.visitValue(scope, StmtContext()), expr.position)
         }
         scope.terminates = true
         return NeverType
@@ -376,16 +394,16 @@ class TypeChecker(
     }
 
 
-    override fun visit(expr: IndexAccessExpr): Type {
+    override fun visit(expr: SubscriptAccessExpr): Type {
         TODO("not implemented")
     }
 
-    override fun visit(expr: IndexAssignExpr): Type? {
+    override fun visit(expr: SubscriptAssignExpr): Type? {
         TODO("not implemented")
     }
 
     override fun visit(expr: PropertyAccessExpr): Type {
-        val target = expr.target.visitValue(scope, StmtContext(), true)
+        val target = expr.target.visitValue(scope, StmtContext())
         val type = target.getMember(expr.name)?.type
 
         if (type == null) {
@@ -404,7 +422,7 @@ class TypeChecker(
     }
 
     override fun visit(expr: TupleIndexAccessExpr): Type {
-        val type = expr.target.visitValue(scope, StmtContext(), true)
+        val type = expr.target.visitValue(scope, StmtContext())
 
         if (type !is TupleType) {
             errorHandler(TypeException("$type is not a tuple type", expr.target.position))

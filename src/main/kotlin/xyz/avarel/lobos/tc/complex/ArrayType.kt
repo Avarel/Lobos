@@ -7,32 +7,30 @@ import xyz.avarel.lobos.tc.findGenericParameters
 import xyz.avarel.lobos.tc.generics.GenericParameter
 import xyz.avarel.lobos.tc.template
 
-class MapType(
-        val keyType: Type,
+class ArrayType(
         val valueType: Type
 ) : TypeTemplate {
-    override var genericParameters = listOf(keyType, valueType).findGenericParameters()
+    override var genericParameters = listOf(valueType).findGenericParameters()
 
     override fun isAssignableFrom(other: Type): Boolean {
         return when {
             this === other -> true
             other === NeverType -> true
-            other !is MapType -> false
-            else -> keyType isAssignableFrom other.keyType && valueType isAssignableFrom other.valueType
+            other !is ArrayType -> false
+            else -> valueType isAssignableFrom other.valueType
         }
     }
 
-    override fun template(types: Map<GenericParameter, Type>): MapType {
-        return MapType(keyType.template(types), valueType.template(types))
+    override fun template(types: Map<GenericParameter, Type>): ArrayType {
+        return ArrayType(valueType.template(types))
     }
 
-    override fun toString() = "[$keyType: $valueType]"
+    override fun toString() = "[$valueType]"
 
     override fun equals(other: Any?): Boolean {
         return when {
             this === other -> true
-            other !is MapType -> false
-            keyType != other.keyType -> false
+            other !is ArrayType -> false
             valueType != other.valueType -> false
             genericParameters != other.genericParameters -> false
             else -> true
@@ -40,8 +38,7 @@ class MapType(
     }
 
     override fun hashCode(): Int {
-        var result = keyType.hashCode()
-        result = 31 * result + valueType.hashCode()
+        var result = valueType.hashCode()
         result = 31 * result + genericParameters.hashCode()
         return result
     }

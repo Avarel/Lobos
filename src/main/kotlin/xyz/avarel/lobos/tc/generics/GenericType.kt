@@ -4,12 +4,13 @@ import xyz.avarel.lobos.tc.AbstractType
 import xyz.avarel.lobos.tc.Type
 import xyz.avarel.lobos.tc.TypeTemplate
 import xyz.avarel.lobos.tc.base.AnyType
+import xyz.avarel.lobos.tc.base.NeverType
 
 class GenericType(val genericParameter: GenericParameter): AbstractType(genericParameter.name, genericParameter.parentType ?: AnyType), TypeTemplate {
     override var genericParameters = listOf(genericParameter)
 
     override fun isAssignableFrom(other: Type): Boolean {
-        return other == this || genericParameter.parentType?.isAssignableFrom(other) ?: false
+        return other == this || other == NeverType || genericParameter.parentType?.isAssignableFrom(other) ?: false
     }
 
     override fun template(types: Map<GenericParameter, Type>): Type {

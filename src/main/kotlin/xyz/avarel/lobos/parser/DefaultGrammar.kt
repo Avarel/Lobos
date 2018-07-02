@@ -20,10 +20,12 @@ object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
         prefix(TokenType.IDENT, IdentParser)
         prefix(TokenType.TRUE, BooleanParser(true))
         prefix(TokenType.FALSE, BooleanParser(false))
-        prefix(TokenType.L_PAREN, ParenParser)
         prefix(TokenType.RETURN, ReturnParser)
         prefix(TokenType.IF, IfParser)
         prefix(TokenType.NULL, NullParser)
+
+        prefix(TokenType.L_PAREN, ParenParser)
+        prefix(TokenType.L_BRACKET, CollectionParser)
 
         prefix(TokenType.LET, LetParser)
         prefix(TokenType.TYPE, TypeAliasParser)

@@ -3,10 +3,11 @@ package xyz.avarel.lobos.tc.generics
 import xyz.avarel.lobos.tc.AbstractType
 import xyz.avarel.lobos.tc.Type
 import xyz.avarel.lobos.tc.base.AnyType
+import xyz.avarel.lobos.tc.base.NeverType
 
 class GenericBodyType(val genericParameter: GenericParameter): AbstractType(genericParameter.name, genericParameter.parentType ?: AnyType) {
     override fun isAssignableFrom(other: Type): Boolean {
-        return other == this || genericParameter.parentType?.isAssignableFrom(other) ?: false
+        return other == this || other == NeverType || genericParameter.parentType?.isAssignableFrom(other) ?: false
     }
 
     override fun equals(other: Any?): Boolean {

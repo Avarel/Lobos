@@ -3,7 +3,7 @@ package xyz.avarel.lobos.parser
 import xyz.avarel.lobos.ast.expr.Expr
 import xyz.avarel.lobos.ast.expr.misc.InvalidExpr
 import xyz.avarel.lobos.ast.expr.misc.MultiExpr
-import xyz.avarel.lobos.ast.expr.nodes.TupleExpr
+import xyz.avarel.lobos.ast.expr.misc.TupleExpr
 import xyz.avarel.lobos.lexer.Section
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType

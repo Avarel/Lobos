@@ -5,7 +5,7 @@ import xyz.avarel.lobos.ast.expr.Expr
 import xyz.avarel.lobos.ast.expr.ExprVisitor
 import xyz.avarel.lobos.lexer.Section
 
-class IndexAccessExpr(
+class SubscriptAccessExpr(
         val target: Expr,
         val index: Expr,
         position: Section

@@ -4,16 +4,15 @@ import xyz.avarel.lobos.ast.types.TypeASTVisitor
 import xyz.avarel.lobos.ast.types.basic.IdentTypeAST
 import xyz.avarel.lobos.ast.types.basic.NeverTypeAST
 import xyz.avarel.lobos.ast.types.basic.NullTypeAST
-import xyz.avarel.lobos.ast.types.complex.FunctionTypeAST
-import xyz.avarel.lobos.ast.types.complex.TemplatingTypeAST
-import xyz.avarel.lobos.ast.types.complex.TupleTypeAST
-import xyz.avarel.lobos.ast.types.complex.UnionTypeAST
+import xyz.avarel.lobos.ast.types.complex.*
 import xyz.avarel.lobos.parser.TypeException
 import xyz.avarel.lobos.tc.base.InvalidType
 import xyz.avarel.lobos.tc.base.NeverType
 import xyz.avarel.lobos.tc.base.NullType
 import xyz.avarel.lobos.tc.base.UnitType
+import xyz.avarel.lobos.tc.complex.ArrayType
 import xyz.avarel.lobos.tc.complex.FunctionType
+import xyz.avarel.lobos.tc.complex.MapType
 import xyz.avarel.lobos.tc.complex.TupleType
 import xyz.avarel.lobos.tc.scope.ScopeContext
 
@@ -43,15 +42,26 @@ class TypeResolver(
     }
 
     override fun visit(typeAst: TupleTypeAST): Type {
-        if (typeAst.types.isEmpty()) return UnitType
+        if (typeAst.valueTypes.isEmpty()) return UnitType
 
-        return TupleType(typeAst.types.map { it.accept(this) })
+        return TupleType(typeAst.valueTypes.map { it.accept(this) })
     }
 
     override fun visit(typeAst: UnionTypeAST): Type {
         val left = typeAst.left.accept(this)
         val right = typeAst.right.accept(this)
         return (left.toList() + right.toList()).toType()
+    }
+
+    override fun visit(typeAst: ArrayTypeAST): Type {
+        val valueType = typeAst.valueType.accept(this)
+        return ArrayType(valueType)
+    }
+
+    override fun visit(typeAst: MapTypeAst): Type {
+        val keyType = typeAst.keyType.accept(this)
+        val valueType = typeAst.valueType.accept(this)
+        return MapType(keyType, valueType)
     }
 
     override fun visit(typeAst: TemplatingTypeAST): Type {

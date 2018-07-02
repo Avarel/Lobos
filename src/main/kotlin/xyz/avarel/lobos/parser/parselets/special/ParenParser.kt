@@ -1,7 +1,7 @@
 package xyz.avarel.lobos.parser.parselets.special
 
 import xyz.avarel.lobos.ast.expr.Expr
-import xyz.avarel.lobos.ast.expr.nodes.TupleExpr
+import xyz.avarel.lobos.ast.expr.misc.TupleExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.lexer.span
@@ -18,8 +18,7 @@ object ParenParser : PrefixParser {
         val expr = parser.parseExpr()
 
         if (parser.match(TokenType.COMMA)) {
-            val exprValues = mutableListOf<Expr>()
-            exprValues.add(expr)
+            val exprValues = mutableListOf(expr)
 
             if (!parser.match(TokenType.R_PAREN)) {
                 do {

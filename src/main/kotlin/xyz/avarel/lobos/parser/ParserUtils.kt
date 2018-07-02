@@ -13,12 +13,10 @@ import xyz.avarel.lobos.ast.types.GenericParameterAST
 import xyz.avarel.lobos.ast.types.basic.IdentTypeAST
 import xyz.avarel.lobos.ast.types.basic.NeverTypeAST
 import xyz.avarel.lobos.ast.types.basic.NullTypeAST
-import xyz.avarel.lobos.ast.types.complex.FunctionTypeAST
-import xyz.avarel.lobos.ast.types.complex.TemplatingTypeAST
-import xyz.avarel.lobos.ast.types.complex.TupleTypeAST
-import xyz.avarel.lobos.ast.types.complex.UnionTypeAST
+import xyz.avarel.lobos.ast.types.complex.*
 import xyz.avarel.lobos.lexer.Section
 import xyz.avarel.lobos.lexer.TokenType
+import xyz.avarel.lobos.lexer.span
 
 val declarationTokens = listOf(
         TokenType.MOD,
@@ -78,8 +76,7 @@ fun Parser.parseUnionTypeAST(): AbstractTypeAST {
     val type = parseSingleTypeAST()
 
     if (match(TokenType.PIPE)) {
-        val list = mutableListOf<AbstractTypeAST>()
-        list += type
+        val list = mutableListOf(type)
         do {
             list += parseSingleTypeAST()
         } while (match(TokenType.PIPE))
@@ -138,6 +135,20 @@ fun Parser.parseSingleTypeAST(): AbstractTypeAST {
             }
 
             return constructTupleOrFunctionType(valueTypes, lParen.position.span(last.position))
+        }
+        match(TokenType.L_BRACKET) -> {
+            val lBracket = last
+
+            val type = parseTypeAST()
+
+            if (match(TokenType.COLON)) {
+                val valueType = parseTypeAST()
+                val rBracket = eat(TokenType.R_BRACKET)
+                return MapTypeAst(type, valueType, lBracket.span(rBracket))
+            }
+
+            val rBracket = eat(TokenType.R_BRACKET)
+            return ArrayTypeAST(type, lBracket.span(rBracket))
         }
         else -> throw SyntaxException("Expected type", peek().position)
     }

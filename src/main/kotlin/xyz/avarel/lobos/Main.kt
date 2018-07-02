@@ -70,9 +70,9 @@ struct Point {
  */
 
 fun main(args: Array<String>) {
-    val source = File("script.waf")
+    val source = File("script.waf").readText()
 
-    val lexer = Tokenizer(reader = File("script.waf").reader())
+    val lexer = Tokenizer(reader = source.reader())
     lexer.parse().let {
 //        println()
 //        println("|> TOKENS:")
@@ -90,7 +90,7 @@ fun main(args: Array<String>) {
                 false
         ) { parser.errors += it }).also { println("return type -> $it") }
 
-        val lines = source.readLines()
+        val lines = source.lines()
         parser.errors.forEach {
             val line = lines[it.position.lineNumber.toInt() - 1]
             val msg = buildString {
