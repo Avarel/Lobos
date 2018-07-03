@@ -560,7 +560,23 @@ class TypeChecker(
     }
 
     override fun visit(expr: PropertyAssignExpr): Type? {
-        TODO("not implemented")
+        val target = expr.target.visitValue(scope)
+        val member = target.getMember(expr.name)
+
+        if (member == null) {
+            errorHandler(TypeException("$target does not have member ${expr.name}", expr.position))
+            return null
+        }
+
+        if (member.mutable) {
+            errorHandler(TypeException("Member ${expr.name} of $target is not mutable", expr.position))
+        }
+
+        val valueType = expr.value.visitValue(scope)
+
+        checkType(member.type, valueType, expr.value.position)
+
+        return null
     }
 
     override fun visit(expr: InvokeMemberExpr): Type {
