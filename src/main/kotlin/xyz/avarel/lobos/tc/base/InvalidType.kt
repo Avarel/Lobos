@@ -13,6 +13,6 @@ object InvalidType: AbstractType("[Invalid type.]") {
     override fun isAssignableFrom(other: Type) = false
     override fun getMember(key: String): VariableInfo? = null
 
-    override fun commonAssignableToType(other: Type) = this
-    override fun commonAssignableFromType(other: Type) = this
+    override fun union(other: Type) = this
+    override fun intersect(other: Type) = this
 }

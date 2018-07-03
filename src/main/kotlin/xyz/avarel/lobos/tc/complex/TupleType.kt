@@ -29,17 +29,17 @@ open class TupleType(val valueTypes: List<Type>) : TypeTemplate {
         }
     }
 
-    override fun commonAssignableToType(other: Type): Type {
+    override fun union(other: Type): Type {
         return when {
-            other is TupleType && other.valueTypes.size == valueTypes.size -> TupleType(valueTypes.zip(other.valueTypes, Type::commonAssignableToType))
-            else -> super.commonAssignableToType(other)
+            other is TupleType && other.valueTypes.size == valueTypes.size -> TupleType(valueTypes.zip(other.valueTypes, Type::union))
+            else -> super.union(other)
         }
     }
 
-    override fun commonAssignableFromType(other: Type): Type {
+    override fun intersect(other: Type): Type {
         return when {
-            other is TupleType && other.valueTypes.size == valueTypes.size -> TupleType(valueTypes.zip(other.valueTypes, Type::commonAssignableFromType))
-            else -> super.commonAssignableFromType(other)
+            other is TupleType && other.valueTypes.size == valueTypes.size -> TupleType(valueTypes.zip(other.valueTypes, Type::intersect))
+            else -> super.intersect(other)
         }
     }
 

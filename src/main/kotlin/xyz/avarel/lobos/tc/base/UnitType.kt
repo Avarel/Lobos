@@ -1,10 +1,7 @@
 package xyz.avarel.lobos.tc.base
 
-import xyz.avarel.lobos.tc.Type
-import xyz.avarel.lobos.tc.complex.TupleType
+import xyz.avarel.lobos.tc.AbstractType
 
-object UnitType : TupleType(emptyList()) {
-    override val universalType: Type get() = this
+object UnitType : AbstractType("()") {
     override val isUnitType: Boolean get() = true
-    override fun toString() = "()"
 }

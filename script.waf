@@ -1,9 +1,9 @@
-mod Collections {
-    external def zipMap<K, V>(list: [K], list2: [V]) -> [K: V]
-    external def zip<A, B>(list: [A], list2: [B]) -> [(A, B)]
+def createLazy<T>(lazy: () -> T) -> () -> T {
+    let mut value: T | null = null
+    return || {
+        if (value == null) {
+            value = lazy()
+        }
+        value
+    }
 }
-
-let numbers = [1,2,3,4,5]
-let strings = ["one", "two", "three", "four", "five"]
-let numbersStr: [i32: str] = Collections.zipMap::<i32, str>(numbers, strings)
-let pairs: [(i32, str)] = Collections.zip::<i32, str>(numbers, strings)

@@ -69,10 +69,6 @@ fun Parser.parseBlock(
 }
 
 fun Parser.parseTypeAST(): AbstractTypeAST {
-    return parseUnionTypeAST()
-}
-
-fun Parser.parseUnionTypeAST(): AbstractTypeAST {
     val type = parseSingleTypeAST()
 
     if (match(TokenType.PIPE)) {
@@ -100,7 +96,7 @@ fun Parser.parseSingleTypeAST(): AbstractTypeAST {
 
             val typeParameters = mutableListOf<AbstractTypeAST>()
             do {
-                typeParameters += parseUnionTypeAST()
+                typeParameters += parseTypeAST()
             } while (match(TokenType.COMMA))
             val gt = eat(TokenType.GT)
 

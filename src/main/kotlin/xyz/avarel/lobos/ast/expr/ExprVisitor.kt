@@ -1,10 +1,7 @@
 package xyz.avarel.lobos.ast.expr
 
 import xyz.avarel.lobos.ast.expr.access.*
-import xyz.avarel.lobos.ast.expr.declarations.LetExpr
-import xyz.avarel.lobos.ast.expr.declarations.ModuleExpr
-import xyz.avarel.lobos.ast.expr.declarations.NamedFunctionExpr
-import xyz.avarel.lobos.ast.expr.declarations.TypeAliasExpr
+import xyz.avarel.lobos.ast.expr.declarations.*
 import xyz.avarel.lobos.ast.expr.external.ExternalLetExpr
 import xyz.avarel.lobos.ast.expr.external.ExternalNamedFunctionExpr
 import xyz.avarel.lobos.ast.expr.invoke.InvokeExpr
@@ -32,6 +29,7 @@ interface ExprVisitor<R> {
 
     fun visit(expr: IdentExpr): R
 
+    fun visit(expr: ClosureExpr): R
     fun visit(expr: TupleExpr): R
     fun visit(expr: ListLiteralExpr): R
     fun visit(expr: MapLiteralExpr): R

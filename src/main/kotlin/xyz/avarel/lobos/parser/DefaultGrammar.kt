@@ -32,10 +32,15 @@ object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
         prefix(TokenType.DEF, FunctionParser)
         prefix(TokenType.EXTERNAL, ExternalParser)
 
+        prefix(TokenType.PIPE, ClosureParser)
+        prefix(TokenType.OR, ClosureParser)
+
         prefix(TokenType.BANG, UnaryOperatorParser(UnaryOperationType.NOT))
         prefix(TokenType.PLUS, UnaryOperatorParser(UnaryOperationType.POSITIVE))
         prefix(TokenType.MINUS, UnaryOperatorParser(UnaryOperationType.NEGATIVE))
 
+
+        infix(TokenType.L_BRACKET, SubscriptParser)
         infix(TokenType.DOT, DotParser)
         infix(TokenType.DOUBLE_COLON, DoubleColonParser)
         infix(TokenType.L_PAREN, InvocationParser)

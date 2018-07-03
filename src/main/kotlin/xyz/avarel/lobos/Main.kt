@@ -6,6 +6,7 @@ import xyz.avarel.lobos.parser.DefaultGrammar
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.tc.TypeChecker
 import xyz.avarel.lobos.tc.scope.DefaultScopeContext
+import xyz.avarel.lobos.tc.scope.StmtContext
 import java.io.File
 
 /* Smart Compiler
@@ -74,21 +75,21 @@ fun main(args: Array<String>) {
 
     val lexer = Tokenizer(reader = source.reader())
     lexer.parse().let {
-//        println()
-//        println("|> TOKENS:")
-//        it.forEach(::println)
-
         val parser = Parser(DefaultGrammar, lexer.fileName, it)
         val ast = parser.parse()
 
-        println()
-        println("|> ERRORS:")
 
         ast.accept(TypeChecker(
                 DefaultScopeContext.subContext(),
-                null,
+                StmtContext(),
                 false
-        ) { parser.errors += it }).also { println("return type -> $it") }
+        ) { parser.errors += it }).also {
+            println("return type -> $it")
+        }
+
+
+        println()
+        println("|> ERRORS:")
 
         val lines = source.lines()
         parser.errors.forEach {

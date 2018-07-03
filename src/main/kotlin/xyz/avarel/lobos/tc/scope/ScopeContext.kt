@@ -6,11 +6,11 @@ open class ScopeContext(
         val parent: ScopeContext? = null,
         val allowMutableParentAssumptions: Boolean = true,
         val variables: MutableMap<String, VariableInfo> = hashMapOf(),
-        val types: MutableMap<String, Type> = hashMapOf()
+        val types: MutableMap<String, Type> = hashMapOf(),
+        val expectedReturnType: Type? = null
 ) {
     val assumptions: MutableMap<String, Type> = hashMapOf()
 
-    var expectedReturnType: Type? = null
     var terminates: Boolean = false
 
     fun getDeclaration(key: String): VariableInfo? {
@@ -19,6 +19,10 @@ open class ScopeContext(
 
     fun declare(key: String, type: Type, mutable: Boolean) {
         variables[key] = VariableInfo(type, mutable)
+    }
+
+    fun allVariableNames(): Set<String> {
+        return variables.keys + (parent?.allVariableNames() ?: emptySet())
     }
 
     fun getAssumption(key: String): Type? {
@@ -45,8 +49,13 @@ open class ScopeContext(
         types[key] = type
     }
 
-    fun subContext(allowParentAssumptions: Boolean = true) = ScopeContext(this, allowParentAssumptions).also {
-        it.expectedReturnType = expectedReturnType
-    }
+    fun subContext(
+            allowParentAssumptions: Boolean = true,
+            expectedReturnType: Type? = this.expectedReturnType
+    ) = ScopeContext(
+            this,
+            allowParentAssumptions,
+            expectedReturnType = expectedReturnType
+    )
 }
 

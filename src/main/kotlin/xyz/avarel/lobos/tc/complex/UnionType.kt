@@ -15,7 +15,7 @@ class UnionType(val left: Type, val right: Type) : TypeTemplate {
     override fun getMember(key: String): VariableInfo? {
         val left = left.getMember(key) ?: return null
         val right = right.getMember(key) ?: return null
-        return VariableInfo(left.type commonAssignableToType right.type, left.mutable && right.mutable)
+        return VariableInfo(left.type union right.type, left.mutable && right.mutable)
     }
 
     override fun template(types: Map<GenericParameter, Type>): Type {
@@ -28,33 +28,43 @@ class UnionType(val left: Type, val right: Type) : TypeTemplate {
         else -> left isAssignableFrom other || right isAssignableFrom other
     }
 
-    override fun commonAssignableToType(other: Type): Type {
-        return when (other) {
-            NeverType -> this
-            is UnionType -> listOf(left, right, other.left, other.right).reduce(Type::commonAssignableToType)
-            else -> listOf(left, right, other).reduce(Type::commonAssignableToType)
-        }
-    }
+//    override fun union(other: Type): Type {
+//        return when (other) {
+//            NeverType -> this
+//            is UnionType -> (toList() + other.toList()).reduce(Type::union)
+//            else -> (toList() + other).toType()
+//        }
+//    }
+//
+//    override fun intersect(other: Type): Type {
+//        return when (other) {
+//            NeverType -> NeverType
+//            is UnionType -> listOf(left, right, other.left, other.right).reduce(Type::intersect)
+//            else -> listOf(left, right, other).reduce(Type::intersect)
+//        }
+//    }
 
-    override fun commonAssignableFromType(other: Type): Type {
-        return when (other) {
-            NeverType -> NeverType
-            is UnionType -> listOf(left, right, other.left, other.right).reduce(Type::commonAssignableFromType)
-            else -> listOf(left, right, other).reduce(Type::commonAssignableFromType)
-        }
-    }
-
-    override fun exclude(other: Type): Type {
-        if (other == this) return NeverType
-        if (other is UnionType) return listOf(left, right, other.left, other.right).map { it.exclude(other) }.filter { it != NeverType }.toType()
-        return listOf(left, right).map { it.exclude(other) }.filter { it != NeverType }.toType()
-    }
-
-    override fun filter(other: Type): Type {
-        if (other == this) return this
-        if (other is UnionType) return listOf(left, right, other.left, other.right).map { it.filter(other) }.filter { it != NeverType }.toType()
-        return listOf(left, right).map { it.filter(other) }.filter { it != NeverType }.toType()
-    }
+//    override fun replace(target: Type, value: Type): Type {
+//        if (target is UnionType) {
+//            val thisTypes = toList()
+//            val targetTypes = target.toList()
+//            if (thisTypes.containsAll(targetTypes)) {
+//                return thisTypes.toMutableList().also {
+//                    it.removeAll(targetTypes)
+//                    it.add(value)
+//                }.toType()
+//            }
+//        } else {
+//            val thisTypes = toList()
+//            val index = thisTypes.indexOf(target)
+//            if (index != -1) {
+//                 return thisTypes.toMutableList().also {
+//                    it[index] = value
+//                }.toType()
+//            }
+//        }
+//        return this
+//    }
 
     override fun toString() = "$left | $right"
 

@@ -13,6 +13,6 @@ object NeverType: AbstractType("!") {
     override fun isAssignableFrom(other: Type) = other === this
     override fun getMember(key: String): VariableInfo? = null
 
-    override fun commonAssignableToType(other: Type) = other
-    override fun commonAssignableFromType(other: Type) = this
+    override fun union(other: Type) = other
+    override fun intersect(other: Type) = this
 }

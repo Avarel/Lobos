@@ -2,6 +2,7 @@ package xyz.avarel.lobos.parser.parselets.special
 
 import xyz.avarel.lobos.ast.expr.Expr
 import xyz.avarel.lobos.ast.expr.access.PropertyAccessExpr
+import xyz.avarel.lobos.ast.expr.access.PropertyAssignExpr
 import xyz.avarel.lobos.ast.expr.access.TupleIndexAccessExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
@@ -23,7 +24,13 @@ object DotParser: InfixParser {
             }
             TokenType.IDENT -> {
                 val name = ident.string
-                PropertyAccessExpr(left, name, left.span(ident))
+
+                if (parser.match(TokenType.ASSIGN)) {
+                    val value = parser.parseExpr()
+                    PropertyAssignExpr(left, name, value, left.span(value))
+                } else {
+                    PropertyAccessExpr(left, name, left.span(ident))
+                }
             }
             else -> throw SyntaxException("Invalid identifier", ident.position)
         }

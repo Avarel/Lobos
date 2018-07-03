@@ -4,7 +4,6 @@ import xyz.avarel.lobos.tc.base.AnyType
 import xyz.avarel.lobos.tc.base.InvalidType
 import xyz.avarel.lobos.tc.base.NeverType
 import xyz.avarel.lobos.tc.base.NullType
-import xyz.avarel.lobos.tc.complex.UnionType
 import xyz.avarel.lobos.tc.scope.VariableInfo
 
 // GO WITH EXPLICIT TYPES FOR NOW, INFERENCE TOO HARD
@@ -72,34 +71,27 @@ interface Type {
         }
     }
 
-    infix fun commonAssignableToType(other: Type): Type {
+    infix fun union(other: Type): Type {
         return when (other) {
             this -> this
-            else -> UnionType(this, other)
+            else -> toList().plus(other.toList()).toType()
         }
     }
 
-    infix fun commonAssignableFromType(other: Type): Type {
-        return when (other) {
-            this -> this
-            else -> NeverType
-        }
-    }
-
-    fun filter(other: Type): Type {
+    infix fun intersect(other: Type): Type {
         return when {
             this == other -> this
             this isAssignableFrom other -> other
-            else -> NeverType
+            else -> toList().intersect(other.toList()).toList().toType()
         }
     }
 
-    fun exclude(other: Type): Type {
+    infix fun exclude(other: Type): Type {
         return when {
             this == other -> NeverType
         // this isAssignableFrom other -> NeverType
         // potential spot for the return of exclusion types?
-            else -> this
+            else -> toList().minus(other.toList()).toType()
         }
     }
 }
