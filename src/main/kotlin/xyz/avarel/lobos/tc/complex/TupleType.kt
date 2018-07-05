@@ -22,7 +22,7 @@ open class TupleType(val valueTypes: List<Type>) : TypeTemplate {
         return when {
             this === other -> true
             other === NeverType -> true
-            other is UnionType -> isAssignableFrom(other.left) && isAssignableFrom(other.right)
+            other is UnionType -> other.valueTypes.all { this isAssignableFrom it }
             other !is TupleType -> false
             else -> valueTypes.size == other.valueTypes.size
                     && valueTypes.zip(other.valueTypes).all { (a, b) -> a.isAssignableFrom(b) }

@@ -4,7 +4,6 @@ import xyz.avarel.lobos.ast.expr.ops.BinaryOperationType
 import xyz.avarel.lobos.ast.expr.ops.UnaryOperationType
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.parser.parselets.BinaryOperatorParser
-import xyz.avarel.lobos.parser.parselets.IfParser
 import xyz.avarel.lobos.parser.parselets.UnaryOperatorParser
 import xyz.avarel.lobos.parser.parselets.declarations.*
 import xyz.avarel.lobos.parser.parselets.nodes.*
@@ -22,6 +21,7 @@ object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
         prefix(TokenType.FALSE, BooleanParser(false))
         prefix(TokenType.RETURN, ReturnParser)
         prefix(TokenType.IF, IfParser)
+        prefix(TokenType.WHILE, WhileParser)
         prefix(TokenType.NULL, NullParser)
 
         prefix(TokenType.L_PAREN, ParenParser)
@@ -38,7 +38,6 @@ object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
         prefix(TokenType.BANG, UnaryOperatorParser(UnaryOperationType.NOT))
         prefix(TokenType.PLUS, UnaryOperatorParser(UnaryOperationType.POSITIVE))
         prefix(TokenType.MINUS, UnaryOperatorParser(UnaryOperationType.NEGATIVE))
-
 
         infix(TokenType.L_BRACKET, SubscriptParser)
         infix(TokenType.DOT, DotParser)

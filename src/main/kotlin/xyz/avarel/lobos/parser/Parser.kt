@@ -20,6 +20,8 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
 
     private val precedence get() = grammar.infixParsers[peek(0).type]?.precedence ?: 0
 
+    fun back() = tokens[--index]
+
     fun eat() = tokens[index++]
 
     fun eat(type: TokenType): Token {

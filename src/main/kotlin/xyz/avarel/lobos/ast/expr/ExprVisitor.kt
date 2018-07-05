@@ -41,6 +41,7 @@ interface ExprVisitor<R> {
 
     fun visit(expr: ReturnExpr): R
     fun visit(expr: IfExpr): R
+    fun visit(expr: WhileExpr): R
 
     fun visit(expr: SubscriptAccessExpr): R
     fun visit(expr: SubscriptAssignExpr): R

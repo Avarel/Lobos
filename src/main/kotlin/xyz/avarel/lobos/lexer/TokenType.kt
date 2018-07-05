@@ -48,6 +48,7 @@ enum class TokenType {
     TRUE,
     FALSE,
 
+    UNDERSCORE,
     DOT,
     COMMA,
     COLON,
@@ -69,6 +70,7 @@ enum class TokenType {
     ELSE,
     NULL,
     TYPE,
+    WHILE,
 
     INVALID,
     RESERVED

@@ -1,9 +1,5 @@
-def createLazy<T>(lazy: () -> T) -> () -> T {
-    let mut value: T | null = null
-    return || {
-        if (value == null) {
-            value = lazy()
-        }
-        value
-    }
+external let mut x: i32
+
+while x != 0 {
+    x = x - 1
 }

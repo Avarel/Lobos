@@ -18,7 +18,8 @@ class MapType(
             this === other -> true
             other === NeverType -> true
             other !is MapType -> false
-            else -> keyType isAssignableFrom other.keyType && valueType isAssignableFrom other.valueType
+            other.keyType === NeverType && other.valueType === NeverType -> true
+            else -> other.keyType isAssignableFrom keyType && valueType isAssignableFrom other.valueType
         }
     }
 

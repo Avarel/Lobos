@@ -79,6 +79,7 @@ fun main(args: Array<String>) {
         val ast = parser.parse()
 
 
+
         ast.accept(TypeChecker(
                 DefaultScopeContext.subContext(),
                 StmtContext(),
@@ -86,6 +87,7 @@ fun main(args: Array<String>) {
         ) { parser.errors += it }).also {
             println("return type -> $it")
         }
+
 
 
         println()
@@ -116,7 +118,7 @@ fun main(args: Array<String>) {
         }
 
         if (parser.errors.isEmpty()) {
-            println("None :)\n")
+            println("No errors.\n")
         }
 
         println()

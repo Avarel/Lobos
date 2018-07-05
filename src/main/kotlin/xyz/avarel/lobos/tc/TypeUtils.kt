@@ -31,22 +31,13 @@ fun List<Type>.toType(): Type {
     return when {
         list.isEmpty() -> NeverType
         list.size == 1 -> list[0]
-        else -> list.reduce { a, b ->
-            when {
-                a == b -> a
-                a.isAssignableFrom(b) -> a
-                b.isAssignableFrom(a) -> b
-                else -> UnionType(a, b)
-            }
-        }
+        else -> UnionType(list)
     }
 }
 
 fun Type.toList(): List<Type> {
     return when {
-        this is UnionType -> {
-            this.left.toList() + this.right.toList()
-        }
+        this is UnionType -> this.valueTypes
         else -> listOf(this)
     }
 }

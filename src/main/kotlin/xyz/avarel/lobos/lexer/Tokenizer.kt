@@ -27,6 +27,7 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
             ')' -> list += makeToken(TokenType.R_PAREN)
             '[' -> list += makeToken(TokenType.L_BRACKET)
             ']' -> list += makeToken(TokenType.R_BRACKET)
+            '_' -> list += makeToken(TokenType.UNDERSCORE)
             '.' -> when {
                 match('.') -> when {
                     match('=') -> list += makeToken(TokenType.RANGE_IN, 3)
@@ -122,6 +123,7 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
             "def" -> makeToken(TokenType.DEF, 3)
             "external" -> makeToken(TokenType.EXTERNAL, 8)
             "struct" -> makeToken(TokenType.STRUCT, 6)
+            "while" -> makeToken(TokenType.WHILE, 5)
             else -> makeToken(TokenType.IDENT, str)
         }
     }

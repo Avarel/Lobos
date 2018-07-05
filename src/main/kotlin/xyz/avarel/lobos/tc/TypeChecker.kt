@@ -110,6 +110,8 @@ class TypeChecker(
                 bodyScope.declare(ast.name, argType.transformToBodyType(), false)
             }
 
+            bodyScope.declare(expr.name, type, false)
+
             val resultType = expr.body.visitValue(bodyScope)
             if (!bodyScope.terminates) {
                 checkType(
@@ -369,7 +371,7 @@ class TypeChecker(
                 stmt.reciprocals.mergeAll(rightCtx.reciprocals, Type::intersect)
 
                 if ((stmt.assumptions.keys + rightCtx.assumptions.keys).size == 1) {
-                    stmt.reciprocals.mergeAll(rightCtx.assumptions, Type::union)
+                    stmt.assumptions.mergeAll(rightCtx.assumptions, Type::union)
                 } else {
                     // cant trust any reciprocals if depends on multiple variables
                     stmt.assumptions.clear()
@@ -411,6 +413,20 @@ class TypeChecker(
         }
         scope.terminates = true
         return NeverType
+    }
+
+    override fun visit(expr: WhileExpr): Type? {
+        val conditionStmt = stmt // special test
+        val condition = expr.condition.visitValue(scope, conditionStmt)
+
+        checkType(BoolType, condition, expr.condition.position)
+
+        val bodyScope = scope.subContext(false)
+        bodyScope.assumptions += conditionStmt.assumptions
+
+        expr.body.visitStmt(bodyScope)
+
+        return null
     }
 
     override fun visit(expr: IfExpr): Type? {
@@ -676,14 +692,14 @@ class TypeChecker(
         return visitStmt(scope, stmt, deferBody, checkNotGeneric, true)!!
     }
 
-    private fun TypeAST.resolve(scope: ScopeContext): Type {
+    fun TypeAST.resolve(scope: ScopeContext): Type {
         return accept(TypeResolver(scope, errorHandler))
     }
 
     /**
      * Throws an error if [foundType] can not be assigned to [expectedType].
      */
-    private fun checkType(expectedType: Type, foundType: Type, position: Section): Boolean {
+    fun checkType(expectedType: Type, foundType: Type, position: Section): Boolean {
         return if (!expectedType.isAssignableFrom(foundType)) {
             errorHandler(TypeException("Expected $expectedType but found $foundType", position))
             false
@@ -740,3 +756,4 @@ class TypeChecker(
         success(target.name, assumption, reciprocal)
     }
 }
+

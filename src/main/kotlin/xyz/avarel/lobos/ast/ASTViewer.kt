@@ -217,6 +217,13 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         }
     }
 
+    override fun visit(expr: WhileExpr) {
+        base("while")
+
+        expr.condition.astLabel("condition", tail = false)
+        expr.body.astLabel("body", tail = true)
+    }
+
     override fun visit(expr: SubscriptAccessExpr) {
         base("subscript access")
 
