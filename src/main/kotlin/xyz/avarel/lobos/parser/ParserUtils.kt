@@ -1,133 +1,118 @@
 package xyz.avarel.lobos.parser
 
-import xyz.avarel.lobos.ast.Expr
-import xyz.avarel.lobos.ast.variables.IdentExpr
+import xyz.avarel.lobos.ast.DeclarationsAST
+import xyz.avarel.lobos.ast.expr.Expr
+import xyz.avarel.lobos.ast.expr.declarations.LetExpr
+import xyz.avarel.lobos.ast.expr.declarations.ModuleExpr
+import xyz.avarel.lobos.ast.expr.declarations.NamedFunctionExpr
+import xyz.avarel.lobos.ast.expr.external.ExternalLetExpr
+import xyz.avarel.lobos.ast.expr.external.ExternalNamedFunctionExpr
+import xyz.avarel.lobos.ast.expr.misc.MultiExpr
+import xyz.avarel.lobos.ast.types.AbstractTypeAST
+import xyz.avarel.lobos.ast.types.GenericParameterAST
+import xyz.avarel.lobos.ast.types.basic.IdentTypeAST
+import xyz.avarel.lobos.ast.types.basic.NeverTypeAST
+import xyz.avarel.lobos.ast.types.basic.NullTypeAST
+import xyz.avarel.lobos.ast.types.complex.*
 import xyz.avarel.lobos.lexer.Section
-import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
-import xyz.avarel.lobos.typesystem.Type
-import xyz.avarel.lobos.typesystem.TypeTemplate
-import xyz.avarel.lobos.typesystem.base.InvalidType
-import xyz.avarel.lobos.typesystem.base.NeverType
-import xyz.avarel.lobos.typesystem.base.NullType
-import xyz.avarel.lobos.typesystem.base.UnitType
-import xyz.avarel.lobos.typesystem.complex.ExcludedType
-import xyz.avarel.lobos.typesystem.complex.FunctionType
-import xyz.avarel.lobos.typesystem.complex.TupleType
-import xyz.avarel.lobos.typesystem.generics.GenericParameter
-import xyz.avarel.lobos.typesystem.generics.GenericType
-import xyz.avarel.lobos.typesystem.literals.LiteralFalseType
-import xyz.avarel.lobos.typesystem.literals.LiteralIntType
-import xyz.avarel.lobos.typesystem.literals.LiteralStrType
-import xyz.avarel.lobos.typesystem.literals.LiteralTrueType
-import xyz.avarel.lobos.typesystem.scope.ScopeContext
-import xyz.avarel.lobos.typesystem.scope.StmtContext
-import xyz.avarel.lobos.typesystem.toType
+import xyz.avarel.lobos.lexer.span
 
-fun Parser.parseTypeTokens(): List<Token> {
-    TODO()
+val declarationTokens = listOf(
+        TokenType.MOD,
+        TokenType.LET,
+        TokenType.DEF,
+        TokenType.EXTERNAL,
+        TokenType.TYPE
+)
+
+fun Parser.matchAllWhitespace(): Boolean {
+    val type = arrayOf(TokenType.SEMICOLON, TokenType.NL)
+    return if (nextIsAny(*type)) {
+        do eat() while (nextIsAny(*type))
+        true
+    } else {
+        false
+    }
 }
 
-fun Parser.parseTypeTokenUnion(): List<Token> {
-    TODO()
+fun Parser.parseDeclarations(): DeclarationsAST {
+    val expr = parseStatements(TokenType.L_BRACE to TokenType.R_BRACE, emptyList(), declarationTokens)
+
+    val declarationsAST = DeclarationsAST()
+
+    val list = if (expr is MultiExpr) {
+        expr.list
+    } else {
+        listOf(expr)
+    }
+
+    list.forEach { it ->
+        when (it) {
+            is NamedFunctionExpr,
+            is ExternalNamedFunctionExpr -> declarationsAST.functions += it
+            is LetExpr,
+            is ExternalLetExpr -> declarationsAST.variables += it
+            is ModuleExpr -> declarationsAST.modules += it
+            else -> throw IllegalStateException()
+        }
+    }
+
+    return declarationsAST
 }
 
-fun Parser.parseTypeTokenSubtraction(): List<Token> {
-    TODO()
+fun Parser.parseBlock(
+        modifiers: List<Modifier> = emptyList(),
+        allowedTokens: List<TokenType> = emptyList()
+): Expr {
+    return parseStatements(TokenType.L_BRACE to TokenType.R_BRACE, modifiers, allowedTokens)
 }
 
-fun Parser.parseTypeTokensSingle(): List<Token> {
-    TODO()
-}
-
-fun Parser.parseBlock(scope: ScopeContext): Expr {
-    return parseStatements(scope, TokenType.L_BRACE to TokenType.R_BRACE)
-}
-
-fun Parser.parseType(scope: ScopeContext): Type {
-    return parseUnionType(scope)
-}
-
-fun Parser.parseUnionType(scope: ScopeContext): Type {
-    val type = parseSubtractionType(scope)
+fun Parser.parseTypeAST(): AbstractTypeAST {
+    val type = parseSingleTypeAST()
 
     if (match(TokenType.PIPE)) {
-        val list = mutableListOf<Type>()
-        list += type
+        val list = mutableListOf(type)
         do {
-            list += try { parseSubtractionType(scope) } catch (e: SyntaxException) { InvalidType }
+            list += parseSingleTypeAST()
         } while (match(TokenType.PIPE))
-        return list.toType()
+        return list.reduce { acc, typeAST -> UnionTypeAST(acc, typeAST, acc.position.span(typeAST.position)) }
     }
 
     return type
 }
 
-fun Parser.parseSubtractionType(scope: ScopeContext): Type {
-    val type = parseSingleType(scope)
-
-    if (match(TokenType.BANG)) {
-        val token = peek()
-        val subtractionType = try { parseSingleType(scope) } catch (e: SyntaxException) { InvalidType }
-
-        if (!type.isAssignableFrom(subtractionType)) {
-            throw SyntaxException("$subtractionType can not be subtracted from $type", token.position)
-        }
-
-        return ExcludedType(type, subtractionType)
-    }
-
-    return type
-}
-
-fun Parser.parseSingleType(scope: ScopeContext): Type {
+fun Parser.parseSingleTypeAST(): AbstractTypeAST {
     return when {
-        match(TokenType.TRUE) -> LiteralTrueType
-        match(TokenType.FALSE) -> LiteralFalseType
-        match(TokenType.NULL) -> NullType
-        match(TokenType.BANG) -> NeverType
+        match(TokenType.NULL) -> NullTypeAST(last.position)
+        match(TokenType.BANG) -> NeverTypeAST(last.position)
         match(TokenType.IDENT) -> {
             val ident = last
             val name = ident.string
 
-            val type = scope.getType(name) ?: throw SyntaxException("Unresolved type $name", ident.position)
+            val type = IdentTypeAST(name, ident.position)
 
-            if (match(TokenType.LT)) {
-                if (type !is TypeTemplate) {
-                    throw SyntaxException("Type $type is not a template", last.position)
-                }
+            if (!match(TokenType.LT)) return type
 
-                val typeParameters = mutableListOf<Type>()
+            val typeParameters = mutableListOf<AbstractTypeAST>()
+            do {
+                typeParameters += parseTypeAST()
+            } while (match(TokenType.COMMA))
+            val gt = eat(TokenType.GT)
 
-                do {
-                    typeParameters += parseUnionType(scope)
-                } while (match(TokenType.COMMA))
-
-                eat(TokenType.GT)
-
-                if (typeParameters.size != type.genericParameters.size) {
-                    throw SyntaxException("Expected ${type.genericParameters.size} type arguments, found ${typeParameters.size}", last.position)
-                }
-
-                type.template(typeParameters)
-            } else {
-                type
-            }
+            return TemplatingTypeAST(type, typeParameters, ident.position.span(gt.position))
         }
-        match(TokenType.INT) -> {
-            LiteralIntType(last.string.toInt())
-        }
-        match(TokenType.STRING) -> LiteralStrType(last.string)
         match(TokenType.L_PAREN) -> {
-            val valueTypes = mutableListOf<Type>()
+            val lParen = last
+            val valueTypes = mutableListOf<AbstractTypeAST>()
 
             if (!match(TokenType.R_PAREN)) {
-                val firstType = tryOrInvalid { parseType(scope) }
+                val firstType = parseTypeAST()
                 valueTypes += firstType
 
                 if (match(TokenType.R_PAREN)) {
                     if (nextIs(TokenType.ARROW)) {
-                        return constructTupleOrFunctionType(scope, valueTypes)
+                        return constructTupleOrFunctionType(valueTypes, lParen.position.span(last.position))
                     }
 
                     return firstType
@@ -135,171 +120,72 @@ fun Parser.parseSingleType(scope: ScopeContext): Type {
 
                 if (match(TokenType.COMMA)) {
                     if (match(TokenType.R_PAREN)) {
-                        return TupleType(listOf(firstType))
+                        return TupleTypeAST(listOf(firstType), lParen.position.span(last.position))
                     }
                     do {
-                        valueTypes += tryOrInvalid { parseType(scope) }
+                        valueTypes += parseTypeAST()
                     } while (match(TokenType.COMMA))
                 }
 
                 eat(TokenType.R_PAREN)
             }
 
-            return constructTupleOrFunctionType(scope, valueTypes)
+            return constructTupleOrFunctionType(valueTypes, lParen.position.span(last.position))
+        }
+        match(TokenType.L_BRACKET) -> {
+            val lBracket = last
+
+            val type = parseTypeAST()
+
+            if (match(TokenType.COLON)) {
+                val valueType = parseTypeAST()
+                val rBracket = eat(TokenType.R_BRACKET)
+                return MapTypeAst(type, valueType, lBracket.span(rBracket))
+            }
+
+            val rBracket = eat(TokenType.R_BRACKET)
+            return ArrayTypeAST(type, lBracket.span(rBracket))
         }
         else -> throw SyntaxException("Expected type", peek().position)
     }
 }
 
-private fun Parser.constructTupleOrFunctionType(scope: ScopeContext, valueTypes: List<Type>): Type {
-   return when {
+private fun Parser.constructTupleOrFunctionType(valueTypes: List<AbstractTypeAST>, position: Section): AbstractTypeAST {
+    return when {
         match(TokenType.ARROW) -> {
-            val returnType = tryOrInvalid { parseType(scope) }
-            FunctionType(valueTypes, returnType)
+            val returnType = parseTypeAST()
+            FunctionTypeAST(valueTypes, returnType, position)
         }
-        valueTypes.isEmpty() -> UnitType
-        else -> TupleType(valueTypes)
+        valueTypes.isEmpty() -> TupleTypeAST(position)
+        else -> TupleTypeAST(valueTypes, position)
     }
 }
 
-private inline fun tryOrInvalid(block: () -> Type): Type {
-    return try { block() } catch (e: SyntaxException) { InvalidType }
-}
+fun Parser.parseGenericParameters(): List<GenericParameterAST> {
+    if (!match(TokenType.LT)) return emptyList()
 
-fun ScopeContext.allVariables(): Map<String, Type> {
-    return parent?.allVariables()?.let { it + this.variables } ?: this.variables
-}
-
-fun Parser.parseGenericArgumentsScope(scope: ScopeContext): Pair<List<GenericParameter>, ScopeContext>? {
-    if (!match(TokenType.LT)) {
-        return null
-    }
-
-    val genericParameters = mutableListOf<GenericParameter>()
-    val typeScope = scope.subContext()
+    val genericNames = mutableListOf<String>()
+    val genericParameters = mutableListOf<GenericParameterAST>()
     do {
         val genericToken = eat(TokenType.IDENT)
         val genericName = genericToken.string
 
-        if (genericName in typeScope.types) {
+        if (genericName in genericNames) {
             errors += SyntaxException("Generic parameter $genericName has already been declared", genericToken.position)
         }
 
         val param = if (match(TokenType.COLON)) {
-            val parentType = parseType(typeScope)
-            GenericParameter(genericName, parentType)
+            val parentType = parseTypeAST()
+            GenericParameterAST(genericName, parentType)
         } else {
-            GenericParameter(genericName)
+            GenericParameterAST(genericName)
         }
 
         genericParameters += param
-        typeScope.types[genericName] = GenericType(param)
     } while (match(TokenType.COMMA))
 
     eat(TokenType.GT)
-    return genericParameters to typeScope
-}
-
-/**
- * Throws an error if [foundType] can not be assigned to [expectedType].
- */
-fun typeCheck(expectedType: Type, foundType: Type, position: Section) {
-    if (!expectedType.isAssignableFrom(foundType)) {
-        throw SyntaxException("Expected $expectedType but found $foundType", position)
-    }
-}
-
-fun checkNotGeneric(expr: Expr, position: Section): Type {
-    val exprType = expr.type
-    if (exprType is TypeTemplate && exprType.genericParameters.isNotEmpty()) {
-        throw SyntaxException("Missing generic type parameters", position)
-    }
-    return exprType
-}
-
-/**
- * Check that [target] is invokable by [arguments].
- * @return [target] return type.
- * @throws SyntaxException if [target] is not a function.
- */
-fun Parser.checkInvocation(target: Expr, arguments: List<Expr>, position: Section): Type {
-    val targetType = target.type
-    if (targetType !is FunctionType) {
-        throw SyntaxException("$targetType can not be invoked", target.position)
-    }
-
-    val targetArgumentTypes = targetType.argumentTypes
-    val argumentTypes = arguments.map(Expr::type)
-
-    if (targetArgumentTypes.size != argumentTypes.size) {
-        errors += SyntaxException("Expected ${targetArgumentTypes.size} arguments, but found ${argumentTypes.size}", position)
-    }
-
-    for (i in targetArgumentTypes.indices) {
-        safe { typeCheck(targetArgumentTypes[i], argumentTypes[i], arguments[i].position) }
-    }
-
-    return targetType.returnType
-}
-
-///**
-// * Throws an error if [this] can not be invoked by [argumentTypes].
-// * This requires that [this] is a function type, and that [argumentTypes]
-// * must conform to all of the functions argument types.
-// */
-//fun Type.checkInvocation(argumentTypes: List<Type>, position: Section) {
-//    when {
-//        this is UnionType -> try {
-//            left.checkInvocation(argumentTypes, position)
-//            right.checkInvocation(argumentTypes, position)
-//        } catch (e: SyntaxException) {
-//            throw SyntaxException("Can not invoke $this with $argumentTypes", position)
-//        }
-//        this !is FunctionType -> throw SyntaxException("$this is not a function", position)
-//        this.argumentTypes.size != argumentTypes.size || !canBeInvokedBy(argumentTypes) -> {
-//            throw SyntaxException(buildString {
-//                append("Expected ")
-//                this@checkInvocation.argumentTypes.joinTo(this, prefix = "(", postfix = ")")
-//                append(" but found ")
-//                argumentTypes.joinTo(this, prefix = "(", postfix = ")")
-//            }, position)
-//        }
-//    }
-//}
-
-//fun FunctionType.canBeInvokedBy(argumentTypes: List<Type>): Boolean {
-//    require(this.argumentTypes.size == argumentTypes.size)
-//    return this.argumentTypes.zip(argumentTypes).all { (a, b) -> a.isAssignableFrom(b) }
-//}
-
-//inline fun requireSyntax(value: Boolean, position: Section, lazy: () -> String) {
-//    if (!value) {
-//        throw SyntaxException(lazy(), position)
-//    }
-//}
-
-fun inferAssumptionExpr(
-        removeUnitOnly: Boolean,
-        scope: ScopeContext,
-        ctx: StmtContext,
-        target: Expr,
-        other: Expr,
-        function: Pair<(Type, Type) -> Type, (Type, Type) -> Type> // forward and inverse
-): Triple<String, Type, Type>? {
-    if (target !is IdentExpr) return null
-
-    val key = target.name
-    val effectiveType = ctx.assumptions[key] ?: scope.getAssumption(key)!!
-    val otherType = other.type
-
-    if (removeUnitOnly && !otherType.isUnitType) {
-        return null
-    }
-
-    val assumption = function.first(effectiveType, otherType)
-    val inverse = function.second(effectiveType, otherType)
-
-    return Triple(key, assumption, inverse)
+    return genericParameters
 }
 
 inline fun <K, V> MutableMap<K, V>.mergeAll(other: Map<K, V>, remappingFunction: (V, V) -> V) {
@@ -309,105 +195,6 @@ inline fun <K, V> MutableMap<K, V>.mergeAll(other: Map<K, V>, remappingFunction:
         } ?: put(k, v)
     }
 }
-
-///**
-// * Infer generic types for the subject type based on the target type.
-// *      target = subject
-// *      (i32, i64) = <T, R>(T, R)
-// *      -> {T: i32, R: i64}
-// *      -> subject is templated as (i32, i64)
-// */
-//fun enhancedInfer(parser: Parser, target: Type, subject: Type, position: Section): Type {
-//    return if (subject is TypeTemplate && subject.genericParameters.isNotEmpty()) {
-//        val map = try {
-//            subject.extract(target)
-//        } catch (e: IllegalArgumentException) {
-//            parser.errors += SyntaxException(e.message ?: "Failed to infer generic parameters", position)
-//            emptyMap<GenericParameter, Type>()
-//        }
-//
-//        if (map.size != subject.genericParameters.size || !map.keys.containsAll(subject.genericParameters)) {
-//            throw SyntaxException("Failed to infer generic parameters", position)
-//        }
-//
-//        return subject.template(map)
-//    } else subject
-//}
-//
-///**
-// * Check invocation of the [target] based on the [arguments].
-// * This also handles generic inference by extracting generic information from the arguments.
-// * @return [target] return type.
-// * @throws SyntaxException if [target] is not a [FunctionType].
-// */
-//fun enhancedCheckInvocation(parser: Parser, target: Type, arguments: List<Expr>, returnType: Type?, position: Section): Type {
-//    if (target !is FunctionType) {
-//        throw SyntaxException("$target is not invokable", position)
-//    }
-//
-//    var fnType = target
-//    var argumentTypes = arguments.map(Expr::type)
-//
-//    if (fnType.genericParameters.isNotEmpty()) {
-//        val map = enhancedExtract(parser, fnType, arguments, returnType, position)
-//        if (map.size != fnType.genericParameters.size || !map.keys.containsAll(fnType.genericParameters)) {
-//            throw SyntaxException("Failed to infer generic parameters", position)
-//        }
-//        fnType = fnType.template(map)
-//
-//        if (fnType.argumentTypes.size == argumentTypes.size && argumentTypes.filterIsInstance<TypeTemplate>().isNotEmpty()) {
-//            argumentTypes = argumentTypes.zip(fnType.argumentTypes)
-//                    .mapIndexed { i, (a, b) ->
-//                        a to try {
-//                            a.extract(b).filterValues { it !is GenericType }
-//                        } catch (e: IllegalArgumentException) {
-//                            throw SyntaxException(e.message ?: "Failed to infer generic parameters", arguments[i].position)
-//                        }
-//                    }.map { (a, map) ->
-//                        a.template(map)
-//                    }
-//        }
-//    }
-//
-//    parser.safe { fnType.checkInvocation(argumentTypes, position) }
-//
-//    return fnType.returnType
-//}
-//
-//
-//fun enhancedExtract(parser: Parser, target: FunctionType, arguments: List<Expr>, returnType: Type?, position: Section): Map<GenericParameter, Type> {
-//    if (arguments.size < target.argumentTypes.size) {
-//        parser.errors += SyntaxException("Can not infer, insufficient arguments", position)
-//        return emptyMap()
-//    }
-//
-//    val extracted = mutableMapOf<GenericParameter, Type>() // generic arguments
-//
-//    // Infer generic arguments from argument types.
-//    target.argumentTypes.zip(arguments) { a, b ->
-//        val map = try {
-//            a.extract(b.type).filterValues { it !is GenericType }
-//        } catch (e: IllegalArgumentException) {
-//            parser.errors += SyntaxException(e.message ?: "Inference failed", b.position)
-//            return@zip
-//        }
-//
-//        extracted.mergeAll(map, Type::commonSuperTypeWith)
-//    }
-//
-//    // Infer return type if it has not been yet inferred.
-//    if (returnType != null) {
-//        if ((target.returnType as? TypeTemplate)?.genericParameters?.let { extracted.keys.containsAll(it) } == false) {
-//            try {
-//                extracted.mergeAll(target.returnType.extract(returnType)) { v1, _ -> v1 }
-//            } catch (e: IllegalArgumentException) {
-//                parser.errors += SyntaxException(e.message ?: "Inference failed", position)
-//            }
-//        }
-//    }
-//
-//    return extracted
-//}
 
 inline fun <R> Parser.safe(block: () -> R): R? {
     return try {

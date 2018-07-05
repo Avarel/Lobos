@@ -4,8 +4,10 @@ import xyz.avarel.lobos.ast.ASTViewer
 import xyz.avarel.lobos.lexer.Tokenizer
 import xyz.avarel.lobos.parser.DefaultGrammar
 import xyz.avarel.lobos.parser.Parser
-import xyz.avarel.lobos.typesystem.base.UnitType
-import xyz.avarel.lobos.typesystem.scope.DefaultParserContext
+import xyz.avarel.lobos.tc.TypeChecker
+import xyz.avarel.lobos.tc.scope.DefaultScopeContext
+import xyz.avarel.lobos.tc.scope.StmtContext
+import java.io.File
 
 /* Smart Compiler
 let y: 1|3|5|7|"string" = "string";
@@ -66,35 +68,27 @@ struct Point {
     x: i32
     y: i32
 }
-
  */
 
 fun main(args: Array<String>) {
-    val source = """
-        external let mut x: i32
-        external let a: 3
-
-        external def what(a: i32, b: i32)
-
-        let b: () = what("hello", "there", "why")
-
-
-    """.trimIndent()
+    val source = File("script.waf").readText()
 
     val lexer = Tokenizer(reader = source.reader())
     lexer.parse().let {
-//        println()
-//        println("|> TOKENS:")
-//        it.forEach(::println)
-
-        println()
-        println("|> SOURCE:")
-
-
-        println(source)
-
         val parser = Parser(DefaultGrammar, lexer.fileName, it)
-        val ast = parser.parse(DefaultParserContext.subContext().also { it.expectedReturnType = UnitType })
+        val ast = parser.parse()
+
+
+
+        ast.accept(TypeChecker(
+                DefaultScopeContext.subContext(),
+                StmtContext(),
+                false
+        ) { parser.errors += it }).also {
+            println("return type -> $it")
+        }
+
+
 
         println()
         println("|> ERRORS:")
@@ -124,7 +118,7 @@ fun main(args: Array<String>) {
         }
 
         if (parser.errors.isEmpty()) {
-            println("None :)\n")
+            println("No errors.\n")
         }
 
         println()

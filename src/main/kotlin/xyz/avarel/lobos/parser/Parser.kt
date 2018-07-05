@@ -1,16 +1,13 @@
 package xyz.avarel.lobos.parser
 
-import xyz.avarel.lobos.ast.DummyExpr
-import xyz.avarel.lobos.ast.Expr
-import xyz.avarel.lobos.ast.misc.InvalidExpr
-import xyz.avarel.lobos.ast.misc.MultiExpr
-import xyz.avarel.lobos.ast.nodes.UnitExpr
+import xyz.avarel.lobos.ast.expr.Expr
+import xyz.avarel.lobos.ast.expr.misc.InvalidExpr
+import xyz.avarel.lobos.ast.expr.misc.MultiExpr
+import xyz.avarel.lobos.ast.expr.misc.TupleExpr
 import xyz.avarel.lobos.lexer.Section
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
 import xyz.avarel.lobos.lexer.Tokenizer
-import xyz.avarel.lobos.typesystem.scope.ScopeContext
-import xyz.avarel.lobos.typesystem.scope.StmtContext
 
 class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>) {
     constructor(grammar: Grammar, lexer: Tokenizer): this(grammar, lexer.fileName, lexer.parse())
@@ -22,6 +19,8 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
     val last get() = tokens[index - 1]
 
     private val precedence get() = grammar.infixParsers[peek(0).type]?.precedence ?: 0
+
+    fun back() = tokens[--index]
 
     fun eat() = tokens[index++]
 
@@ -52,28 +51,6 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
         }
     }
 
-    fun matchComplete(type: TokenType): Boolean {
-        return if (nextIs(type)) {
-            while (nextIs(type)) {
-                eat()
-            }
-            true
-        } else {
-            false
-        }
-    }
-
-    fun matchCompleteAny(vararg type: TokenType): Boolean {
-        return if (nextIsAny(*type)) {
-            while (nextIsAny(*type)) {
-                eat()
-            }
-            true
-        } else {
-            false
-        }
-    }
-
     fun peek(distance: Int = 0) = tokens[index + distance]
 
     fun nextIs(type: TokenType) = !eof && peek().type == type
@@ -96,9 +73,9 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
         }
     }
 
-    fun parse(scope: ScopeContext): Expr {
-        if (eof) return UnitExpr(Section(fileName, 0, 0, 0))
-        val expr = parseStatements(scope)
+    fun parse(): Expr {
+        if (eof) return TupleExpr(Section(fileName, 0, 0, 0))
+        val expr = parseStatements()
 
         if (!eof) {
             val token = peek()
@@ -108,20 +85,24 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
         return expr
     }
 
-    fun parseStatements(scope: ScopeContext, delimiterPair: Pair<TokenType, TokenType>? = null): Expr {
+    fun parseStatements(
+            delimiterPair: Pair<TokenType, TokenType>? = null,
+            modifiers: List<Modifier> = emptyList(),
+            allowedTokens: List<TokenType> = emptyList()
+    ): Expr {
         if (eof) throw SyntaxException("Expected expression but reached end of file", last.position)
 
         delimiterPair?.first?.let(this::eat)
-        matchCompleteAny(TokenType.SEMICOLON, TokenType.NL)
+        matchAllWhitespace()
 
         val list = mutableListOf<Expr>()
-        matchCompleteAny(TokenType.SEMICOLON, TokenType.NL)
+        matchAllWhitespace()
 
         do {
             if (eof || (delimiterPair != null && nextIs(delimiterPair.second))) {
                 break
             }
-            val expr = parseExpr(scope, StmtContext())
+            val expr = parseExpr(0, modifiers, allowedTokens)
 
             if (expr is InvalidExpr) {
                 if (delimiterPair != null) {
@@ -129,42 +110,49 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
                 } else {
                     skipUntil(TokenType.SEMICOLON, TokenType.NL)
                 }
-            } else if (expr !== DummyExpr) {
+            } else {
                 list += expr
             }
-        } while (!eof && matchCompleteAny(TokenType.SEMICOLON, TokenType.NL))
+        } while (!eof && matchAllWhitespace())
 
         delimiterPair?.second?.let(this::eat)
 
         return when {
-            list.isEmpty() -> UnitExpr(last.position)
+            list.isEmpty() -> TupleExpr(last.position)
             list.size == 1 -> list[0]
             else -> MultiExpr(list)
         }
     }
 
-    fun parseExpr(scope: ScopeContext, ctx: StmtContext, precedence: Int = 0): Expr {
+    fun parseExpr(
+            precedence: Int = 0,
+            modifiers: List<Modifier> = emptyList(),
+            allowedTokens: List<TokenType> = emptyList()
+    ): Expr {
         if (eof) throw SyntaxException("Expected expression but reached end of file", last.position)
 
         val token = eat()
+
+        if (allowedTokens.isNotEmpty() && token.type !in allowedTokens) {
+            throw SyntaxException("Expected any of $allowedTokens but found ${token.type}", token.position)
+        }
+
         val parser = grammar.prefixParsers[token.type] ?: let {
             errors += SyntaxException("Unexpected $token", token.position)
             return InvalidExpr(token.position)
         }
+
         val expr = try {
-            parser.parse(this, scope, ctx, token)
+            parser.parse(this, modifiers, token)
         } catch (e: SyntaxException) {
             errors += e
             return InvalidExpr(e.position)
         }
 
-        return when {
-            expr === DummyExpr -> expr
-            else -> parseInfix(scope, ctx, precedence, expr)
-        }
+        return parseInfix(precedence, expr)
     }
 
-    fun parseInfix(scope: ScopeContext, stmt: StmtContext, precedence: Int, left: Expr): Expr {
+    fun parseInfix(precedence: Int, left: Expr): Expr {
         var leftExpr = left
         while (!eof && precedence < this.precedence) {
             val token = eat()
@@ -174,7 +162,7 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
             }
 
             leftExpr = try {
-                parser.parse(this, scope, stmt, token, leftExpr)
+                parser.parse(this, token, leftExpr)
             } catch (e: SyntaxException) {
                 errors += e
                 return InvalidExpr(e.position)

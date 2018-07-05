@@ -1,43 +1,43 @@
 package xyz.avarel.lobos.lexer
 
 enum class TokenType {
-    L_BRACE,
-    R_BRACE,
+    L_BRACE, // {
+    R_BRACE, // }
 
-    L_PAREN,
-    R_PAREN,
+    L_PAREN, // (
+    R_PAREN, // )
 
-    L_BRACKET,
-    R_BRACKET,
+    L_BRACKET, // [
+    R_BRACKET, // ]
 
-    LT,
-    GT,
-    LTE,
-    GTE,
+    LT, // <
+    GT, // >
+    LTE, // <=
+    GTE, // >=
 
-    EQ,
-    NEQ,
+    EQ, // ==
+    NEQ, // !=
 
-    RANGE_IN,
-    RANGE_EX,
+    RANGE_IN, // ..=
+    RANGE_EX, // ..<
 
-    AMP,
-    PIPE,
-    AND,
-    OR,
+    AMP, // &
+    PIPE, // |
+    AND, // &&
+    OR, // ||
 
-    PIPE_FORWARD,
+    PIPE_FORWARD, // |>
 
-    PLUS,
-    MINUS,
-    ASTERISK,
-    F_SLASH,
-    B_SLASH,
+    PLUS, // +
+    MINUS, // -
+    ASTERISK, // *
+    F_SLASH, // /
+    B_SLASH, // \
 
-    ASSIGN,
-    QUESTION,
-    BANG,
-    ARROW,
+    ASSIGN, // =
+    QUESTION, // ?
+    BANG, // !
+    ARROW, // ->
 
     STRING,
     IDENT,
@@ -48,13 +48,16 @@ enum class TokenType {
     TRUE,
     FALSE,
 
+    UNDERSCORE,
     DOT,
     COMMA,
     COLON,
+    DOUBLE_COLON,
     SEMICOLON,
 
     NL,
 
+    STRUCT,
     AS,
     IS,
     EXTERNAL,
@@ -67,6 +70,7 @@ enum class TokenType {
     ELSE,
     NULL,
     TYPE,
+    WHILE,
 
     INVALID,
     RESERVED
