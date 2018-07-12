@@ -1,13 +1,9 @@
 package xyz.avarel.lobos.parser
 
 import xyz.avarel.lobos.ast.DeclarationsAST
+import xyz.avarel.lobos.ast.ExternalDeclarationsAST
 import xyz.avarel.lobos.ast.expr.Expr
-import xyz.avarel.lobos.ast.expr.declarations.LetExpr
-import xyz.avarel.lobos.ast.expr.declarations.ModuleExpr
-import xyz.avarel.lobos.ast.expr.declarations.NamedFunctionExpr
-import xyz.avarel.lobos.ast.expr.external.ExternalLetExpr
-import xyz.avarel.lobos.ast.expr.external.ExternalNamedFunctionExpr
-import xyz.avarel.lobos.ast.expr.misc.MultiExpr
+import xyz.avarel.lobos.ast.expr.declarations.*
 import xyz.avarel.lobos.ast.types.AbstractTypeAST
 import xyz.avarel.lobos.ast.types.GenericParameterAST
 import xyz.avarel.lobos.ast.types.basic.IdentTypeAST
@@ -16,7 +12,6 @@ import xyz.avarel.lobos.ast.types.basic.NullTypeAST
 import xyz.avarel.lobos.ast.types.complex.*
 import xyz.avarel.lobos.lexer.Section
 import xyz.avarel.lobos.lexer.TokenType
-import xyz.avarel.lobos.lexer.span
 
 val declarationTokens = listOf(
         TokenType.MOD,
@@ -36,36 +31,58 @@ fun Parser.matchAllWhitespace(): Boolean {
     }
 }
 
-fun Parser.parseDeclarations(): DeclarationsAST {
-    val expr = parseStatements(TokenType.L_BRACE to TokenType.R_BRACE, emptyList(), declarationTokens)
-
+fun Parser.parseDeclarations(delimiterPair: Pair<TokenType, TokenType>? = TokenType.L_BRACE to TokenType.R_BRACE): DeclarationsAST {
     val declarationsAST = DeclarationsAST()
 
-    val list = if (expr is MultiExpr) {
-        expr.list
-    } else {
-        listOf(expr)
-    }
+    delimitedBlock(delimiterPair) {
+        if (peek().type !in declarationTokens) {
+            errors += SyntaxException("Only allow $declarationTokens in this context", peek().section)
+            false
+        } else {
+            val expr = parseExpr()
 
-    list.forEach { it ->
-        when (it) {
-            is NamedFunctionExpr,
-            is ExternalNamedFunctionExpr -> declarationsAST.functions += it
-            is LetExpr,
-            is ExternalLetExpr -> declarationsAST.variables += it
-            is ModuleExpr -> declarationsAST.modules += it
-            else -> throw IllegalStateException()
+            when (expr) {
+                is UseExpr -> declarationsAST.uses += expr
+                is FunctionExpr -> declarationsAST.functions += expr
+                is LetExpr -> declarationsAST.variables += expr
+                is ModuleExpr -> declarationsAST.modules += expr
+                else -> throw IllegalStateException()
+            }
+
+            true
         }
     }
+    return declarationsAST
+}
 
+fun Parser.parseExternalDeclarations(): ExternalDeclarationsAST {
+    val declarationsAST = ExternalDeclarationsAST()
+
+    delimitedBlock(TokenType.L_BRACE to TokenType.R_BRACE) {
+        if (peek().type !in declarationTokens) {
+            errors += SyntaxException("Only allow $declarationTokens in this context", peek().section)
+            false
+        } else {
+            val expr = parseExpr(0, listOf(Modifier.EXTERNAL))
+
+            when (expr) {
+                is UseExpr -> declarationsAST.uses += expr
+                is ExternalFunctionExpr -> declarationsAST.functions += expr
+                is ExternalLetExpr -> declarationsAST.variables += expr
+                is ExternalModuleExpr -> declarationsAST.modules += expr
+                else -> throw IllegalStateException()
+            }
+
+            true
+        }
+    }
     return declarationsAST
 }
 
 fun Parser.parseBlock(
-        modifiers: List<Modifier> = emptyList(),
-        allowedTokens: List<TokenType> = emptyList()
+        modifiers: List<Modifier> = emptyList()
 ): Expr {
-    return parseStatements(TokenType.L_BRACE to TokenType.R_BRACE, modifiers, allowedTokens)
+    return parseStatements(TokenType.L_BRACE to TokenType.R_BRACE, modifiers)
 }
 
 fun Parser.parseTypeAST(): AbstractTypeAST {
@@ -76,7 +93,7 @@ fun Parser.parseTypeAST(): AbstractTypeAST {
         do {
             list += parseSingleTypeAST()
         } while (match(TokenType.PIPE))
-        return list.reduce { acc, typeAST -> UnionTypeAST(acc, typeAST, acc.position.span(typeAST.position)) }
+        return list.reduce { acc, typeAST -> UnionTypeAST(acc, typeAST, acc.section.span(typeAST.section)) }
     }
 
     return type
@@ -84,13 +101,13 @@ fun Parser.parseTypeAST(): AbstractTypeAST {
 
 fun Parser.parseSingleTypeAST(): AbstractTypeAST {
     return when {
-        match(TokenType.NULL) -> NullTypeAST(last.position)
-        match(TokenType.BANG) -> NeverTypeAST(last.position)
+        match(TokenType.NULL) -> NullTypeAST(last.section)
+        match(TokenType.BANG) -> NeverTypeAST(last.section)
         match(TokenType.IDENT) -> {
             val ident = last
             val name = ident.string
 
-            val type = IdentTypeAST(name, ident.position)
+            val type = IdentTypeAST(name, ident.section)
 
             if (!match(TokenType.LT)) return type
 
@@ -100,7 +117,7 @@ fun Parser.parseSingleTypeAST(): AbstractTypeAST {
             } while (match(TokenType.COMMA))
             val gt = eat(TokenType.GT)
 
-            return TemplatingTypeAST(type, typeParameters, ident.position.span(gt.position))
+            return TemplatingTypeAST(type, typeParameters, ident.section.span(gt.section))
         }
         match(TokenType.L_PAREN) -> {
             val lParen = last
@@ -112,7 +129,7 @@ fun Parser.parseSingleTypeAST(): AbstractTypeAST {
 
                 if (match(TokenType.R_PAREN)) {
                     if (nextIs(TokenType.ARROW)) {
-                        return constructTupleOrFunctionType(valueTypes, lParen.position.span(last.position))
+                        return constructTupleOrFunctionType(valueTypes, lParen.section.span(last.section))
                     }
 
                     return firstType
@@ -120,7 +137,7 @@ fun Parser.parseSingleTypeAST(): AbstractTypeAST {
 
                 if (match(TokenType.COMMA)) {
                     if (match(TokenType.R_PAREN)) {
-                        return TupleTypeAST(listOf(firstType), lParen.position.span(last.position))
+                        return TupleTypeAST(listOf(firstType), lParen.section.span(last.section))
                     }
                     do {
                         valueTypes += parseTypeAST()
@@ -130,7 +147,7 @@ fun Parser.parseSingleTypeAST(): AbstractTypeAST {
                 eat(TokenType.R_PAREN)
             }
 
-            return constructTupleOrFunctionType(valueTypes, lParen.position.span(last.position))
+            return constructTupleOrFunctionType(valueTypes, lParen.section.span(last.section))
         }
         match(TokenType.L_BRACKET) -> {
             val lBracket = last
@@ -146,7 +163,7 @@ fun Parser.parseSingleTypeAST(): AbstractTypeAST {
             val rBracket = eat(TokenType.R_BRACKET)
             return ArrayTypeAST(type, lBracket.span(rBracket))
         }
-        else -> throw SyntaxException("Expected type", peek().position)
+        else -> throw SyntaxException("Expected type", peek().section)
     }
 }
 
@@ -171,7 +188,7 @@ fun Parser.parseGenericParameters(): List<GenericParameterAST> {
         val genericName = genericToken.string
 
         if (genericName in genericNames) {
-            errors += SyntaxException("Generic parameter $genericName has already been declared", genericToken.position)
+            errors += SyntaxException("Generic parameter $genericName has already been declared", genericToken.section)
         }
 
         val param = if (match(TokenType.COLON)) {

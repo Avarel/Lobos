@@ -5,7 +5,6 @@ import xyz.avarel.lobos.ast.expr.misc.ListLiteralExpr
 import xyz.avarel.lobos.ast.expr.misc.MapLiteralExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
-import xyz.avarel.lobos.lexer.span
 import xyz.avarel.lobos.parser.Modifier
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.PrefixParser

@@ -8,7 +8,7 @@ import xyz.avarel.lobos.lexer.Section
 class TupleIndexAccessExpr(
         val target: Expr,
         val index: Int,
-        position: Section
-) : AbstractExpr(position) {
+        section: Section
+) : AbstractExpr(section) {
     override fun <R> accept(visitor: ExprVisitor<R>) = visitor.visit(this)
 }

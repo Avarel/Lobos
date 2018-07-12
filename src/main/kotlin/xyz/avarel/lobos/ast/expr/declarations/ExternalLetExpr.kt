@@ -1,4 +1,4 @@
-package xyz.avarel.lobos.ast.expr.external
+package xyz.avarel.lobos.ast.expr.declarations
 
 import xyz.avarel.lobos.ast.expr.AbstractExpr
 import xyz.avarel.lobos.ast.expr.ExprVisitor
@@ -9,7 +9,7 @@ class ExternalLetExpr(
         val mutable: Boolean,
         val name: String,
         val type: AbstractTypeAST,
-        position: Section
-) : AbstractExpr(position) {
+        section: Section
+) : AbstractExpr(section), LetExpr {
     override fun <R> accept(visitor: ExprVisitor<R>) = visitor.visit(this)
 }

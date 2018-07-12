@@ -1,0 +1,8 @@
+external mod io {
+    def println()
+    def print(value: any)
+}
+
+use io::print
+
+print("why")

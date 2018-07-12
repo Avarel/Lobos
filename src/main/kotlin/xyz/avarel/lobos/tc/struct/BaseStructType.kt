@@ -13,7 +13,7 @@ class BaseStructType(
 ) : StructType {
     override val parentType: Type get() = parentStructType ?: AnyType
 
-    override var genericParameters: List<GenericParameter> = members.values.map(VariableInfo::type).findGenericParameters()
+    override var genericParameters = members.values.map(VariableInfo::type).findGenericParameters()
 
     override fun template(types: Map<GenericParameter, Type>): StructType {
         require(types.keys == genericParameters.toSet())

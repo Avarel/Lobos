@@ -7,10 +7,10 @@ import xyz.avarel.lobos.tc.scope.VariableInfo
 import xyz.avarel.lobos.tc.template
 
 class TemplatedStructType(val base: BaseStructType, val typeArguments: Map<GenericParameter, Type>) : StructType {
-    override val name: String get() = base.name
-    override val members: Map<String, VariableInfo> = base.members.mapValues { VariableInfo(it.value.type.template(typeArguments), it.value.mutable) }
+    override val name get() = base.name
+    override val members = base.members.mapValues { VariableInfo(it.value.type.template(typeArguments), it.value.mutable) }
 
-    override var genericParameters: List<GenericParameter> = members.values.map(VariableInfo::type).findGenericParameters()
+    override var genericParameters = members.values.map(VariableInfo::type).findGenericParameters()
 
     override fun template(types: Map<GenericParameter, Type>): StructType {
         require(types.keys == genericParameters.toSet())

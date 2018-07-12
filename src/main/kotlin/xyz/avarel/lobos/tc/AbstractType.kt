@@ -3,6 +3,7 @@ package xyz.avarel.lobos.tc
 import xyz.avarel.lobos.tc.base.AnyType
 import xyz.avarel.lobos.tc.base.NeverType
 import xyz.avarel.lobos.tc.complex.UnionType
+import xyz.avarel.lobos.tc.scope.VariableInfo
 
 abstract class AbstractType(val name: String, override val parentType: Type = AnyType): Type {
     override fun isAssignableFrom(other: Type): Boolean {
@@ -23,7 +24,7 @@ abstract class AbstractType(val name: String, override val parentType: Type = An
         }
     }
 
-    override fun getMember(key: String) = parentType.getMember(key)
+    override fun getMember(key: String): VariableInfo? = parentType.getMember(key)
 
     override fun toString() = name
 }

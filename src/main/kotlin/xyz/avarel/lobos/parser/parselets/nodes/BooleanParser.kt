@@ -9,6 +9,6 @@ import xyz.avarel.lobos.parser.PrefixParser
 
 class BooleanParser(private val value: Boolean): PrefixParser {
     override fun parse(parser: Parser, modifiers: List<Modifier>, token: Token): Expr {
-        return BooleanExpr(value, token.position)
+        return BooleanExpr(value, token.section)
     }
 }

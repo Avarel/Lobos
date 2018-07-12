@@ -5,7 +5,6 @@ import xyz.avarel.lobos.ast.expr.misc.TemplateExpr
 import xyz.avarel.lobos.ast.types.TypeAST
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
-import xyz.avarel.lobos.lexer.span
 import xyz.avarel.lobos.parser.InfixParser
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.Precedence

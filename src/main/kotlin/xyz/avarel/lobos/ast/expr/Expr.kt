@@ -1,7 +1,7 @@
 package xyz.avarel.lobos.ast.expr
 
-import xyz.avarel.lobos.lexer.Positional
+import xyz.avarel.lobos.lexer.Sectional
 
-interface Expr : Positional {
+interface Expr : Sectional {
     fun <R> accept(visitor: ExprVisitor<R>): R
 }

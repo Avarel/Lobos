@@ -4,7 +4,6 @@ import xyz.avarel.lobos.ast.expr.Expr
 import xyz.avarel.lobos.ast.expr.declarations.TypeAliasExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
-import xyz.avarel.lobos.lexer.span
 import xyz.avarel.lobos.parser.*
 
 object TypeAliasParser: PrefixParser {

@@ -58,8 +58,10 @@ enum class TokenType {
     NL,
 
     STRUCT,
+    USE,
     AS,
     IS,
+    BREAK,
     EXTERNAL,
     MOD,
     MUT,

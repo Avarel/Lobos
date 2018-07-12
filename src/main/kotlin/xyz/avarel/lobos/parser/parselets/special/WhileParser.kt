@@ -13,6 +13,6 @@ object WhileParser : PrefixParser {
         val condition = parser.parseExpr()
         val body = parser.parseBlock()
 
-        return WhileExpr(condition, body, token.position)
+        return WhileExpr(condition, body, token.section)
     }
 }

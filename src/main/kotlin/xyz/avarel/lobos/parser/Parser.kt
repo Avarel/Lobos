@@ -4,13 +4,10 @@ import xyz.avarel.lobos.ast.expr.Expr
 import xyz.avarel.lobos.ast.expr.misc.InvalidExpr
 import xyz.avarel.lobos.ast.expr.misc.MultiExpr
 import xyz.avarel.lobos.ast.expr.misc.TupleExpr
-import xyz.avarel.lobos.lexer.Section
-import xyz.avarel.lobos.lexer.Token
-import xyz.avarel.lobos.lexer.TokenType
-import xyz.avarel.lobos.lexer.Tokenizer
+import xyz.avarel.lobos.lexer.*
 
-class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>) {
-    constructor(grammar: Grammar, lexer: Tokenizer): this(grammar, lexer.fileName, lexer.parse())
+class Parser(val grammar: Grammar, val source: Source, val tokens: List<Token>) {
+    constructor(grammar: Grammar, lexer: Tokenizer) : this(grammar, lexer.source, lexer.parse())
 
     val errors = mutableListOf<SyntaxException>()
 
@@ -25,10 +22,10 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
     fun eat() = tokens[index++]
 
     fun eat(type: TokenType): Token {
-        if (eof) throw SyntaxException("Expected $type but reached end of file", last.position)
+        if (eof) throw SyntaxException("Expected $type but reached end of file", last.section)
         val token = peek()
         if (token.type != type) {
-            throw SyntaxException("Expected $type but found ${token.type}", token.position)
+            throw SyntaxException("Expected $type but found ${token.type}", token.section)
         }
         return eat()
     }
@@ -74,51 +71,60 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
     }
 
     fun parse(): Expr {
-        if (eof) return TupleExpr(Section(fileName, 0, 0, 0))
+        if (eof) return TupleExpr(Section(source, 0, 0, 0))
         val expr = parseStatements()
 
         if (!eof) {
             val token = peek()
-            errors += SyntaxException("Did not reach end of file. Found token $token", token.position)
+            errors += SyntaxException("Did not reach end of file. Found token $token", token.section)
         }
 
         return expr
     }
 
-    fun parseStatements(
-            delimiterPair: Pair<TokenType, TokenType>? = null,
-            modifiers: List<Modifier> = emptyList(),
-            allowedTokens: List<TokenType> = emptyList()
-    ): Expr {
-        if (eof) throw SyntaxException("Expected expression but reached end of file", last.position)
+    inline fun delimitedBlock(delimiterPair: Pair<TokenType, TokenType>? = null, block: () -> Boolean) {
+        if (eof) throw SyntaxException("Expected block but reached end of file", last.section)
 
         delimiterPair?.first?.let(this::eat)
-        matchAllWhitespace()
-
-        val list = mutableListOf<Expr>()
         matchAllWhitespace()
 
         do {
             if (eof || (delimiterPair != null && nextIs(delimiterPair.second))) {
                 break
             }
-            val expr = parseExpr(0, modifiers, allowedTokens)
-
-            if (expr is InvalidExpr) {
+            if (!block()) {
                 if (delimiterPair != null) {
                     skipUntil(delimiterPair.second, TokenType.SEMICOLON, TokenType.NL)
                 } else {
                     skipUntil(TokenType.SEMICOLON, TokenType.NL)
                 }
-            } else {
-                list += expr
             }
         } while (!eof && matchAllWhitespace())
 
         delimiterPair?.second?.let(this::eat)
+    }
+
+    fun parseStatements(
+            delimiterPair: Pair<TokenType, TokenType>? = null,
+            modifiers: List<Modifier> = emptyList()
+    ): Expr {
+        if (eof) throw SyntaxException("Expected block but reached end of file", last.section)
+
+        val list = mutableListOf<Expr>()
+
+        delimitedBlock(delimiterPair) {
+            val expr = parseExpr(0, modifiers)
+
+            if (expr is InvalidExpr) {
+                false
+            } else {
+                list += expr
+                true
+            }
+        }
 
         return when {
-            list.isEmpty() -> TupleExpr(last.position)
+            list.isEmpty() -> TupleExpr(last.section)
             list.size == 1 -> list[0]
             else -> MultiExpr(list)
         }
@@ -126,20 +132,15 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
 
     fun parseExpr(
             precedence: Int = 0,
-            modifiers: List<Modifier> = emptyList(),
-            allowedTokens: List<TokenType> = emptyList()
+            modifiers: List<Modifier> = emptyList()
     ): Expr {
-        if (eof) throw SyntaxException("Expected expression but reached end of file", last.position)
+        if (eof) throw SyntaxException("Expected expression but reached end of file", last.section)
 
         val token = eat()
 
-        if (allowedTokens.isNotEmpty() && token.type !in allowedTokens) {
-            throw SyntaxException("Expected any of $allowedTokens but found ${token.type}", token.position)
-        }
-
         val parser = grammar.prefixParsers[token.type] ?: let {
-            errors += SyntaxException("Unexpected $token", token.position)
-            return InvalidExpr(token.position)
+            errors += SyntaxException("Unexpected $token", token.section)
+            return InvalidExpr(token.section)
         }
 
         val expr = try {
@@ -157,8 +158,8 @@ class Parser(val grammar: Grammar, val fileName: String, val tokens: List<Token>
         while (!eof && precedence < this.precedence) {
             val token = eat()
             val parser = grammar.infixParsers[token.type] ?: let {
-                errors += SyntaxException("Unexpected $token", token.position)
-                return InvalidExpr(token.position)
+                errors += SyntaxException("Unexpected $token", token.section)
+                return InvalidExpr(token.section)
             }
 
             leftExpr = try {

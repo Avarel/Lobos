@@ -1,12 +1,9 @@
 package xyz.avarel.lobos.lexer
 
-import java.io.BufferedReader
 import java.io.Reader
 
-class Tokenizer(val fileName: String = "_", reader: Reader) {
-    constructor(string: String) : this(reader = string.reader())
-
-    private val reader: Reader = if (reader.markSupported()) reader else BufferedReader(reader)
+class Tokenizer(val source: Source) {
+    private val reader: Reader = source.reader()
 
     private var lineNumber: Long = 1
     private var lineIndex: Long = 0
@@ -91,7 +88,7 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
     private fun makeToken(tokenType: TokenType, string: String, offset: Int = 0) = Token(
             tokenType,
             string,
-            Section(fileName, lineNumber, lineIndex - string.length - offset, string.length + offset)
+            Section(source, lineNumber, lineIndex - string.length - offset, string.length + offset)
     )
 
     private fun parseIdentTo(list: MutableList<Token>, c: Char) {
@@ -110,6 +107,7 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
 
         val str = buf.toString()
         list += when (str) {
+            "use" -> makeToken(TokenType.USE, 3)
             "true" -> makeToken(TokenType.TRUE, 4)
             "false" -> makeToken(TokenType.FALSE, 4)
             "let" -> makeToken(TokenType.LET, 3)
@@ -123,6 +121,7 @@ class Tokenizer(val fileName: String = "_", reader: Reader) {
             "def" -> makeToken(TokenType.DEF, 3)
             "external" -> makeToken(TokenType.EXTERNAL, 8)
             "struct" -> makeToken(TokenType.STRUCT, 6)
+            "break" -> makeToken(TokenType.BREAK, 5)
             "while" -> makeToken(TokenType.WHILE, 5)
             else -> makeToken(TokenType.IDENT, str)
         }

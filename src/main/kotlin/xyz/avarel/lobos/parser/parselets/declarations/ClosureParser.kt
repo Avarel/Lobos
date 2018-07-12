@@ -1,7 +1,7 @@
 package xyz.avarel.lobos.parser.parselets.declarations
 
 import xyz.avarel.lobos.ast.expr.Expr
-import xyz.avarel.lobos.ast.expr.declarations.ClosureExpr
+import xyz.avarel.lobos.ast.expr.misc.ClosureExpr
 import xyz.avarel.lobos.ast.types.ArgumentParameterAST
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
@@ -22,7 +22,7 @@ object ClosureParser : PrefixParser {
                 val type = parser.parseSingleTypeAST()
 
                 if (paramName in arguments) {
-                    parser.errors += SyntaxException("Parameter $paramName has already been declared", paramIdent.position)
+                    parser.errors += SyntaxException("Parameter $paramName has already been declared", paramIdent.section)
                 }
 
                 arguments[paramName] = ArgumentParameterAST(isMutable, paramName, type)
@@ -37,6 +37,6 @@ object ClosureParser : PrefixParser {
             parser.parseExpr()
         }
 
-        return ClosureExpr(arguments.values.toList(), body, token.position)
+        return ClosureExpr(arguments.values.toList(), body, token.section)
     }
 }

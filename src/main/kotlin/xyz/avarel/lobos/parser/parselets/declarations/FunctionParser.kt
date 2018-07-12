@@ -1,8 +1,8 @@
 package xyz.avarel.lobos.parser.parselets.declarations
 
 import xyz.avarel.lobos.ast.expr.Expr
-import xyz.avarel.lobos.ast.expr.declarations.NamedFunctionExpr
-import xyz.avarel.lobos.ast.expr.external.ExternalNamedFunctionExpr
+import xyz.avarel.lobos.ast.expr.declarations.DeclareFunctionExpr
+import xyz.avarel.lobos.ast.expr.declarations.ExternalFunctionExpr
 import xyz.avarel.lobos.ast.types.ArgumentParameterAST
 import xyz.avarel.lobos.ast.types.complex.TupleTypeAST
 import xyz.avarel.lobos.lexer.Token
@@ -29,7 +29,7 @@ object FunctionParser: PrefixParser {
                 val type = parser.parseTypeAST()
 
                 if (paramName in arguments) {
-                    parser.errors += SyntaxException("Parameter $paramName has already been declared", paramIdent.position)
+                    parser.errors += SyntaxException("Parameter $paramName has already been declared", paramIdent.section)
                 }
 
                 arguments[paramName] = ArgumentParameterAST(isMutable, paramName, type)
@@ -41,15 +41,15 @@ object FunctionParser: PrefixParser {
         val returnType = if (parser.match(TokenType.ARROW)) {
             parser.parseTypeAST()
         } else {
-            TupleTypeAST(parser.last.position)
+            TupleTypeAST(parser.last.section)
         }
 
         if (Modifier.EXTERNAL in modifiers) {
-            return ExternalNamedFunctionExpr(name, generics, arguments.values.toList(), returnType, token.position)
+            return ExternalFunctionExpr(name, generics, arguments.values.toList(), returnType, token.section)
         }
 
         val body = parser.parseBlock()
 
-        return NamedFunctionExpr(name, generics, arguments.values.toList(), returnType, body, token.position)
+        return DeclareFunctionExpr(name, generics, arguments.values.toList(), returnType, body, token.section)
     }
 }

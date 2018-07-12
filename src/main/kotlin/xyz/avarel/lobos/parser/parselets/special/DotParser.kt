@@ -6,7 +6,6 @@ import xyz.avarel.lobos.ast.expr.access.PropertyAssignExpr
 import xyz.avarel.lobos.ast.expr.access.TupleIndexAccessExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
-import xyz.avarel.lobos.lexer.span
 import xyz.avarel.lobos.parser.InfixParser
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.Precedence
@@ -32,7 +31,7 @@ object DotParser: InfixParser {
                     PropertyAccessExpr(left, name, left.span(ident))
                 }
             }
-            else -> throw SyntaxException("Invalid identifier", ident.position)
+            else -> throw SyntaxException("Invalid identifier", ident.section)
         }
     }
 }

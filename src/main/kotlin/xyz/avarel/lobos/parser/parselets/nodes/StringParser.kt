@@ -10,6 +10,6 @@ import xyz.avarel.lobos.parser.PrefixParser
 object StringParser: PrefixParser {
     override fun parse(parser: Parser, modifiers: List<Modifier>, token: Token): Expr {
         val value = token.string
-        return StringExpr(value, token.position)
+        return StringExpr(value, token.section)
     }
 }

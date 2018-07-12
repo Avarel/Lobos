@@ -14,6 +14,7 @@ object DefaultGrammar: Grammar(hashMapOf(), hashMapOf()) {
         prefix(TokenType.INT, IntParser)
         prefix(TokenType.DECIMAL, DecimalParser)
 
+        prefix(TokenType.USE, UseParser)
         prefix(TokenType.MOD, ModuleParser)
         prefix(TokenType.STRING, StringParser)
         prefix(TokenType.IDENT, IdentParser)

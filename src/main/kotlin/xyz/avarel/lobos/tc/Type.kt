@@ -48,6 +48,8 @@ interface Type {
      */
     fun getMember(key: String): VariableInfo? = parentType.getMember(key)
 
+    fun getAssociatedType(key: String): Type? = null
+
     infix fun commonSuperTypeWith(other: Type): Type {
         when {
             this == other -> return this

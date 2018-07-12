@@ -9,7 +9,7 @@ class BinaryOperation(
         val left: Expr,
         val right: Expr,
         val operator: BinaryOperationType,
-        position: Section
-) : AbstractExpr(position) {
+        section: Section
+) : AbstractExpr(section) {
     override fun <R> accept(visitor: ExprVisitor<R>) = visitor.visit(this)
 }

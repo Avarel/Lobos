@@ -4,9 +4,10 @@ import xyz.avarel.lobos.ast.expr.Expr
 import xyz.avarel.lobos.ast.expr.ExprVisitor
 import xyz.avarel.lobos.ast.expr.access.*
 import xyz.avarel.lobos.ast.expr.declarations.*
-import xyz.avarel.lobos.ast.expr.external.ExternalLetExpr
-import xyz.avarel.lobos.ast.expr.external.ExternalNamedFunctionExpr
+import xyz.avarel.lobos.ast.expr.files.FileModuleExpr
+import xyz.avarel.lobos.ast.expr.files.FolderModuleExpr
 import xyz.avarel.lobos.ast.expr.invoke.InvokeExpr
+import xyz.avarel.lobos.ast.expr.invoke.InvokeLocalExpr
 import xyz.avarel.lobos.ast.expr.invoke.InvokeMemberExpr
 import xyz.avarel.lobos.ast.expr.misc.*
 import xyz.avarel.lobos.ast.expr.nodes.*
@@ -49,6 +50,30 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         }
     }
 
+    override fun visit(expr: UseExpr) {
+        base("use")
+        label(expr.list.joinToString("::"), tail = true)
+    }
+
+    override fun visit(expr: FileModuleExpr) {
+        base("file module")
+        label("name: ${expr.name}", false)
+
+        expr.declarationsAST.let { d ->
+            d.modules.astGroup("submodules", tail = d.functions.isEmpty() && d.variables.isEmpty())
+            d.functions.astGroup("functions", tail = d.variables.isEmpty())
+            d.variables.astGroup("variables", tail = true)
+        }
+    }
+
+    override fun visit(expr: FolderModuleExpr) {
+        base("folder module")
+        label("name: ${expr.name}", false)
+
+        expr.folderModules.astGroup("folders", tail = expr.fileModules.isEmpty())
+        expr.fileModules.astGroup("files", tail = true)
+    }
+
     override fun visit(expr: IdentExpr) = base("reference ${expr.name}")
 
     override fun visit(expr: NullExpr) = base("null ref")
@@ -71,8 +96,10 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         }
     }
 
-    override fun visit(expr: ModuleExpr) {
-        base("module ${expr.name}")
+    override fun visit(expr: DeclareModuleExpr) {
+        base("local module")
+
+        label("name: ${expr.name}", false)
 
         expr.declarationsAST.let { d ->
             d.modules.astGroup("submodules", tail = d.functions.isEmpty() && d.variables.isEmpty())
@@ -81,7 +108,7 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         }
     }
 
-    override fun visit(expr: NamedFunctionExpr) {
+    override fun visit(expr: DeclareFunctionExpr) {
         base("function")
 
         label("name: ${expr.name}", false)
@@ -95,7 +122,7 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         expr.body.astLabel("body", tail = true)
     }
 
-    override fun visit(expr: LetExpr) {
+    override fun visit(expr: DeclareLetExpr) {
         base("let")
 
         label("name: ${expr.name}", false)
@@ -117,13 +144,25 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         label("type: ${expr.type}", true)
     }
 
+    override fun visit(expr: ExternalModuleExpr) {
+        base("external module")
+
+        label("name: ${expr.name}", false)
+
+        expr.declarationsAST.let { d ->
+            d.modules.astGroup("submodules", tail = d.functions.isEmpty() && d.variables.isEmpty())
+            d.functions.astGroup("functions", tail = d.variables.isEmpty())
+            d.variables.astGroup("variables", tail = true)
+        }
+    }
+
     override fun visit(expr: ExternalLetExpr) {
         base("external let")
 
         label("name: ${expr.name}", true)
     }
 
-    override fun visit(expr: ExternalNamedFunctionExpr) {
+    override fun visit(expr: ExternalFunctionExpr) {
         base("external function")
 
         label("name: ${expr.name}", true)
@@ -187,8 +226,23 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         expr.arguments.astGroup("arguments", tail = true)
     }
 
+    override fun visit(expr: InvokeLocalExpr) {
+        base("invoke local")
+
+        label("name: ${expr.name}", tail = false)
+        expr.arguments.astGroup("arguments", tail = true)
+    }
+
+    override fun visit(expr: InvokeMemberExpr) {
+        base("invoke member function")
+
+        expr.target.astLabel("target", tail = false)
+        label("name: ${expr.name}", expr.arguments.isEmpty())
+        expr.arguments.astGroup("arguments", tail = true)
+    }
+
     override fun visit(expr: UnaryOperation) {
-        base("binary ${expr.operator}")
+        base("unary ${expr.operator}")
 
         expr.target.ast(tail = true)
     }
@@ -259,13 +313,5 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
         expr.target.astLabel("target", tail = false)
         label("name: ${expr.name}", true)
         expr.value.astLabel("value", tail = true)
-    }
-
-    override fun visit(expr: InvokeMemberExpr) {
-        base("invoke member function")
-
-        expr.target.astLabel("target", tail = false)
-        label("name: ${expr.name}", expr.arguments.isEmpty())
-        expr.arguments.astGroup("arguments", tail = true)
     }
 }

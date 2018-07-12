@@ -9,7 +9,7 @@ import xyz.avarel.lobos.lexer.Section
 class TemplateExpr(
         val target: Expr,
         val typeArguments: List<TypeAST>,
-        position: Section
-) : AbstractExpr(position) {
+        section: Section
+) : AbstractExpr(section) {
     override fun <R> accept(visitor: ExprVisitor<R>) = visitor.visit(this)
 }

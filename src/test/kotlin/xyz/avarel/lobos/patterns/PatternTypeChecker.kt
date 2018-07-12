@@ -1,6 +1,5 @@
 package xyz.avarel.lobos.patterns
 
-import xyz.avarel.lobos.parser.TypeException
 import xyz.avarel.lobos.tc.Type
 import xyz.avarel.lobos.tc.TypeChecker
 import xyz.avarel.lobos.tc.base.I32Type
@@ -18,23 +17,23 @@ class PatternTypeChecker(
     }
 
     override fun visit(pattern: I32Pattern): Boolean {
-        tc.checkType(targetType, I32Type, pattern.position)
+        tc.checkType(targetType, I32Type, pattern.section)
         return false
     }
 
     override fun visit(pattern: StrPattern): Boolean {
-        tc.checkType(targetType, StrType, pattern.position)
+        tc.checkType(targetType, StrType, pattern.section)
         return false
     }
 
     override fun visit(pattern: TuplePattern): Boolean {
         if (targetType !is TupleType) {
-            tc.errorHandler(TypeException("$targetType can not be matched to a tuple pattern", pattern.position))
+            tc.errorHandler("$targetType can not be matched to a tuple pattern", pattern.section)
             return false
         }
 
         if (targetType.valueTypes.size != pattern.list.size) {
-            tc.errorHandler(TypeException("Tuple pattern size mismatch, expected ${pattern.list.size}, found ${targetType.valueTypes.size}", pattern.position))
+            tc.errorHandler("Tuple pattern size mismatch, expected ${pattern.list.size}, found ${targetType.valueTypes.size}", pattern.section)
             return false
         }
 
@@ -54,7 +53,7 @@ class PatternTypeChecker(
             if (type.isAssignableFrom(targetType)) {
                 scope.assume(pattern.name, targetType)
             } else {
-                tc.errorHandler(TypeException("Expected $type but found $targetType", pattern.position))
+                tc.errorHandler("Expected $type but found $targetType", pattern.section)
             }
         }
 

@@ -1,9 +1,11 @@
 package xyz.avarel.lobos
 
 import xyz.avarel.lobos.ast.ASTViewer
+import xyz.avarel.lobos.lexer.Source
 import xyz.avarel.lobos.lexer.Tokenizer
 import xyz.avarel.lobos.parser.DefaultGrammar
 import xyz.avarel.lobos.parser.Parser
+import xyz.avarel.lobos.parser.TypeException
 import xyz.avarel.lobos.tc.TypeChecker
 import xyz.avarel.lobos.tc.scope.DefaultScopeContext
 import xyz.avarel.lobos.tc.scope.StmtContext
@@ -71,59 +73,56 @@ struct Point {
  */
 
 fun main(args: Array<String>) {
-    val source = File("script.waf").readText()
+    val source = Source(File("scripts/script.waf"))
 
-    val lexer = Tokenizer(reader = source.reader())
-    lexer.parse().let {
-        val parser = Parser(DefaultGrammar, lexer.fileName, it)
-        val ast = parser.parse()
+    val lexer = Tokenizer(source)
+    val tokens = lexer.parse()
 
+    val parser = Parser(DefaultGrammar, source, tokens)
+    val ast = parser.parse()
 
-
-        ast.accept(TypeChecker(
-                DefaultScopeContext.subContext(),
-                StmtContext(),
-                false
-        ) { parser.errors += it }).also {
-            println("return type -> $it")
-        }
-
+    ast.accept(TypeChecker(
+            DefaultScopeContext.subContext(),
+            StmtContext(),
+            false
+    ) { message, section ->
+        parser.errors += TypeException(message, section)
+    })
 
 
-        println()
-        println("|> ERRORS:")
+    println()
+    println("|> ERRORS:")
 
-        val lines = source.lines()
-        parser.errors.forEach {
-            val line = lines[it.position.lineNumber.toInt() - 1]
-            val msg = buildString {
-                append(line)
-                append('\n')
-                kotlin.repeat(it.position.lineIndex.toInt()) {
-                    append(' ')
-                }
-                when (it.position.length) {
-                    0, 1 -> append("^ ")
-                    else -> {
-                        append('└')
-                        kotlin.repeat(it.position.length - 2) {
-                            append('─')
-                        }
-                        append("┘ ")
-                    }
-                }
-                append(it.message)
+    parser.errors.forEach {
+        val line = source.lines[it.position.lineNumber.toInt() - 1]
+        val msg = buildString {
+            append(line)
+            append('\n')
+            kotlin.repeat(it.position.lineIndex.toInt()) {
+                append(' ')
             }
-            println(msg)
+            when (it.position.length) {
+                0, 1 -> append("^ ")
+                else -> {
+                    append('└')
+                    kotlin.repeat(it.position.length - 2) {
+                        append('─')
+                    }
+                    append("┘ ")
+                }
+            }
+            append(it.message)
         }
-
-        if (parser.errors.isEmpty()) {
-            println("No errors.\n")
-        }
-
-        println()
-        println("|> AST")
-        println(buildString { ast.accept(ASTViewer(this, "", true)) })
+        println(msg)
     }
+
+    if (parser.errors.isEmpty()) {
+        println("No errors.\n")
+    }
+
+    println()
+    println("|> AST")
+    println(buildString { ast.accept(ASTViewer(this, "", true)) })
+
 }
 

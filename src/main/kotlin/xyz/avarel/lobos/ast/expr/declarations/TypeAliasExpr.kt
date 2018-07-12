@@ -10,7 +10,7 @@ class TypeAliasExpr(
         val name: String,
         val generics: List<GenericParameterAST>,
         val type: AbstractTypeAST,
-        position: Section
-) : AbstractExpr(position) {
+        section: Section
+) : AbstractExpr(section) {
     override fun <R> accept(visitor: ExprVisitor<R>) = visitor.visit(this)
 }

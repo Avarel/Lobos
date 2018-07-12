@@ -21,6 +21,6 @@ object IfParser: PrefixParser {
             null
         }
 
-        return IfExpr(condition, thenBranch, elseBranch, token.position)
+        return IfExpr(condition, thenBranch, elseBranch, token.section)
     }
 }

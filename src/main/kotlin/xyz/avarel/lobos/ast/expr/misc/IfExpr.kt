@@ -9,7 +9,7 @@ class IfExpr(
         val condition: Expr,
         val thenBranch: Expr,
         val elseBranch: Expr?,
-        position: Section
-) : AbstractExpr(position) {
+        section: Section
+) : AbstractExpr(section) {
     override fun <R> accept(visitor: ExprVisitor<R>) = visitor.visit(this)
 }

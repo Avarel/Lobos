@@ -5,7 +5,7 @@ import xyz.avarel.lobos.ast.types.basic.IdentTypeAST
 import xyz.avarel.lobos.ast.types.basic.NeverTypeAST
 import xyz.avarel.lobos.ast.types.basic.NullTypeAST
 import xyz.avarel.lobos.ast.types.complex.*
-import xyz.avarel.lobos.parser.TypeException
+import xyz.avarel.lobos.lexer.Section
 import xyz.avarel.lobos.tc.base.InvalidType
 import xyz.avarel.lobos.tc.base.NeverType
 import xyz.avarel.lobos.tc.base.NullType
@@ -18,13 +18,13 @@ import xyz.avarel.lobos.tc.scope.ScopeContext
 
 class TypeResolver(
         val scope: ScopeContext,
-        val errorHandler: (TypeException) -> Unit
+        val errorHandler: (message: String, section: Section) -> Unit
 ) : TypeASTVisitor<Type> {
     override fun visit(typeAst: IdentTypeAST): Type {
         val type = scope.getType(typeAst.name)
 
         if (type == null) {
-            errorHandler(TypeException("Unresolved type ${typeAst.name}", typeAst.position))
+            errorHandler("Unresolved type ${typeAst.name}", typeAst.section)
         }
 
         return type ?: InvalidType
@@ -68,14 +68,14 @@ class TypeResolver(
         val target = typeAst.target.accept(this)
 
         if (target !is TypeTemplate) {
-            errorHandler(TypeException("$target is not a generic type", typeAst.target.position))
+            errorHandler("$target is not a generic type", typeAst.target.section)
             return InvalidType
         }
 
         val arguments = typeAst.arguments.map { it.accept(this) }
 
         if (arguments.size != target.genericParameters.size) {
-            errorHandler(TypeException("Expected ${target.genericParameters.size} type arguments, found ${arguments.size} arguments", typeAst.position))
+            errorHandler("Expected ${target.genericParameters.size} type arguments, found ${arguments.size} arguments", typeAst.section)
             return InvalidType
         }
 

@@ -10,6 +10,6 @@ import xyz.avarel.lobos.parser.PrefixParser
 object DecimalParser: PrefixParser {
     override fun parse(parser: Parser, modifiers: List<Modifier>, token: Token): Expr {
         val value = token.string.toDouble()
-        return F64Expr(value, token.position)
+        return F64Expr(value, token.section)
     }
 }

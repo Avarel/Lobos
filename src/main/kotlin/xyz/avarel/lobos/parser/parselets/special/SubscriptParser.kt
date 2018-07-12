@@ -5,7 +5,6 @@ import xyz.avarel.lobos.ast.expr.access.SubscriptAccessExpr
 import xyz.avarel.lobos.ast.expr.access.SubscriptAssignExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
-import xyz.avarel.lobos.lexer.span
 import xyz.avarel.lobos.parser.InfixParser
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.Precedence

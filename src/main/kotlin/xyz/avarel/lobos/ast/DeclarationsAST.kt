@@ -1,11 +1,17 @@
 package xyz.avarel.lobos.ast
 
-import xyz.avarel.lobos.ast.expr.Expr
+import xyz.avarel.lobos.ast.expr.declarations.*
 
-@Suppress("UNCHECKED_CAST")
 class DeclarationsAST(
-        val modules: MutableList<Expr> = mutableListOf(),
-        val functions: MutableList<Expr> = mutableListOf(),
-        val variables: MutableList<Expr> = mutableListOf()
-// TODO typealiases
+        val uses: MutableList<UseExpr> = mutableListOf(),
+        val modules: MutableList<ModuleExpr> = mutableListOf(),
+        val functions: MutableList<FunctionExpr> = mutableListOf(),
+        val variables: MutableList<LetExpr> = mutableListOf()
+)
+
+class ExternalDeclarationsAST(
+        val uses: MutableList<UseExpr> = mutableListOf(),
+        val modules: MutableList<ExternalModuleExpr> = mutableListOf(),
+        val functions: MutableList<ExternalFunctionExpr> = mutableListOf(),
+        val variables: MutableList<ExternalLetExpr> = mutableListOf()
 )

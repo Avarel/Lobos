@@ -4,9 +4,10 @@ import xyz.avarel.lobos.ast.expr.Expr
 import xyz.avarel.lobos.ast.expr.ExprVisitor
 import xyz.avarel.lobos.ast.expr.access.*
 import xyz.avarel.lobos.ast.expr.declarations.*
-import xyz.avarel.lobos.ast.expr.external.ExternalLetExpr
-import xyz.avarel.lobos.ast.expr.external.ExternalNamedFunctionExpr
+import xyz.avarel.lobos.ast.expr.files.FileModuleExpr
+import xyz.avarel.lobos.ast.expr.files.FolderModuleExpr
 import xyz.avarel.lobos.ast.expr.invoke.InvokeExpr
+import xyz.avarel.lobos.ast.expr.invoke.InvokeLocalExpr
 import xyz.avarel.lobos.ast.expr.invoke.InvokeMemberExpr
 import xyz.avarel.lobos.ast.expr.misc.*
 import xyz.avarel.lobos.ast.expr.nodes.*
@@ -26,15 +27,52 @@ import xyz.avarel.lobos.tc.complex.TupleType
 import xyz.avarel.lobos.tc.generics.GenericBodyType
 import xyz.avarel.lobos.tc.generics.GenericParameter
 import xyz.avarel.lobos.tc.generics.GenericType
+import xyz.avarel.lobos.tc.module.ModuleType
 import xyz.avarel.lobos.tc.scope.ScopeContext
 import xyz.avarel.lobos.tc.scope.StmtContext
+import xyz.avarel.lobos.tc.scope.VariableInfo
 
 class TypeChecker(
         val scope: ScopeContext,
         val stmt: StmtContext,
         val deferBody: Boolean,
-        val errorHandler: (TypeException) -> Unit
+        val errorHandler: (message: String, section: Section) -> Unit
 ) : ExprVisitor<Type?> {
+    override fun visit(expr: UseExpr): Type? {
+        var target: Type? = null
+        for (name in expr.list) {
+            target = if (target == null) {
+                scope.getDeclaration(name)?.type
+            } else {
+                target.getMember(name)?.type
+            }
+
+            if (target == null) {
+                errorHandler("$name does not exist", expr.section)
+                return null
+            }
+        }
+
+        val name = expr.list.last()
+        if (name in scope.variables) {
+            errorHandler("Reference $name have been already declared", expr.section)
+            return null
+        }
+
+        scope.declare(name, target!!, false)
+        return null
+    }
+
+    override fun visit(expr: FolderModuleExpr): Type? {
+        errorHandler("folder not yet supported", expr.section)
+        return null
+    }
+
+    override fun visit(expr: FileModuleExpr): Type? {
+        errorHandler("file not yet supported", expr.section)
+        return null
+    }
+
     override fun visit(expr: NullExpr) = NullType
     override fun visit(expr: I32Expr) = I32Type
     override fun visit(expr: I64Expr) = I64Type
@@ -43,22 +81,26 @@ class TypeChecker(
     override fun visit(expr: StringExpr) = StrType
     override fun visit(expr: BooleanExpr) = BoolType
 
-    override fun visit(expr: ModuleExpr): Type? {
-        val subScope = scope.subContext()
-
+    override fun visit(expr: DeclareModuleExpr): Type? {
         if (expr.name in scope.variables) {
             if (!scope.getDeclaration(expr.name)!!.mutable) {
                 // if a module is mutable in this scope, it's body's typecheck is being deferred
-                errorHandler(TypeException("Module ${expr.name} has already been declared", expr.position))
+                errorHandler("Module ${expr.name} has already been declared", expr.section)
                 return null
             }
         }
 
-        val type = ModuleType(expr.name).also { it.members = subScope.variables }
+        val subScope = scope.subContext(false)
+        val type = ModuleType.Local(expr.name).also { it.members = subScope.variables }
+
+        scope.declare(expr.name, type, deferBody)
 
         expr.declarationsAST.let { declarations ->
             // defer modules //
             declarations.modules.forEach { it.visitStmt(subScope, deferBody = true) }
+
+            declarations.uses.forEach { it.visitStmt(subScope) }
+
             // defer functions //
             declarations.functions.forEach { it.visitStmt(subScope, deferBody = true) }
 
@@ -66,22 +108,24 @@ class TypeChecker(
                 // check lets //
                 declarations.variables.forEach { it.visitStmt(subScope) }
                 // check modules modules //
-                declarations.modules.forEach { it.visitStmt(subScope) }
+
+                val moduleSubScope = subScope.subContext(false)
+                moduleSubScope.declare("super", type, false)
+                declarations.modules.forEach { it.visitStmt(moduleSubScope) }
+
                 // check function bodies //
                 declarations.functions.forEach { it.visitStmt(subScope) }
             }
         }
 
-        this.scope.declare(expr.name, type, deferBody)
-
         return null
     }
 
-    override fun visit(expr: NamedFunctionExpr): Type? {
+    override fun visit(expr: DeclareFunctionExpr): Type? {
         if (expr.name in scope.variables) {
             if (!scope.getDeclaration(expr.name)!!.mutable) {
                 // if a function is mutable in this scope, it's body's typecheck is being deferred
-                errorHandler(TypeException("Reference ${expr.name} has already been declared", expr.position))
+                errorHandler("Reference ${expr.name} has already been declared", expr.section)
                 return null
             }
         }
@@ -118,9 +162,9 @@ class TypeChecker(
                         returnType,
                         resultType,
                         if (expr.body is MultiExpr) {
-                            expr.body.list.last().position
+                            expr.body.list.last().section
                         } else {
-                            expr.body.position
+                            expr.body.section
                         }
                 )
             }
@@ -145,13 +189,13 @@ class TypeChecker(
             expr.type.resolve(scope).also { typeAliased ->
                 if (typeAliased is TypeTemplate) {
                     if (typeAliased.genericParameters.size != genericParameters.size || !typeAliased.genericParameters.containsAll(genericParameters)) {
-                        errorHandler(TypeException("Extraneous type parameters are not allowed for type aliases", expr.position))
+                        errorHandler("Extraneous type parameters are not allowed for type aliases", expr.section)
                         return null
                     } else {
                         typeAliased.genericParameters = genericParameters
                     }
                 } else {
-                    errorHandler(TypeException("${expr.type} is not a generic type", expr.type.position))
+                    errorHandler("${expr.type} is not a generic type", expr.type.section)
                     return null
                 }
             }
@@ -164,9 +208,9 @@ class TypeChecker(
         return null
     }
 
-    override fun visit(expr: LetExpr): Type? {
+    override fun visit(expr: DeclareLetExpr): Type? {
         if (expr.name in scope.variables) {
-            errorHandler(TypeException("Reference ${expr.name} has already been declared", expr.position))
+            errorHandler("Reference ${expr.name} has already been declared", expr.section)
         }
 
         val exprType = expr.value.visitValue(scope)
@@ -181,7 +225,7 @@ class TypeChecker(
             if (type.isAssignableFrom(exprType)) {
                 scope.assume(expr.name, exprType)
             } else {
-                errorHandler(TypeException("Expected $type but found $exprType", expr.value.position))
+                errorHandler("Expected $type but found $exprType", expr.value.section)
             }
         }
 
@@ -190,17 +234,17 @@ class TypeChecker(
 
     override fun visit(expr: AssignExpr): Type? {
         val (type, mutable) = scope.getDeclaration(expr.name) ?: let {
-            errorHandler(TypeException("Reference ${expr.name} does not exist in this scope", expr.position))
+            errorHandler("Reference ${expr.name} does not exist in this scope", expr.section)
             return null
         }
 
         if (!mutable) {
-            errorHandler(TypeException("Reference ${expr.name} is not mutable", expr.position))
+            errorHandler("Reference ${expr.name} is not mutable", expr.section)
             return null
         }
 
         val exprType = expr.value.visitValue(scope)
-        if (checkType(type, exprType, expr.value.position)) {
+        if (checkType(type, exprType, expr.value.section)) {
             scope.assume(expr.name, exprType)
         }
 
@@ -210,7 +254,7 @@ class TypeChecker(
     override fun visit(expr: IdentExpr): Type {
         val key = expr.name
         return stmt.getAssumption(key) ?: scope.getAssumption(key) ?: let {
-            errorHandler(TypeException("Reference $key does not exist in this scope", expr.position))
+            errorHandler("Reference $key does not exist in this scope", expr.section)
             return InvalidType
         }
     }
@@ -259,12 +303,12 @@ class TypeChecker(
         val target = expr.target.visitValue(scope, checkNotGeneric = false)
 
         if (target !is TypeTemplate) {
-            errorHandler(TypeException("$target is not a generic template", expr.target.position))
+            errorHandler("$target is not a generic template", expr.target.section)
             return target
         }
 
         if (target.genericParameters.size != expr.typeArguments.size) {
-            errorHandler(TypeException("Expected ${target.genericParameters.size} type arguments, found ${expr.typeArguments.size} type arguments", expr.target.position))
+            errorHandler("Expected ${target.genericParameters.size} type arguments, found ${expr.typeArguments.size} type arguments", expr.target.section)
             return InvalidType
         }
 
@@ -274,7 +318,7 @@ class TypeChecker(
 
             if (param.parentType != null) {
                 if (!param.parentType.isAssignableFrom(type)) {
-                    errorHandler(TypeException("$type does not satisfy type bound ${param.parentType}", arg.position))
+                    errorHandler("$type does not satisfy type bound ${param.parentType}", arg.section)
                     error = true
                 }
             }
@@ -287,7 +331,15 @@ class TypeChecker(
     }
 
     override fun visit(expr: InvokeExpr): Type {
-        return checkInvocation(expr.target, expr.arguments, expr.position)
+        return checkInvocation(expr.target, expr.arguments, expr.section)
+    }
+
+    override fun visit(expr: InvokeLocalExpr): Type {
+        return checkInvocation(IdentExpr(expr.name, expr.section), expr.arguments, expr.section)
+    }
+
+    override fun visit(expr: InvokeMemberExpr): Type {
+        return checkInvocation(PropertyAccessExpr(expr.target, expr.name, expr.section), expr.arguments, expr.section)
     }
 
     override fun visit(expr: UnaryOperation): Type {
@@ -311,7 +363,7 @@ class TypeChecker(
             }
         }
 
-        errorHandler(TypeException("Operator ${expr.operator} is incompatible with $target", expr.position))
+        errorHandler("Operator ${expr.operator} is incompatible with $target", expr.section)
         return InvalidType
     }
 
@@ -323,7 +375,7 @@ class TypeChecker(
             BinaryOperationType.EQUALS, BinaryOperationType.NOT_EQUALS -> {
                 val right = expr.right.visitValue(scope)
                 if (!left.isAssignableFrom(right) && !right.isAssignableFrom(left)) {
-                    errorHandler(TypeException("$left and $right are incompatible", expr.position))
+                    errorHandler("$left and $right are incompatible", expr.section)
                 } else {
                     inferTypeAssertion(true, expr.left, left, right, { type, other -> type.intersect(other) }, Type::exclude) { key, assumption, reciprocal ->
                         stmt.putAssumption(key, assumption)
@@ -347,8 +399,8 @@ class TypeChecker(
                     it.assumptions.putAll(stmt.assumptions)
                 }
                 val right = expr.right.visitValue(scope, rightCtx)
-                checkType(BoolType, left, expr.left.position)
-                checkType(BoolType, right, expr.right.position)
+                checkType(BoolType, left, expr.left.section)
+                checkType(BoolType, right, expr.right.section)
 
                 stmt.assumptions.mergeAll(rightCtx.assumptions, Type::intersect)
 
@@ -365,8 +417,8 @@ class TypeChecker(
                     it.assumptions.putAll(stmt.reciprocals)
                 }
                 val right = expr.right.visitValue(scope, rightCtx)
-                checkType(BoolType, left, expr.left.position)
-                checkType(BoolType, right, expr.right.position)
+                checkType(BoolType, left, expr.left.section)
+                checkType(BoolType, right, expr.right.section)
 
                 stmt.reciprocals.mergeAll(rightCtx.reciprocals, Type::intersect)
 
@@ -398,7 +450,7 @@ class TypeChecker(
                         F64Type -> return F64Type
                     }
                 }
-                errorHandler(TypeException("Operator ${expr.operator} is incompatible with $left and $right", expr.position))
+                errorHandler("Operator ${expr.operator} is incompatible with $left and $right", expr.section)
                 return InvalidType
             }
         }
@@ -407,9 +459,9 @@ class TypeChecker(
     override fun visit(expr: ReturnExpr): Type {
         val expectedReturnType = scope.expectedReturnType
         if (expectedReturnType == null) {
-            errorHandler(TypeException("return is not valid in this context", expr.position))
+            errorHandler("return is not valid in this context", expr.section)
         } else {
-            checkType(expectedReturnType, expr.value.visitValue(scope), expr.position)
+            checkType(expectedReturnType, expr.value.visitValue(scope), expr.section)
         }
         scope.terminates = true
         return NeverType
@@ -419,7 +471,7 @@ class TypeChecker(
         val conditionStmt = stmt // special test
         val condition = expr.condition.visitValue(scope, conditionStmt)
 
-        checkType(BoolType, condition, expr.condition.position)
+        checkType(BoolType, condition, expr.condition.section)
 
         val bodyScope = scope.subContext(false)
         bodyScope.assumptions += conditionStmt.assumptions
@@ -433,7 +485,7 @@ class TypeChecker(
         val conditionStmt = stmt // special test
         val condition = expr.condition.visitValue(scope, conditionStmt)
 
-        checkType(BoolType, condition, expr.condition.position)
+        checkType(BoolType, condition, expr.condition.section)
 
         val thenScope = scope.subContext()
         thenScope.assumptions += conditionStmt.assumptions
@@ -532,11 +584,11 @@ class TypeChecker(
 
         return when (target) {
             is ArrayType -> {
-                checkType(I32Type, keyType, expr.index.position)
+                checkType(I32Type, keyType, expr.index.section)
                 target.valueType
             }
             is MapType -> {
-                checkType(target.keyType, keyType, expr.index.position)
+                checkType(target.keyType, keyType, expr.index.section)
                 target.valueType
             }
             else -> InvalidType
@@ -551,14 +603,14 @@ class TypeChecker(
 
         when (target) {
             is ArrayType -> {
-                checkType(I32Type, keyType, expr.index.position)
-                checkType(target.valueType, valueType, expr.value.position)
+                checkType(I32Type, keyType, expr.index.section)
+                checkType(target.valueType, valueType, expr.value.section)
             }
             is MapType -> {
-                checkType(target.keyType, keyType, expr.index.position)
-                checkType(target.valueType, valueType, expr.value.position)
+                checkType(target.keyType, keyType, expr.index.section)
+                checkType(target.valueType, valueType, expr.value.section)
             }
-            else -> errorHandler(TypeException("$target does not have subscript", expr.target.position))
+            else -> errorHandler("$target does not have subscript", expr.target.section)
         }
 
         return null
@@ -569,7 +621,7 @@ class TypeChecker(
         val type = target.getMember(expr.name)?.type
 
         if (type == null) {
-            errorHandler(TypeException("$target does not have member ${expr.name}", expr.position))
+            errorHandler("$target does not have member ${expr.name}", expr.section)
         }
 
         return type ?: InvalidType
@@ -580,44 +632,67 @@ class TypeChecker(
         val member = target.getMember(expr.name)
 
         if (member == null) {
-            errorHandler(TypeException("$target does not have member ${expr.name}", expr.position))
+            errorHandler("$target does not have member ${expr.name}", expr.section)
             return null
         }
 
         if (member.mutable) {
-            errorHandler(TypeException("Member ${expr.name} of $target is not mutable", expr.position))
+            errorHandler("Member ${expr.name} of $target is not mutable", expr.section)
         }
 
         val valueType = expr.value.visitValue(scope)
 
-        checkType(member.type, valueType, expr.value.position)
+        checkType(member.type, valueType, expr.value.section)
 
         return null
-    }
-
-    override fun visit(expr: InvokeMemberExpr): Type {
-        return checkInvocation(PropertyAccessExpr(expr.target, expr.name, expr.target.position), expr.arguments, expr.position)
     }
 
     override fun visit(expr: TupleIndexAccessExpr): Type {
         val type = expr.target.visitValue(scope)
 
         if (type !is TupleType) {
-            errorHandler(TypeException("$type is not a tuple type", expr.target.position))
+            errorHandler("$type is not a tuple type", expr.target.section)
             return InvalidType
         }
 
         if (expr.index !in type.valueTypes.indices) {
-            errorHandler(TypeException("$type indices only include 0..${type.valueTypes.size - 1}, tried to access ${expr.index}", expr.position))
+            errorHandler("$type indices only include 0..${type.valueTypes.size - 1}, tried to access ${expr.index}", expr.section)
             return InvalidType
         }
 
         return type.valueTypes[expr.index]
     }
 
+    override fun visit(expr: ExternalModuleExpr): Type? {
+        if (expr.name in scope.variables) {
+            if (!scope.getDeclaration(expr.name)!!.mutable) {
+                // if a module is mutable in this scope, it's body's typecheck is being deferred
+                errorHandler("Module ${expr.name} has already been declared", expr.section)
+                return null
+            }
+        }
+
+        val type = ModuleType.Local(expr.name)
+        val subScope = scope.subContext(false)
+
+        scope.declare(expr.name, type, deferBody)
+
+        expr.declarationsAST.let { declarations ->
+            declarations.modules.forEach { it.visitStmt(subScope) }
+            declarations.functions.forEach { it.visitStmt(subScope) }
+            declarations.variables.forEach { it.visitStmt(subScope) }
+        }
+
+        type.members = subScope.variables.mapValues { (_, variable) ->
+            VariableInfo(variable.type, variable.mutable)
+        }.toMutableMap()
+
+        return null
+    }
+
     override fun visit(expr: ExternalLetExpr): Type? {
         if (expr.name in scope.variables) {
-            errorHandler(TypeException("Reference ${expr.name} has already been declared", expr.position))
+            errorHandler("Reference ${expr.name} has already been declared", expr.section)
         }
 
         val exprType = expr.type.resolve(scope)
@@ -627,11 +702,11 @@ class TypeChecker(
         return null
     }
 
-    override fun visit(expr: ExternalNamedFunctionExpr): Type? {
+    override fun visit(expr: ExternalFunctionExpr): Type? {
         if (expr.name in scope.variables) {
             if (!scope.getDeclaration(expr.name)!!.mutable) {
                 // if a function is mutable in this scope, it's body's typecheck is being deferred
-                errorHandler(TypeException("Reference ${expr.name} has already been declared", expr.position))
+                errorHandler("Reference ${expr.name} has already been declared", expr.section)
                 return null
             }
         }
@@ -661,7 +736,7 @@ class TypeChecker(
         return expr.list.last().visitStmt(scope, deferBody = deferBody)
     }
 
-    private fun Expr.visitStmt(
+    fun Expr.visitStmt(
             scope: ScopeContext,
             stmt: StmtContext = StmtContext(),
             deferBody: Boolean = false,
@@ -671,19 +746,19 @@ class TypeChecker(
         val type = accept(TypeChecker(scope, stmt, deferBody, errorHandler))
 
         if (expectExpr && type == null) {
-            errorHandler(TypeException("Not a valid expression", position))
+            errorHandler("Not a valid expression", section)
             return InvalidType
         }
 
         if (expectNotGeneric && type is TypeTemplate && type.genericParameters.isNotEmpty()) {
-            errorHandler(TypeException("Missing generic type parameters", position))
+            errorHandler("Missing generic type parameters", section)
             return InvalidType
         }
 
         return type
     }
 
-    private fun Expr.visitValue(
+    fun Expr.visitValue(
             scope: ScopeContext,
             stmt: StmtContext = StmtContext(),
             deferBody: Boolean = false,
@@ -701,7 +776,7 @@ class TypeChecker(
      */
     fun checkType(expectedType: Type, foundType: Type, position: Section): Boolean {
         return if (!expectedType.isAssignableFrom(foundType)) {
-            errorHandler(TypeException("Expected $expectedType but found $foundType", position))
+            errorHandler("Expected $expectedType but found $foundType", position)
             false
         } else {
             true
@@ -717,7 +792,7 @@ class TypeChecker(
         val targetType = target.visitValue(scope)
 
         if (targetType !is FunctionType) {
-            errorHandler(TypeException("$targetType can not be invoked", target.position))
+            errorHandler("$targetType can not be invoked", target.section)
             return InvalidType
         }
 
@@ -725,12 +800,12 @@ class TypeChecker(
         val argumentTypes = arguments.map { it.visitValue(scope) }
 
         if (targetArgumentTypes.size != argumentTypes.size) {
-            errorHandler(TypeException("Expected ${targetArgumentTypes.size} arguments, but found ${argumentTypes.size} arguments", position))
+            errorHandler("Expected ${targetArgumentTypes.size} arguments, but found ${argumentTypes.size} arguments", position)
             return InvalidType
         }
 
         for (i in targetArgumentTypes.indices) {
-            checkType(targetArgumentTypes[i], argumentTypes[i], arguments[i].position)
+            checkType(targetArgumentTypes[i], argumentTypes[i], arguments[i].section)
         }
 
         return targetType.returnType.also {

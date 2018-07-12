@@ -9,6 +9,6 @@ import xyz.avarel.lobos.parser.PrefixParser
 
 object NullParser: PrefixParser {
     override fun parse(parser: Parser, modifiers: List<Modifier>, token: Token): Expr {
-        return NullExpr(token.position)
+        return NullExpr(token.section)
     }
 }

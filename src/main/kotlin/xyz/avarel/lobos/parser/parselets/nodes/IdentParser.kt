@@ -16,10 +16,10 @@ object IdentParser: PrefixParser {
         if (parser.match(TokenType.ASSIGN)) {
             val expr = parser.parseExpr()
 
-            return AssignExpr(name, expr, token.position)
+            return AssignExpr(name, expr, token.section)
         }
 
-        return IdentExpr(name, token.position)
+        return IdentExpr(name, token.section)
 
     }
 }

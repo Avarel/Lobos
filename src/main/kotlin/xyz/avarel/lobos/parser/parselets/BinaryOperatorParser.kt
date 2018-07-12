@@ -4,7 +4,6 @@ import xyz.avarel.lobos.ast.expr.Expr
 import xyz.avarel.lobos.ast.expr.ops.BinaryOperation
 import xyz.avarel.lobos.ast.expr.ops.BinaryOperationType
 import xyz.avarel.lobos.lexer.Token
-import xyz.avarel.lobos.lexer.span
 import xyz.avarel.lobos.parser.Parser
 
 class BinaryOperatorParser(precedence: Int, val operator: BinaryOperationType, leftAssoc: Boolean = true) : BinaryParser(precedence, leftAssoc) {

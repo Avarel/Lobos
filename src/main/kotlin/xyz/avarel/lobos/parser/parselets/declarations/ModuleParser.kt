@@ -1,21 +1,23 @@
 package xyz.avarel.lobos.parser.parselets.declarations
 
 import xyz.avarel.lobos.ast.expr.Expr
-import xyz.avarel.lobos.ast.expr.declarations.ModuleExpr
+import xyz.avarel.lobos.ast.expr.declarations.DeclareModuleExpr
+import xyz.avarel.lobos.ast.expr.declarations.ExternalModuleExpr
 import xyz.avarel.lobos.lexer.Token
 import xyz.avarel.lobos.lexer.TokenType
-import xyz.avarel.lobos.parser.Modifier
-import xyz.avarel.lobos.parser.Parser
-import xyz.avarel.lobos.parser.PrefixParser
-import xyz.avarel.lobos.parser.parseDeclarations
+import xyz.avarel.lobos.parser.*
 
 object ModuleParser : PrefixParser {
     override fun parse(parser: Parser, modifiers: List<Modifier>, token: Token): Expr {
         val name = parser.eat(TokenType.IDENT).string
 
+        if (Modifier.EXTERNAL in modifiers) {
+            val declarations = parser.parseExternalDeclarations()
+            return ExternalModuleExpr(name, declarations, token.section)
+        }
+
         val declarations = parser.parseDeclarations()
 
-        return ModuleExpr(name, declarations, token.position)
-        // TODO external modules?
+        return DeclareModuleExpr(name, declarations, token.section)
     }
 }

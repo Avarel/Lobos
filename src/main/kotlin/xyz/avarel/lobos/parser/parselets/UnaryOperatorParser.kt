@@ -4,7 +4,6 @@ import xyz.avarel.lobos.ast.expr.Expr
 import xyz.avarel.lobos.ast.expr.ops.UnaryOperation
 import xyz.avarel.lobos.ast.expr.ops.UnaryOperationType
 import xyz.avarel.lobos.lexer.Token
-import xyz.avarel.lobos.lexer.span
 import xyz.avarel.lobos.parser.Modifier
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.Precedence
