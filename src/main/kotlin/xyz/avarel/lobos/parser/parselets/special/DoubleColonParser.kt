@@ -11,7 +11,7 @@ import xyz.avarel.lobos.parser.Precedence
 import xyz.avarel.lobos.parser.parseTypeAST
 
 object DoubleColonParser : InfixParser {
-    override val precedence: Int get() = Precedence.INFIX
+    override val precedence: Int get() = Precedence.POSTFIX
 
     override fun parse(parser: Parser, token: Token, left: Expr): Expr {
         parser.eat(TokenType.LT)

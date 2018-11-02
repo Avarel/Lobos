@@ -22,7 +22,7 @@ class Parser(val grammar: Grammar, val source: Source, val tokens: List<Token>) 
     fun eat() = tokens[index++]
 
     fun eat(type: TokenType): Token {
-        if (eof) throw SyntaxException("Expected $type but reached end of file", last.section)
+        if (eof) throw SyntaxException("Expected $type but reached end of folder", last.section)
         val token = peek()
         if (token.type != type) {
             throw SyntaxException("Expected $type but found ${token.type}", token.section)
@@ -76,14 +76,14 @@ class Parser(val grammar: Grammar, val source: Source, val tokens: List<Token>) 
 
         if (!eof) {
             val token = peek()
-            errors += SyntaxException("Did not reach end of file. Found token $token", token.section)
+            errors += SyntaxException("Did not reach end of folder. Found token $token", token.section)
         }
 
         return expr
     }
 
     inline fun delimitedBlock(delimiterPair: Pair<TokenType, TokenType>? = null, block: () -> Boolean) {
-        if (eof) throw SyntaxException("Expected block but reached end of file", last.section)
+        if (eof) throw SyntaxException("Expected block but reached end of folder", last.section)
 
         delimiterPair?.first?.let(this::eat)
         matchAllWhitespace()
@@ -108,7 +108,7 @@ class Parser(val grammar: Grammar, val source: Source, val tokens: List<Token>) 
             delimiterPair: Pair<TokenType, TokenType>? = null,
             modifiers: List<Modifier> = emptyList()
     ): Expr {
-        if (eof) throw SyntaxException("Expected block but reached end of file", last.section)
+        if (eof) throw SyntaxException("Expected block but reached end of folder", last.section)
 
         val list = mutableListOf<Expr>()
 
@@ -134,7 +134,7 @@ class Parser(val grammar: Grammar, val source: Source, val tokens: List<Token>) 
             precedence: Int = 0,
             modifiers: List<Modifier> = emptyList()
     ): Expr {
-        if (eof) throw SyntaxException("Expected expression but reached end of file", last.section)
+        if (eof) throw SyntaxException("Expected expression but reached end of folder", last.section)
 
         val token = eat()
 

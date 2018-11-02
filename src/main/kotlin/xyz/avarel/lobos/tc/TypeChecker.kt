@@ -32,7 +32,7 @@ import xyz.avarel.lobos.tc.scope.ScopeContext
 import xyz.avarel.lobos.tc.scope.StmtContext
 import xyz.avarel.lobos.tc.scope.VariableInfo
 
-class TypeChecker(
+open class TypeChecker(
         val scope: ScopeContext,
         val stmt: StmtContext,
         val deferBody: Boolean,
@@ -60,17 +60,44 @@ class TypeChecker(
         }
 
         scope.declare(name, target!!, false)
+        scope.variableImportMap[
+                name] = expr.list
         return null
     }
 
     override fun visit(expr: FolderModuleExpr): Type? {
-        errorHandler("folder not yet supported", expr.section)
+        if (expr.name in scope.variables) {
+            if (!scope.getDeclaration(expr.name)!!.mutable) {
+                // if a module is mutable in this scope, it's body's typecheck is being deferred
+                errorHandler("Module ${expr.name} has already been declared", expr.section)
+                return null
+            }
+        }
+
+        val subScope = scope.subContext(false)
+        val type = ModuleType.Local(expr.name).also { it.members = subScope.variables }
+
+        scope.declare(expr.name, type, deferBody)
+
+        expr.folderModules.forEach { it.visitStmt(subScope, deferBody = true) }
+
+        expr.fileModules.forEach { it.visitStmt(subScope, deferBody = true) }
+
+        if (!deferBody) {
+            val moduleSubScope = subScope.subContext(false)
+            moduleSubScope.declare("super", type, false)
+
+            expr.folderModules.forEach { it.visitStmt(moduleSubScope) }
+
+            // check function bodies //
+            expr.fileModules.forEach { it.visitStmt(subScope) }
+        }
+
         return null
     }
 
     override fun visit(expr: FileModuleExpr): Type? {
-        errorHandler("file not yet supported", expr.section)
-        return null
+        return visit(expr as DeclareModuleExpr)
     }
 
     override fun visit(expr: NullExpr) = NullType
@@ -99,6 +126,7 @@ class TypeChecker(
             // defer modules //
             declarations.modules.forEach { it.visitStmt(subScope, deferBody = true) }
 
+            // use statements
             declarations.uses.forEach { it.visitStmt(subScope) }
 
             // defer functions //
@@ -111,6 +139,7 @@ class TypeChecker(
 
                 val moduleSubScope = subScope.subContext(false)
                 moduleSubScope.declare("super", type, false)
+
                 declarations.modules.forEach { it.visitStmt(moduleSubScope) }
 
                 // check function bodies //
@@ -743,7 +772,7 @@ class TypeChecker(
             expectNotGeneric: Boolean = true,
             expectExpr: Boolean = false
     ): Type? {
-        val type = accept(TypeChecker(scope, stmt, deferBody, errorHandler))
+        val type = accept(createSubvisitor(scope, stmt, deferBody))
 
         if (expectExpr && type == null) {
             errorHandler("Not a valid expression", section)
@@ -770,6 +799,12 @@ class TypeChecker(
     fun TypeAST.resolve(scope: ScopeContext): Type {
         return accept(TypeResolver(scope, errorHandler))
     }
+
+    open fun createSubvisitor(
+            scope: ScopeContext,
+            stmt: StmtContext = StmtContext(),
+            deferBody: Boolean = false
+    ): ExprVisitor<Type?> = TypeChecker(scope, stmt, deferBody, errorHandler)
 
     /**
      * Throws an error if [foundType] can not be assigned to [expectedType].

@@ -13,13 +13,13 @@ interface TypeTemplate: Type {
      */
     fun template(types: Map<GenericParameter, Type>): Type
 
-    fun partialTemplate(types: Map<GenericParameter, Type>): Type {
-        return template(types).also {
-            if (it is TypeTemplate) {
-                it.genericParameters = it.genericParameters.toMutableList().also { it.removeAll(types.keys) }
-            }
-        }
-    }
+//    fun partialTemplate(types: Map<GenericParameter, Type>): Type {
+//        return template(types).also {
+//            if (it is TypeTemplate) {
+//                it.genericParameters = it.genericParameters.toMutableList().also { i -> i.removeAll(types.keys) }
+//            }
+//        }
+//    }
 }
 
 fun Type.template(types: Map<GenericParameter, Type>): Type {

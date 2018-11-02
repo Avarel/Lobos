@@ -73,6 +73,62 @@ struct Point {
  */
 
 fun main(args: Array<String>) {
+//    val sc = Scanner(System.`in`)
+//    val ctx = DefaultScopeContext.subContext()
+//    while (true) {
+//        print(">>> ")
+//        val line = sc.nextLine()
+//        if (line.isNullOrEmpty()) break
+//
+//        val source = Source(line)
+//
+//        val lexer = Tokenizer(source)
+//        val tokens = lexer.parse()
+//
+//        val parser = Parser(DefaultGrammar, source, tokens)
+//        val ast = parser.parse()
+//
+//        ast.accept(TypeChecker(
+//                ctx,
+//                StmtContext(),
+//                false
+//        ) { message, section ->
+//            parser.errors += TypeException(message, section)
+//        })
+//
+//
+//        println()
+//        println("|> ERRORS:")
+//
+//        parser.errors.forEach {
+//            val line = source.lines[it.position.lineNumber.toInt() - 1]
+//            val msg = buildString {
+//                append(line)
+//                append('\n')
+//                kotlin.repeat(it.position.lineIndex.toInt()) {
+//                    append(' ')
+//                }
+//                when (it.position.length) {
+//                    0, 1 -> append("^ ")
+//                    else -> {
+//                        append('└')
+//                        kotlin.repeat(it.position.length - 2) {
+//                            append('─')
+//                        }
+//                        append("┘ ")
+//                    }
+//                }
+//                append(it.message)
+//            }
+//            println(msg)
+//        }
+//
+//        if (parser.errors.isEmpty()) {
+//            println("No errors.")
+//        }
+//
+//        println()
+//    }
     val source = Source(File("scripts/script.waf"))
 
     val lexer = Tokenizer(source)

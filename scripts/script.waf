@@ -5,4 +5,10 @@ external mod io {
 
 use io::print
 
-print("why")
+print("Hello world")
+
+def identity<T>(obj: T) -> T {
+    return obj
+}
+
+1 + identity::<i32>(1)

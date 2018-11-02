@@ -10,5 +10,5 @@ class FolderModuleExpr(
         val fileModules: List<FileModuleExpr>,
         section: Section
 ) : AbstractExpr(section) {
-    override fun <R> accept(visitor: ExprVisitor<R>) = TODO()// visitor.visit(this)
+    override fun <R> accept(visitor: ExprVisitor<R>) = visitor.visit(this)
 }

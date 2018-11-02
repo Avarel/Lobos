@@ -40,9 +40,9 @@ class Tokenizer(val source: Source) {
             ';' -> list += makeToken(TokenType.SEMICOLON)
             '\n' -> list += makeToken(TokenType.NL)
             '+' -> list += makeToken(TokenType.PLUS)
-            '-' -> when {
-                match('>') -> list += makeToken(TokenType.ARROW, 2)
-                else -> list += makeToken(TokenType.MINUS)
+            '-' -> list += when {
+                match('>') -> makeToken(TokenType.ARROW, 2)
+                else -> makeToken(TokenType.MINUS)
             }
             '*' -> list += makeToken(TokenType.ASTERISK)
             '/' -> list += makeToken(TokenType.F_SLASH)
@@ -244,15 +244,15 @@ class Tokenizer(val source: Source) {
 
         fillBufferNumbers(buf, false)
 
-        when {
+        list += when {
             peek() == '.' && peek(1).isDigit() -> {
                 next()
                 buf.append('.')
                 fillBufferNumbers(buf, false)
-                list += makeToken(TokenType.DECIMAL, buf.toString())
+                makeToken(TokenType.DECIMAL, buf.toString())
             }
             else -> {
-                list += makeToken(TokenType.INT, buf.toString())
+                makeToken(TokenType.INT, buf.toString())
             }
         }
     }

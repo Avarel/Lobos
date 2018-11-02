@@ -9,7 +9,7 @@ open class ScopeContext(
         val types: MutableMap<String, Type> = hashMapOf(),
         val expectedReturnType: Type? = null
 ) {
-    val variableImportMap: MutableMap<VariableInfo, List<String>> = hashMapOf()
+    val variableImportMap: MutableMap<String, List<String>> = hashMapOf()
 
     val assumptions: MutableMap<String, Type> = hashMapOf()
 

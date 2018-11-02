@@ -89,10 +89,10 @@ interface Type {
     }
 
     infix fun exclude(other: Type): Type {
-        return when {
-            this == other -> NeverType
-        // this isAssignableFrom other -> NeverType
-        // potential spot for the return of exclusion types?
+        return when (other) {
+            this -> NeverType
+            // this isAssignableFrom other -> NeverType
+            // potential spot for the return of exclusion types?
             else -> toList().minus(other.toList()).toType()
         }
     }

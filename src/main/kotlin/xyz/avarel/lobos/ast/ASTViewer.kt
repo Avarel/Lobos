@@ -56,7 +56,7 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
     }
 
     override fun visit(expr: FileModuleExpr) {
-        base("file module")
+        base("folder module")
         label("name: ${expr.name}", false)
 
         expr.declarationsAST.let { d ->

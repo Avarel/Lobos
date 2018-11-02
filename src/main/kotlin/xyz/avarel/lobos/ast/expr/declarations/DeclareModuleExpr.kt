@@ -5,7 +5,7 @@ import xyz.avarel.lobos.ast.expr.AbstractExpr
 import xyz.avarel.lobos.ast.expr.ExprVisitor
 import xyz.avarel.lobos.lexer.Section
 
-class DeclareModuleExpr(
+open class DeclareModuleExpr(
         val name: String,
         val declarationsAST: DeclarationsAST,
         section: Section
