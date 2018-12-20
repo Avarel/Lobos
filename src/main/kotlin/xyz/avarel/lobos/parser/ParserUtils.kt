@@ -34,6 +34,8 @@ fun Parser.matchAllWhitespace(): Boolean {
 fun Parser.parseDeclarations(delimiterPair: Pair<TokenType, TokenType>? = TokenType.L_BRACE to TokenType.R_BRACE): DeclarationsAST {
     val declarationsAST = DeclarationsAST()
 
+    if (eof) return declarationsAST
+
     delimitedBlock(delimiterPair) {
         if (peek().type !in declarationTokens) {
             errors += SyntaxException("Only allow $declarationTokens in this context", peek().section)

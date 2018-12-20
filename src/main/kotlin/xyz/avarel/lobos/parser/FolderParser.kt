@@ -20,7 +20,9 @@ class FolderParser(val grammar: Grammar, val folder: File) {
             if (child.isDirectory) {
                 folderModules += FolderParser(grammar, child).parse()
             } else {
-                fileModules += parseFile(child)
+                if (child.name.endsWith(".waf")) {
+                    fileModules += parseFile(child)
+                }
             }
         }
 
@@ -30,7 +32,7 @@ class FolderParser(val grammar: Grammar, val folder: File) {
     private fun parseFile(file: File): FileModuleExpr {
         val src = Source(file)
         val lexer = Tokenizer(src)
-        val declarations = Parser(grammar, src, lexer.parse()).parseDeclarations()
+        val declarations = Parser(grammar, src, lexer.parse()).parseDeclarations(null)
 
         return FileModuleExpr(file.nameWithoutExtension, declarations, Section(Source(file), -1, -1, -1))
     }

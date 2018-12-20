@@ -56,8 +56,8 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
     }
 
     override fun visit(expr: FileModuleExpr) {
-        base("folder module")
-        label("name: ${expr.name}", false)
+        base("file module")
+        label("name: ${expr.name}", expr.declarationsAST.isEmpty())
 
         expr.declarationsAST.let { d ->
             d.modules.astGroup("submodules", tail = d.functions.isEmpty() && d.variables.isEmpty())
@@ -68,10 +68,10 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
 
     override fun visit(expr: FolderModuleExpr) {
         base("folder module")
-        label("name: ${expr.name}", false)
+        label("name: ${expr.name}", expr.folderModules.isNotEmpty() && expr.fileModules.isNotEmpty())
 
-        expr.folderModules.astGroup("folders", tail = expr.fileModules.isEmpty())
-        expr.fileModules.astGroup("files", tail = true)
+        if (expr.folderModules.isNotEmpty())  expr.folderModules.astGroup("folders", tail = expr.fileModules.isEmpty())
+        if (expr.fileModules.isNotEmpty()) expr.fileModules.astGroup("files", tail = true)
     }
 
     override fun visit(expr: IdentExpr) = base("reference ${expr.name}")

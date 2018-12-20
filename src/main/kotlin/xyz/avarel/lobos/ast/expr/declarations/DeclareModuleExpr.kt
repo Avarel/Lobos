@@ -11,4 +11,5 @@ open class DeclareModuleExpr(
         section: Section
 ) : AbstractExpr(section), ModuleExpr {
     override fun <R> accept(visitor: ExprVisitor<R>) = visitor.visit(this)
+    override fun isEmpty() = declarationsAST.isEmpty()
 }

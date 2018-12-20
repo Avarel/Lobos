@@ -4,12 +4,14 @@ import xyz.avarel.lobos.ast.ASTViewer
 import xyz.avarel.lobos.lexer.Source
 import xyz.avarel.lobos.lexer.Tokenizer
 import xyz.avarel.lobos.parser.DefaultGrammar
+import xyz.avarel.lobos.parser.FolderParser
 import xyz.avarel.lobos.parser.Parser
 import xyz.avarel.lobos.parser.TypeException
 import xyz.avarel.lobos.tc.TypeChecker
 import xyz.avarel.lobos.tc.scope.DefaultScopeContext
 import xyz.avarel.lobos.tc.scope.StmtContext
 import java.io.File
+import java.util.*
 
 /* Smart Compiler
 let y: 1|3|5|7|"string" = "string";
@@ -72,63 +74,17 @@ struct Point {
 }
  */
 
-fun main(args: Array<String>) {
-//    val sc = Scanner(System.`in`)
-//    val ctx = DefaultScopeContext.subContext()
-//    while (true) {
-//        print(">>> ")
-//        val line = sc.nextLine()
-//        if (line.isNullOrEmpty()) break
-//
-//        val source = Source(line)
-//
-//        val lexer = Tokenizer(source)
-//        val tokens = lexer.parse()
-//
-//        val parser = Parser(DefaultGrammar, source, tokens)
-//        val ast = parser.parse()
-//
-//        ast.accept(TypeChecker(
-//                ctx,
-//                StmtContext(),
-//                false
-//        ) { message, section ->
-//            parser.errors += TypeException(message, section)
-//        })
-//
-//
-//        println()
-//        println("|> ERRORS:")
-//
-//        parser.errors.forEach {
-//            val line = source.lines[it.position.lineNumber.toInt() - 1]
-//            val msg = buildString {
-//                append(line)
-//                append('\n')
-//                kotlin.repeat(it.position.lineIndex.toInt()) {
-//                    append(' ')
-//                }
-//                when (it.position.length) {
-//                    0, 1 -> append("^ ")
-//                    else -> {
-//                        append('└')
-//                        kotlin.repeat(it.position.length - 2) {
-//                            append('─')
-//                        }
-//                        append("┘ ")
-//                    }
-//                }
-//                append(it.message)
-//            }
-//            println(msg)
-//        }
-//
-//        if (parser.errors.isEmpty()) {
-//            println("No errors.")
-//        }
-//
-//        println()
-//    }
+fun main() {
+    mainLocalFolder()
+}
+
+fun mainLocalFolder() {
+    val folder = FolderParser(DefaultGrammar, File("./scripts"))
+    val ast = folder.parse()
+    println(buildString { ast.accept(ASTViewer(this, "", true)) })
+}
+
+fun mainLocalFile() {
     val source = Source(File("scripts/script.waf"))
 
     val lexer = Tokenizer(source)
@@ -179,6 +135,63 @@ fun main(args: Array<String>) {
     println()
     println("|> AST")
     println(buildString { ast.accept(ASTViewer(this, "", true)) })
-
 }
 
+fun mainConsole() {
+    val sc = Scanner(System.`in`)
+    val ctx = DefaultScopeContext.subContext()
+    while (true) {
+        print(">>> ")
+        val line = sc.nextLine()
+        if (line.isNullOrEmpty()) break
+
+        val source = Source(line)
+
+        val lexer = Tokenizer(source)
+        val tokens = lexer.parse()
+
+        val parser = Parser(DefaultGrammar, source, tokens)
+        val ast = parser.parse()
+
+        ast.accept(TypeChecker(
+                ctx,
+                StmtContext(),
+                false
+        ) { message, section ->
+            parser.errors += TypeException(message, section)
+        })
+
+
+        println()
+        println("|> ERRORS:")
+
+        parser.errors.forEach {
+            val line = source.lines[it.position.lineNumber.toInt() - 1]
+            val msg = buildString {
+                append(line)
+                append('\n')
+                kotlin.repeat(it.position.lineIndex.toInt()) {
+                    append(' ')
+                }
+                when (it.position.length) {
+                    0, 1 -> append("^ ")
+                    else -> {
+                        append('└')
+                        kotlin.repeat(it.position.length - 2) {
+                            append('─')
+                        }
+                        append("┘ ")
+                    }
+                }
+                append(it.message)
+            }
+            println(msg)
+        }
+
+        if (parser.errors.isEmpty()) {
+            println("No errors.")
+        }
+
+        println()
+    }
+}

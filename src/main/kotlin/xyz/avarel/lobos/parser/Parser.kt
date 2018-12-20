@@ -83,7 +83,13 @@ class Parser(val grammar: Grammar, val source: Source, val tokens: List<Token>) 
     }
 
     inline fun delimitedBlock(delimiterPair: Pair<TokenType, TokenType>? = null, block: () -> Boolean) {
-        if (eof) throw SyntaxException("Expected block but reached end of folder", last.section)
+        if (eof) {
+            if (tokens.isEmpty()) {
+                throw SyntaxException("Expected block but reached end of folder", Section(source, 0, 0 , 0))
+            } else {
+                throw SyntaxException("Expected block but reached end of folder", last.section)
+            }
+        }
 
         delimiterPair?.first?.let(this::eat)
         matchAllWhitespace()
