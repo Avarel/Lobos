@@ -3,10 +3,7 @@ package xyz.avarel.lobos
 import xyz.avarel.lobos.ast.ASTViewer
 import xyz.avarel.lobos.lexer.Source
 import xyz.avarel.lobos.lexer.Tokenizer
-import xyz.avarel.lobos.parser.DefaultGrammar
-import xyz.avarel.lobos.parser.FolderParser
-import xyz.avarel.lobos.parser.Parser
-import xyz.avarel.lobos.parser.TypeException
+import xyz.avarel.lobos.parser.*
 import xyz.avarel.lobos.tc.TypeChecker
 import xyz.avarel.lobos.tc.scope.DefaultScopeContext
 import xyz.avarel.lobos.tc.scope.StmtContext
@@ -21,9 +18,6 @@ let x: String = y
 
 // OR -> add inverse assumption to scope
 // AND -> nothing
-
-// TODO extern let PI: i32
-// TODO extern impl i32
 
 /*
         let y = "hello";
@@ -79,8 +73,24 @@ fun main() {
 }
 
 fun mainLocalFolder() {
-    val folder = FolderParser(DefaultGrammar, File("./scripts"))
-    val ast = folder.parse()
+    val parser = FolderParser(DefaultGrammar, File("./scripts"))
+    val ast = parser.parse()
+
+    println()
+    println("|> ERRORS:")
+
+    ast.accept(TypeChecker(
+            DefaultScopeContext.subContext(),
+            StmtContext(),
+            false
+    ) { message, section ->
+        parser.errors += TypeException(message, section)
+    })
+
+    printErrors(parser.errors)
+
+    println()
+    println("|> AST")
     println(buildString { ast.accept(ASTViewer(this, "", true)) })
 }
 
@@ -105,32 +115,7 @@ fun mainLocalFile() {
     println()
     println("|> ERRORS:")
 
-    parser.errors.forEach {
-        val line = source.lines[it.position.lineNumber.toInt() - 1]
-        val msg = buildString {
-            append(line)
-            append('\n')
-            kotlin.repeat(it.position.lineIndex.toInt()) {
-                append(' ')
-            }
-            when (it.position.length) {
-                0, 1 -> append("^ ")
-                else -> {
-                    append('└')
-                    kotlin.repeat(it.position.length - 2) {
-                        append('─')
-                    }
-                    append("┘ ")
-                }
-            }
-            append(it.message)
-        }
-        println(msg)
-    }
-
-    if (parser.errors.isEmpty()) {
-        println("No errors.\n")
-    }
+    printErrors(parser.errors)
 
     println()
     println("|> AST")
@@ -165,33 +150,38 @@ fun mainConsole() {
         println()
         println("|> ERRORS:")
 
-        parser.errors.forEach {
-            val line = source.lines[it.position.lineNumber.toInt() - 1]
-            val msg = buildString {
-                append(line)
-                append('\n')
-                kotlin.repeat(it.position.lineIndex.toInt()) {
-                    append(' ')
-                }
-                when (it.position.length) {
-                    0, 1 -> append("^ ")
-                    else -> {
-                        append('└')
-                        kotlin.repeat(it.position.length - 2) {
-                            append('─')
-                        }
-                        append("┘ ")
-                    }
-                }
-                append(it.message)
-            }
-            println(msg)
-        }
-
-        if (parser.errors.isEmpty()) {
-            println("No errors.")
-        }
+        printErrors(parser.errors)
 
         println()
+    }
+}
+
+fun printErrors(list: List<SyntaxException>) {
+    if (list.isEmpty()) {
+        println("No errors.")
+        return
+    }
+
+    list.forEach {
+        val line = it.position.getLine()
+        val msg = buildString {
+            append(line)
+            append('\n')
+            kotlin.repeat(it.position.lineIndex) {
+                append(' ')
+            }
+            when (it.position.length) {
+                0, 1 -> append("^ ")
+                else -> {
+                    append('└')
+                    kotlin.repeat(it.position.length - 2) {
+                        append('─')
+                    }
+                    append("┘ ")
+                }
+            }
+            append(it.message)
+        }
+        println(msg)
     }
 }

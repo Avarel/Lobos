@@ -12,6 +12,8 @@ class FolderParser(val grammar: Grammar, val folder: File) {
         require(folder.isDirectory) { "${folder.name} is not a folder." }
     }
 
+    val errors: MutableList<SyntaxException> = mutableListOf()
+
     fun parse(): FolderModuleExpr {
         val folderModules: MutableList<FolderModuleExpr> = mutableListOf()
         val fileModules: MutableList<FileModuleExpr> = mutableListOf()
@@ -32,7 +34,10 @@ class FolderParser(val grammar: Grammar, val folder: File) {
     private fun parseFile(file: File): FileModuleExpr {
         val src = Source(file)
         val lexer = Tokenizer(src)
-        val declarations = Parser(grammar, src, lexer.parse()).parseDeclarations(null)
+
+        val parser = Parser(grammar, src, lexer.parse())
+        val declarations =  parser.parseDeclarations(null)
+        errors += parser.errors
 
         return FileModuleExpr(file.nameWithoutExtension, declarations, Section(Source(file), -1, -1, -1))
     }

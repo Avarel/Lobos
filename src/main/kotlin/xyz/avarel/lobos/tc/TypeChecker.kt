@@ -238,26 +238,8 @@ open class TypeChecker(
     }
 
     override fun visit(expr: DeclareLetExpr): Type? {
-        if (expr.name in scope.variables) {
-            errorHandler("Reference ${expr.name} has already been declared", expr.section)
-        }
-
         val exprType = expr.value.visitValue(scope)
-
-        if (expr.type == null) {
-            scope.declare(expr.name, exprType.universalType, expr.mutable)
-        } else {
-            val type = expr.type.resolve(scope)
-
-            scope.declare(expr.name, type, expr.mutable)
-
-            if (type.isAssignableFrom(exprType)) {
-                scope.assume(expr.name, exprType)
-            } else {
-                errorHandler("Expected $type but found $exprType", expr.value.section)
-            }
-        }
-
+        expr.pattern.accept(PatternTypeBinder(this, exprType, scope, true))
         return null
     }
 

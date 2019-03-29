@@ -2,7 +2,7 @@ package xyz.avarel.lobos.ast.types
 
 class GenericParameterAST(
         val name: String,
-        val parentType: AbstractTypeAST? = null
+        val parentType: TypeAST? = null
 ) {
     override fun toString() = buildString {
         append(name)

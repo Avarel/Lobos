@@ -1,4 +1,4 @@
-package xyz.avarel.lobos.patterns
+package xyz.avarel.lobos.ast.patterns
 
 import xyz.avarel.lobos.lexer.Section
 

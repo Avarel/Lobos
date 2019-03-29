@@ -4,7 +4,7 @@ import xyz.avarel.lobos.ast.DeclarationsAST
 import xyz.avarel.lobos.ast.ExternalDeclarationsAST
 import xyz.avarel.lobos.ast.expr.Expr
 import xyz.avarel.lobos.ast.expr.declarations.*
-import xyz.avarel.lobos.ast.types.AbstractTypeAST
+import xyz.avarel.lobos.ast.types.TypeAST
 import xyz.avarel.lobos.ast.types.GenericParameterAST
 import xyz.avarel.lobos.ast.types.basic.IdentTypeAST
 import xyz.avarel.lobos.ast.types.basic.NeverTypeAST
@@ -48,7 +48,7 @@ fun Parser.parseDeclarations(delimiterPair: Pair<TokenType, TokenType>? = TokenT
                 is FunctionExpr -> declarationsAST.functions += expr
                 is LetExpr -> declarationsAST.variables += expr
                 is ModuleExpr -> declarationsAST.modules += expr
-                else -> throw IllegalStateException()
+                else -> {}
             }
 
             true
@@ -87,7 +87,7 @@ fun Parser.parseBlock(
     return parseStatements(TokenType.L_BRACE to TokenType.R_BRACE, modifiers)
 }
 
-fun Parser.parseTypeAST(): AbstractTypeAST {
+fun Parser.parseTypeAST(): TypeAST {
     val type = parseSingleTypeAST()
 
     if (match(TokenType.PIPE)) {
@@ -101,7 +101,7 @@ fun Parser.parseTypeAST(): AbstractTypeAST {
     return type
 }
 
-fun Parser.parseSingleTypeAST(): AbstractTypeAST {
+fun Parser.parseSingleTypeAST(): TypeAST {
     return when {
         match(TokenType.NULL) -> NullTypeAST(last.section)
         match(TokenType.BANG) -> NeverTypeAST(last.section)
@@ -113,7 +113,7 @@ fun Parser.parseSingleTypeAST(): AbstractTypeAST {
 
             if (!match(TokenType.LT)) return type
 
-            val typeParameters = mutableListOf<AbstractTypeAST>()
+            val typeParameters = mutableListOf<TypeAST>()
             do {
                 typeParameters += parseTypeAST()
             } while (match(TokenType.COMMA))
@@ -123,7 +123,7 @@ fun Parser.parseSingleTypeAST(): AbstractTypeAST {
         }
         match(TokenType.L_PAREN) -> {
             val lParen = last
-            val valueTypes = mutableListOf<AbstractTypeAST>()
+            val valueTypes = mutableListOf<TypeAST>()
 
             if (!match(TokenType.R_PAREN)) {
                 val firstType = parseTypeAST()
@@ -169,7 +169,7 @@ fun Parser.parseSingleTypeAST(): AbstractTypeAST {
     }
 }
 
-private fun Parser.constructTupleOrFunctionType(valueTypes: List<AbstractTypeAST>, position: Section): AbstractTypeAST {
+private fun Parser.constructTupleOrFunctionType(valueTypes: List<TypeAST>, position: Section): TypeAST {
     return when {
         match(TokenType.ARROW) -> {
             val returnType = parseTypeAST()

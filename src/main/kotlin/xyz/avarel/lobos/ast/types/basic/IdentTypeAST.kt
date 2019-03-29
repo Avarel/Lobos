@@ -1,6 +1,7 @@
 package xyz.avarel.lobos.ast.types.basic
 
 import xyz.avarel.lobos.ast.types.AbstractTypeAST
+import xyz.avarel.lobos.ast.types.TypeAST
 import xyz.avarel.lobos.ast.types.TypeASTVisitor
 import xyz.avarel.lobos.lexer.Section
 

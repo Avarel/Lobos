@@ -125,10 +125,7 @@ class ASTViewer(val buf: StringBuilder, val indent: String = "", val isTail: Boo
     override fun visit(expr: DeclareLetExpr) {
         base("let")
 
-        label("name: ${expr.name}", false)
-        if (expr.type != null) {
-            label("type: ${expr.type}", false)
-        }
+        label("${expr.pattern}", tail = false)
         expr.value.astLabel("value", tail = true)
     }
 

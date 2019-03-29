@@ -5,8 +5,8 @@ import java.io.Reader
 class Tokenizer(val source: Source) {
     private val reader: Reader = source.reader()
 
-    private var lineNumber: Long = 1
-    private var lineIndex: Long = 0
+    private var lineNumber: Int = 1
+    private var lineIndex: Int = 0
 
     fun parse() = mutableListOf<Token>().also(::parseTo)
 
@@ -123,6 +123,7 @@ class Tokenizer(val source: Source) {
             "struct" -> makeToken(TokenType.STRUCT, 6)
             "break" -> makeToken(TokenType.BREAK, 5)
             "while" -> makeToken(TokenType.WHILE, 5)
+            "is" -> makeToken(TokenType.IS, 2)
             else -> makeToken(TokenType.IDENT, str)
         }
     }
