@@ -7,7 +7,6 @@ import xyz.avarel.lobos.ast.patterns.PatternAST
 import xyz.avarel.lobos.lexer.Section
 
 class DeclareLetExpr(
-        val mutable: Boolean,
         val pattern: PatternAST,
         val value: Expr,
         section: Section

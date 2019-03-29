@@ -12,9 +12,8 @@ import xyz.avarel.lobos.parser.*
 
 object LetParser: PrefixParser {
     override fun parse(parser: Parser, modifiers: List<Modifier>, token: Token): Expr {
-        val isMutable = parser.match(TokenType.MUT)
-
         if (Modifier.EXTERNAL in modifiers) {
+            val isMutable = parser.match(TokenType.MUT)
             val ident = parser.eat(TokenType.IDENT)
             val name = ident.string
 
@@ -28,6 +27,6 @@ object LetParser: PrefixParser {
         parser.eat(TokenType.ASSIGN)
 
         val expr = parser.parseExpr()
-        return DeclareLetExpr(isMutable, pattern, expr, token.span(expr))
+        return DeclareLetExpr(pattern, expr, token.span(expr))
     }
 }

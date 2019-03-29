@@ -92,7 +92,7 @@ interface Type {
         return when (other) {
             this -> NeverType
             // this isAssignableFrom other -> NeverType
-            // potential spot for the return of exclusion types?
+            // TODO potential spot for the return of exclusion types?
             else -> toList().minus(other.toList()).toType()
         }
     }

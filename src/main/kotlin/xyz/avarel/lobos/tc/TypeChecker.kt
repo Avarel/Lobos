@@ -32,6 +32,8 @@ import xyz.avarel.lobos.tc.scope.ScopeContext
 import xyz.avarel.lobos.tc.scope.StmtContext
 import xyz.avarel.lobos.tc.scope.VariableInfo
 
+// TODO RETHINK ALL OF SMART IF
+
 open class TypeChecker(
         val scope: ScopeContext,
         val stmt: StmtContext,
@@ -388,11 +390,11 @@ open class TypeChecker(
                 if (!left.isAssignableFrom(right) && !right.isAssignableFrom(left)) {
                     errorHandler("$left and $right are incompatible", expr.section)
                 } else {
-                    inferTypeAssertion(true, expr.left, left, right, { type, other -> type.intersect(other) }, Type::exclude) { key, assumption, reciprocal ->
+                    inferTypeAssertion(true, expr.left, left, right, Type::intersect, Type::exclude) { key, assumption, reciprocal ->
                         stmt.putAssumption(key, assumption)
                         stmt.putReciprocal(key, reciprocal)
                     }
-                    inferTypeAssertion(true, expr.right, right, left, { type, other -> type.intersect(other) }, Type::exclude) { key, assumption, reciprocal ->
+                    inferTypeAssertion(true, expr.right, right, left, Type::intersect, Type::exclude) { key, assumption, reciprocal ->
                         stmt.putAssumption(key, assumption)
                         stmt.putReciprocal(key, reciprocal)
                     }
@@ -539,6 +541,7 @@ open class TypeChecker(
                         )
                     }
                 } else {
+                    println(conditionStmt.assumptions)
                     val outerInheritVariables = scope.allVariableNames()
                             .intersect(conditionStmt.assumptions.keys)
                             .intersect(thenScope.assumptions.keys)

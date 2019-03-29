@@ -1,6 +1,13 @@
-def main() -> i32 {
-    let (a, b) = (1, "str")
-    let (c, d) = (b, a)
-    let z: () = c
-    return a
+def main() {
+    external let b: bool
+    let mut a: any = 1
+
+    if b {
+        a = "str"
+    } else {
+        a = 6
+    }
+
+    let z: i32 | str = a
+    return ()
 }

@@ -55,7 +55,7 @@ class PatternTypeBinder(
             return null
         }
 
-        scope.declare(pattern.display, targetType.universalType, pattern.mutable)
+        scope.declare(pattern.name, targetType.universalType, pattern.mutable)
         return targetType
     }
 
@@ -78,6 +78,9 @@ class PatternTypeBinder(
                 }
 
                 return targetType
+            }
+            is WildcardPattern, is I32Pattern, is StrPattern -> {
+                return null
             }
             else -> TODO()
         }
