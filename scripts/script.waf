@@ -1,13 +1,5 @@
 def main() {
-    external let b: bool
-    let mut a: any = 1
-
-    if b {
-        a = "str"
-    } else {
-        a = 6
-    }
-
-    let z: i32 | str = a
+    let (a, b, c) = ("natan", 2, null)
+    let z: () = (a, b, c)
     return ()
 }

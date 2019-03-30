@@ -21,10 +21,13 @@ val declarationTokens = listOf(
         TokenType.TYPE
 )
 
-fun Parser.matchAllWhitespace(): Boolean {
-    val type = arrayOf(TokenType.SEMICOLON, TokenType.NL)
-    return if (nextIsAny(*type)) {
-        do eat() while (nextIsAny(*type))
+//fun Parser.matchAllWhitespace(): Boolean {
+//    return matchAll(TokenType.NL)
+//}
+
+fun Parser.matchAll(vararg types: TokenType): Boolean {
+    return if (nextIsAny(*types)) {
+        do eat() while (nextIsAny(*types))
         true
     } else {
         false

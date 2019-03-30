@@ -163,6 +163,7 @@ fun printErrors(list: List<SyntaxException>) {
     }
 
     list.forEach {
+//        it.printStackTrace(System.out)
         val line = it.position.getLine()
         val msg = buildString {
             append(line)

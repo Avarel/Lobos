@@ -11,13 +11,20 @@ class Parser(val grammar: Grammar, val source: Source, val tokens: List<Token>) 
 
     val errors = mutableListOf<SyntaxException>()
 
-    private var index: Int = 0
+    var index: Int = 0
+        private set
     val eof get() = index == tokens.size
     val last get() = tokens[index - 1]
 
     private val precedence get() = grammar.infixParsers[peek(0).type]?.precedence ?: 0
 
     fun back() = tokens[--index]
+
+//    inline fun latest(block: (Token) -> Boolean): Token {
+//        var i = index
+//        while (block(tokens[--i]));
+//        return tokens[i]
+//    }
 
     fun eat() = tokens[index++]
 
@@ -82,30 +89,31 @@ class Parser(val grammar: Grammar, val source: Source, val tokens: List<Token>) 
         return expr
     }
 
+    /** [block] returns false if it wants to skip to the next statement */
     inline fun delimitedBlock(delimiterPair: Pair<TokenType, TokenType>? = null, block: () -> Boolean) {
         if (eof) {
             if (tokens.isEmpty()) {
-                throw SyntaxException("Expected block but reached end of folder", Section(source, 0, 0 , 0))
+                throw SyntaxException("Expected block but reached end of file", Section(source, 0, 0 , 0))
             } else {
-                throw SyntaxException("Expected block but reached end of folder", last.section)
+                throw SyntaxException("Expected block but reached end of file", last.section)
             }
         }
 
         delimiterPair?.first?.let(this::eat)
-        matchAllWhitespace()
+        matchAll(TokenType.NL, TokenType.SEMICOLON)
 
         do {
             if (eof || (delimiterPair != null && nextIs(delimiterPair.second))) {
                 break
             }
-            if (!block()) {
+            if (!block()) { //returns true to skip to the next statement
                 if (delimiterPair != null) {
                     skipUntil(delimiterPair.second, TokenType.SEMICOLON, TokenType.NL)
                 } else {
                     skipUntil(TokenType.SEMICOLON, TokenType.NL)
                 }
             }
-        } while (!eof && matchAllWhitespace())
+        } while (!eof && matchAll(TokenType.NL, TokenType.SEMICOLON))
 
         delimiterPair?.second?.let(this::eat)
     }
@@ -129,6 +137,8 @@ class Parser(val grammar: Grammar, val source: Source, val tokens: List<Token>) 
             }
         }
 
+        if (last.type == TokenType.SEMICOLON) list += TupleExpr(last.section)
+
         return when {
             list.isEmpty() -> TupleExpr(last.section)
             list.size == 1 -> list[0]
@@ -145,7 +155,7 @@ class Parser(val grammar: Grammar, val source: Source, val tokens: List<Token>) 
         val token = eat()
 
         val parser = grammar.prefixParsers[token.type] ?: let {
-            errors += SyntaxException("Unexpected $token", token.section)
+            errors += SyntaxException("Unexpected ${token.type}", token.section)
             return InvalidExpr(token.section)
         }
 

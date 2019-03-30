@@ -1,7 +1,0 @@
-external def print(value: any)
-external def println(value: any)
-
-mod console {
-    external def scan() -> str
-    external def log(value: any)
-}

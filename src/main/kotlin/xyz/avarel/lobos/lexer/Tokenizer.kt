@@ -38,6 +38,10 @@ class Tokenizer(val source: Source) {
                 else -> makeToken(TokenType.COLON)
             }
             ';' -> list += makeToken(TokenType.SEMICOLON)
+            '\r' -> {
+                match('\n')
+                list += makeToken(TokenType.NL)
+            }
             '\n' -> list += makeToken(TokenType.NL)
             '+' -> list += makeToken(TokenType.PLUS)
             '-' -> list += when {
