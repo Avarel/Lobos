@@ -1,5 +1,5 @@
 def main() {
-    let (a, b, c) = ("natan", 2, null)
+    let (a: str, b, c) = ("natan", 2, null)
     let z: () = (a, b, c)
     return ()
 }

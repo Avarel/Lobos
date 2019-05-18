@@ -3,7 +3,6 @@ package xyz.avarel.lobos.parser.parselets.declarations
 import xyz.avarel.lobos.ast.expr.Expr
 import xyz.avarel.lobos.ast.expr.declarations.DeclareLetExpr
 import xyz.avarel.lobos.ast.expr.declarations.ExternalLetExpr
-import xyz.avarel.lobos.ast.patterns.parsePattern
 import xyz.avarel.lobos.ast.types.AbstractTypeAST
 import xyz.avarel.lobos.ast.types.TypeAST
 import xyz.avarel.lobos.lexer.Token

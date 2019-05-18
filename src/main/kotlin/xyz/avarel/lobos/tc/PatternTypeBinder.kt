@@ -55,34 +55,22 @@ class PatternTypeBinder(
             return null
         }
 
-        scope.declare(pattern.name, targetType.universalType, pattern.mutable)
-        return targetType
-    }
+        if (pattern.type != null) {
+            val type = tc.run { pattern.type.resolve(scope) }
 
-    override fun visit(pattern: TypedPattern): Type? {
-        when (pattern.target) {
-            is VariablePattern -> {
-                if (fromLet && pattern.target.name in scope.variables) {
-                    tc.errorHandler("Reference ${pattern.target.name} has already been declared", pattern.target.section)
-                    return null
-                }
+            scope.declare(pattern.name, type, pattern.mutable)
 
-                val type = tc.run { pattern.type.resolve(scope) }
-
-                scope.declare(pattern.target.name, type, pattern.target.mutable)
-
-                if (type.isAssignableFrom(targetType)) {
-                    scope.assume(pattern.display, targetType)
-                } else {
-                    tc.errorHandler("Expected $type but found $targetType", pattern.section)
-                }
-
-                return targetType
+            if (type.isAssignableFrom(targetType)) {
+                scope.assume(pattern.display, targetType)
+            } else {
+                tc.errorHandler("Expected $type but found $targetType", pattern.section)
             }
-            is WildcardPattern, is I32Pattern, is StrPattern -> {
-                return null
-            }
-            else -> TODO()
+
+            return type
+        } else {
+            scope.declare(pattern.name, targetType.universalType, pattern.mutable)
         }
+
+        return targetType
     }
 }

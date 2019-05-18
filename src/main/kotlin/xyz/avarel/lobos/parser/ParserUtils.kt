@@ -4,6 +4,7 @@ import xyz.avarel.lobos.ast.DeclarationsAST
 import xyz.avarel.lobos.ast.ExternalDeclarationsAST
 import xyz.avarel.lobos.ast.expr.Expr
 import xyz.avarel.lobos.ast.expr.declarations.*
+import xyz.avarel.lobos.ast.patterns.*
 import xyz.avarel.lobos.ast.types.TypeAST
 import xyz.avarel.lobos.ast.types.GenericParameterAST
 import xyz.avarel.lobos.ast.types.basic.IdentTypeAST
@@ -24,6 +25,38 @@ val declarationTokens = listOf(
 //fun Parser.matchAllWhitespace(): Boolean {
 //    return matchAll(TokenType.NL)
 //}
+
+
+fun Parser.parsePattern(): PatternAST {
+    return when {
+        match(TokenType.UNDERSCORE) -> WildcardPattern(last.section)
+        match(TokenType.INT) -> I32Pattern(last.string.toInt(), last.section)
+        match(TokenType.STRING) -> StrPattern(last.string, last.section)
+        match(TokenType.L_PAREN) -> {
+            val lParen = last.section
+            val list = mutableListOf<PatternAST>()
+            if (!match(TokenType.R_PAREN)) {
+                do {
+                    list += parsePattern()
+                } while (match(TokenType.COMMA))
+                eat(TokenType.R_PAREN)
+            }
+            TuplePattern(list, lParen.span(last.section))
+        }
+        match(TokenType.IDENT) -> {
+            val name = last.string
+            val type = if (match(TokenType.COLON)) parseTypeAST() else null
+            VariablePattern(false, name, type, last.section)
+        }
+        match(TokenType.MUT) -> {
+            val name = last.string
+            val type = if (match(TokenType.COLON)) parseTypeAST() else null
+            val mutToken = last
+            VariablePattern(false, name, type, mutToken.span(last))
+        }
+        else -> throw SyntaxException("Expected pattern", peek().section)
+    }
+}
 
 fun Parser.matchAll(vararg types: TokenType): Boolean {
     return if (nextIsAny(*types)) {
